@@ -14,7 +14,8 @@ namespace LangFoodBackend.Models
         public DbSet<UserReport> UserReports { get; set; }
         public DbSet<CartItem> CartItems { get; set; }
         public DbSet<RoleRequest> RoleRequests { get; set; }
-
+        // Mở file LangFoodDbContext.cs và thêm dòng này vào cùng các DbSet khác
+        public DbSet<Category> Categories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

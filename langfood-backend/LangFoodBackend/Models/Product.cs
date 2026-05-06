@@ -12,7 +12,11 @@ namespace LangFoodBackend.Models
         public decimal Price { get; set; }
         public string? ImageUrl { get; set; }
         public bool IsAvailable { get; set; } = true;
+        // Mở file Product.cs và thêm các dòng này vào
+        public int CategoryId { get; set; }
 
+        [ForeignKey("CategoryId")]
+        public virtual Category? Category { get; set; }
         // Tạo khóa ngoại nối với Seller (User)
         [ForeignKey("SellerId")]
         public virtual User? Seller { get; set; }
