@@ -31,6 +31,8 @@ builder.WebHost.ConfigureKestrel(options =>
     options.ListenAnyIP(portToUse);
 });
 
+builder.Services.AddMemoryCache(); // Để lưu mã OTP tạm thời trong bộ nhớ
+builder.Services.AddScoped<LangFoodBackend.Services.EmailService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -5,6 +5,7 @@ import com.example.langfood.models.Category;
 import com.example.langfood.models.Product;
 import com.example.langfood.models.User;
 import com.example.langfood.models.Order;
+import com.example.langfood.models.UsernameCheckResponse;
 
 import java.util.List;
 
@@ -26,6 +27,15 @@ public interface ApiService {
 
     @GET("api/Products")
     Call<List<Product>> getProducts(@Query("categoryId") Integer categoryId);
+
+    @GET("api/Users/check-username")
+    Call<UsernameCheckResponse> checkUsername(@Query("username") String username);
+
+    @GET("api/Users/check-email")
+    Call<UsernameCheckResponse> checkEmail(@Query("email") String email);
+
+    @GET("api/Users/check-phone")
+    Call<UsernameCheckResponse> checkPhone(@Query("phone") String phone);
 
     @GET("api/Products/{id}")
     Call<Product> getProductById(@Path("id") int id);
@@ -104,5 +114,22 @@ public interface ApiService {
     Call<ResponseBody> applyShipper(
             @Part("userId") RequestBody userId,
             @Part MultipartBody.Part imageProof
+    );
+
+    // --- API OTP ---
+    @POST("api/Users/send-otp")
+    Call<ResponseBody> sendOtp(@Query("email") String email, @Query("username") String username);
+
+    @POST("api/Users/verify-otp")
+    Call<ResponseBody> verifyOtp(@Query("email") String email, @Query("otp") String otp);
+
+    @POST("api/Users/reset-password")
+    Call<ResponseBody> resetPassword(@Query("email") String email, @Query("newPassword") String newPassword);
+
+    @POST("api/Users/change-password")
+    Call<ResponseBody> changePassword(
+            @Query("id") String id,
+            @Query("oldPassword") String oldPassword,
+            @Query("newPassword") String newPassword
     );
 }

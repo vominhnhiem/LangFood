@@ -142,7 +142,7 @@ public class ProfileActivity extends AppCompatActivity {
         });
 
         btnChangePassword.setOnClickListener(v -> {
-            Toast.makeText(this, "Chức năng đổi mật khẩu đang phát triển", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(ProfileActivity.this, ChangePasswordActivity.class));
         });
 
         btnMyAddresses.setOnClickListener(v -> {

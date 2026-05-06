@@ -200,11 +200,20 @@
                 android:paddingLeft="15dp"
                 android:textSize="15sp" />
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dp"
+                android:layout_marginTop="2dp"
+                android:text="* Mật khẩu phải có ít nhất 8 ký tự"
+                android:textColor="#757575"
+                android:textSize="12sp" />
+
             <EditText
                 android:id="@+id/etConfirmPassword"
                 android:layout_width="match_parent"
                 android:layout_height="55dp"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="10dp"
                 android:background="@android:drawable/editbox_background"
                 android:hint="Xác nhận mật khẩu"
                 android:inputType="textPassword"

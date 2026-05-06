@@ -36,6 +36,7 @@ namespace LangFoodBackend.Controllers
                     p.ImageUrl,
                     p.IsAvailable,
                     p.SellerId,
+                    p.CategoryId,
                     SellerName = p.Seller != null ? p.Seller.FullName : "Ẩn danh"
                 })
                 .ToListAsync();
@@ -63,6 +64,7 @@ namespace LangFoodBackend.Controllers
                 product.ImageUrl,
                 product.IsAvailable,
                 product.SellerId,
+                product.CategoryId,
                 SellerName = product.Seller?.FullName,
                 SellerPhone = product.Seller?.PhoneNumber
             };
@@ -99,24 +101,29 @@ namespace LangFoodBackend.Controllers
         [HttpPost("upload")]
         public async Task<ActionResult<Product>> PostProductWithImage(
             [FromForm] string name,
-            [FromForm] decimal price, // Đã sửa thành decimal để hết lỗi
+            [FromForm] decimal price,
             [FromForm] string description,
             [FromForm] string sellerId,
+            [FromForm] int categoryId, // Đã thêm để hết lỗi 500
             IFormFile image)
         {
             // Kiểm tra Seller có tồn tại không
             var sellerExists = await _context.Users.AnyAsync(u => u.Id == sellerId);
             if (!sellerExists) return BadRequest(new { message = "Người bán không tồn tại!" });
 
-            string imageUrl = "images/default_food.png"; // Ảnh mặc định nếu không upload
+            // Kiểm tra Category có tồn tại không
+            var categoryExists = await _context.Categories.AnyAsync(c => c.Id == categoryId);
+            if (!categoryExists) return BadRequest(new { message = "Danh mục không tồn tại!" });
+
+            string imageUrl = "images/products/default_food.png";
 
             if (image != null && image.Length > 0)
             {
-                // Tạo thư mục images trong wwwroot nếu chưa có
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+                // Tạo thư mục images/products trong wwwroot nếu chưa có
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "products");
                 if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
 
-                // Tạo tên file duy nhất (GUID) để tránh trùng lặp
+                // Tạo tên file duy nhất (GUID)
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
                 var filePath = Path.Combine(uploadsFolder, fileName);
 
@@ -124,7 +131,7 @@ namespace LangFoodBackend.Controllers
                 {
                     await image.CopyToAsync(stream);
                 }
-                imageUrl = "images/" + fileName;
+                imageUrl = "images/products/" + fileName;
             }
 
             var product = new Product
@@ -133,6 +140,7 @@ namespace LangFoodBackend.Controllers
                 Price = price,
                 Description = description,
                 SellerId = sellerId,
+                CategoryId = categoryId, // Gán ID danh mục vào đây
                 ImageUrl = imageUrl,
                 IsAvailable = true
             };

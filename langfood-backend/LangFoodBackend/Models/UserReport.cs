@@ -16,10 +16,10 @@ namespace LangFoodBackend.Models
         public DateTime? ResolvedAt { get; set; }
 
         [ForeignKey("ReporterId")]
-        public virtual User? Reporter { get; set; }
+        public virtual User? Reporter { get; set; } // bán đồ ăn cơm
 
         [ForeignKey("ReportedUserId")]
-        public virtual User? ReportedUser { get; set; }
+        public virtual User? ReportedUser { get; set; }// nguyên
 
         [ForeignKey("OrderId")]
         public virtual Order? Order { get; set; }

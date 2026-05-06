@@ -1,23 +1,28 @@
 package com.example.langfood;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
-import android.util.Log;
+import android.text.SpannableString;
+import android.text.style.UnderlineSpan;
+import android.util.Patterns;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.view.View;
 
-import com.google.android.material.button.MaterialButtonToggleGroup;
-
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.langfood.api.ApiClient;
 import com.example.langfood.api.ApiService;
 import com.example.langfood.models.User;
+import com.example.langfood.models.UsernameCheckResponse;
+import com.google.android.material.button.MaterialButtonToggleGroup;
 
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -31,19 +36,20 @@ public class RegisterActivity extends AppCompatActivity {
     private LinearLayout llKtxInfo, llMerchantInfo;
     private MaterialButtonToggleGroup toggleRole;
     private int selectedAccountType = 0; // 0: SinhVien KTX, 1: External Merchant
+    private ApiService apiService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
-        // 1. Ánh xạ View
-        initViews();
+        apiService = ApiClient.getClient().create(ApiService.class);
 
-        // 2. Nút Đăng ký
+        initViews();
+        underlineLoginLink();
+
         btnRegister.setOnClickListener(v -> handleRegister());
 
-        // 3. Xử lý logic chọn Role
         toggleRole.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (isChecked) {
                 if (checkedId == R.id.btnRoleStudent) {
@@ -56,17 +62,11 @@ public class RegisterActivity extends AppCompatActivity {
                     llKtxInfo.setVisibility(View.GONE);
                     llMerchantInfo.setVisibility(View.VISIBLE);
                     etEmail.setHint("Email cá nhân");
-                    // Xóa data KTX nếu đổi sang ngoại khu
-                    etKtxBuilding.setText("");
-                    etKtxRoom.setText("");
                 }
             }
         });
 
-        // 4. Link về Đăng nhập
-        tvLoginLink.setOnClickListener(v -> {
-            finish(); // Quay lại màn hình Login
-        });
+        tvLoginLink.setOnClickListener(v -> finish());
     }
 
     private void initViews() {
@@ -88,76 +88,177 @@ public class RegisterActivity extends AppCompatActivity {
         toggleRole = findViewById(R.id.toggleRole);
     }
 
+    private void underlineLoginLink() {
+        String text = "Đã có tài khoản? Đăng nhập";
+        SpannableString ss = new SpannableString(text);
+        int start = text.indexOf("Đăng nhập");
+        if (start != -1) {
+            ss.setSpan(new UnderlineSpan(), start, text.length(), 0);
+        }
+        tvLoginLink.setText(ss);
+    }
+
+    private boolean validateData() {
+        boolean isValid = true;
+        if (etFullName.getText().toString().trim().isEmpty()) { etFullName.setError("Họ tên không được trống"); isValid = false; }
+        if (etUsername.getText().toString().trim().isEmpty()) { etUsername.setError("Tên đăng nhập không được trống"); isValid = false; }
+        String email = etEmail.getText().toString().trim();
+        if (email.isEmpty() || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) { etEmail.setError("Email không hợp lệ"); isValid = false; }
+        String phone = etPhone.getText().toString().trim();
+        if (phone.length() != 10 || !phone.startsWith("0")) { etPhone.setError("SĐT phải đúng 10 số và bắt đầu bằng 0"); isValid = false; }
+        if (etPassword.getText().toString().trim().length() < 8) { etPassword.setError("Mật khẩu ít nhất 8 ký tự"); isValid = false; }
+        if (!etPassword.getText().toString().trim().equals(etConfirmPassword.getText().toString().trim())) { etConfirmPassword.setError("Mật khẩu không khớp"); isValid = false; }
+        
+        if (selectedAccountType == 0) {
+            if (etKtxBuilding.getText().toString().trim().isEmpty()) { etKtxBuilding.setError("Vui lòng nhập tòa"); isValid = false; }
+            if (etKtxRoom.getText().toString().trim().isEmpty()) { etKtxRoom.setError("Vui lòng nhập phòng"); isValid = false; }
+        } else {
+            if (etShopName.getText().toString().trim().isEmpty()) { etShopName.setError("Vui lòng nhập tên quán"); isValid = false; }
+            if (etShopAddress.getText().toString().trim().isEmpty()) { etShopAddress.setError("Vui lòng nhập địa chỉ"); isValid = false; }
+            if (etCccd.getText().toString().trim().isEmpty()) { etCccd.setError("Vui lòng nhập CCCD"); isValid = false; }
+        }
+        return isValid;
+    }
+
     private void handleRegister() {
-        String fullName = etFullName.getText().toString().trim();
+        if (!validateData()) return;
+
+        btnRegister.setEnabled(false);
         String username = etUsername.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
         String phone = etPhone.getText().toString().trim();
-        String ktxBuilding = etKtxBuilding.getText().toString().trim();
-        String ktxRoom = etKtxRoom.getText().toString().trim();
-        String pass = etPassword.getText().toString().trim();
-        String confirmPass = etConfirmPassword.getText().toString().trim();
-        String shopName = etShopName.getText().toString().trim();
-        String shopAddress = etShopAddress.getText().toString().trim();
-        String cccd = etCccd.getText().toString().trim();
 
-        // Validation - Bỏ ktxBuilding và ktxRoom khỏi điều kiện bắt buộc
-        if (fullName.isEmpty() || username.isEmpty() || email.isEmpty() || phone.isEmpty() || pass.isEmpty()) {
-            Toast.makeText(this, "Vui lòng nhập đầy đủ thông tin cơ bản!", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        Toast.makeText(this, "Đang kiểm tra thông tin...", Toast.LENGTH_SHORT).show();
 
-        if (selectedAccountType == 1 && (shopName.isEmpty() || shopAddress.isEmpty() || cccd.isEmpty())) {
-            Toast.makeText(this, "Vui lòng nhập đầy đủ thông tin quán ăn và CCCD!", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // 1. Check trùng Username
+        apiService.checkUsername(username).enqueue(new Callback<UsernameCheckResponse>() {
+            @Override
+            public void onResponse(Call<UsernameCheckResponse> call, Response<UsernameCheckResponse> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isExists()) {
+                    etUsername.setError("Tên đăng nhập này đã tồn tại!");
+                    btnRegister.setEnabled(true);
+                } else {
+                    checkEmailDuplication(email, phone);
+                }
+            }
+            @Override public void onFailure(Call<UsernameCheckResponse> call, Throwable t) { 
+                btnRegister.setEnabled(true);
+                Toast.makeText(RegisterActivity.this, "Lỗi kết nối Server!", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 
-        if (!pass.equals(confirmPass)) {
-            Toast.makeText(this, "Mật khẩu xác nhận không khớp!", Toast.LENGTH_SHORT).show();
-            return;
-        }
+    private void checkEmailDuplication(String email, String phone) {
+        apiService.checkEmail(email).enqueue(new Callback<UsernameCheckResponse>() {
+            @Override
+            public void onResponse(Call<UsernameCheckResponse> call, Response<UsernameCheckResponse> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isExists()) {
+                    etEmail.setError("Email này đã được sử dụng!");
+                    btnRegister.setEnabled(true);
+                } else {
+                    checkPhoneDuplication(email, phone);
+                }
+            }
+            @Override public void onFailure(Call<UsernameCheckResponse> call, Throwable t) { btnRegister.setEnabled(true); }
+        });
+    }
 
-        // Tạo object User
-        User newUser = new User();
-        newUser.setFullName(fullName);
-        newUser.setUsername(username);
-        newUser.setEmail(email);
-        newUser.setPhoneNumber(phone);
-        // Có thể để trống nếu không ở KTX
-        newUser.setKtxBuilding(ktxBuilding.isEmpty() ? "" : ktxBuilding);
-        newUser.setKtxRoom(ktxRoom.isEmpty() ? "" : ktxRoom);
-        
-        // Thêm fields phụ
-        newUser.setShopName(shopName.isEmpty() ? "" : shopName);
-        newUser.setShopAddress(shopAddress.isEmpty() ? "" : shopAddress);
-        newUser.setCccdNumber(cccd.isEmpty() ? "" : cccd);
+    private void checkPhoneDuplication(String email, String phone) {
+        apiService.checkPhone(phone).enqueue(new Callback<UsernameCheckResponse>() {
+            @Override
+            public void onResponse(Call<UsernameCheckResponse> call, Response<UsernameCheckResponse> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isExists()) {
+                    etPhone.setError("Số điện thoại này đã được sử dụng!");
+                    btnRegister.setEnabled(true);
+                } else {
+                    sendOtpToEmail(email);
+                }
+            }
+            @Override public void onFailure(Call<UsernameCheckResponse> call, Throwable t) { btnRegister.setEnabled(true); }
+        });
+    }
 
-        newUser.setPasswordHash(pass); 
-        newUser.setRoleId(1); // 1: Buyer (Tất cả đăng ký mới đều là Buyer)
-        newUser.setAccountType(selectedAccountType); // 0: SinhVien, 1: Merchant Ngoại Khu
+    private void sendOtpToEmail(String email) {
+        Toast.makeText(this, "Đang gửi OTP về Gmail...", Toast.LENGTH_SHORT).show();
+        // Sửa lỗi: Truyền null cho username vì đây là bước Đăng ký (chưa có account)
+        apiService.sendOtp(email, null).enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                btnRegister.setEnabled(true);
+                if (response.isSuccessful()) {
+                    showOtpDialog(email);
+                } else {
+                    Toast.makeText(RegisterActivity.this, "Lỗi gửi mail! Kiểm tra lại Gmail.", Toast.LENGTH_SHORT).show();
+                }
+            }
+            @Override public void onFailure(Call<ResponseBody> call, Throwable t) { btnRegister.setEnabled(true); }
+        });
+    }
 
-        // Gọi API
-        ApiService apiService = ApiClient.getClient().create(ApiService.class);
-        apiService.register(newUser).enqueue(new Callback<User>() {
+    private void showOtpDialog(String email) {
+        final EditText etOtp = new EditText(this);
+        etOtp.setHint("Mã 6 số");
+        etOtp.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        etOtp.setPadding(60, 40, 60, 40);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Xác thực Email")
+                .setMessage("Mã OTP đã được gửi đến: " + email)
+                .setView(etOtp)
+                .setCancelable(false)
+                .setPositiveButton("Xác nhận", (dialog, which) -> {
+                    String otp = etOtp.getText().toString().trim();
+                    if (otp.length() == 6) verifyAndRegister(email, otp);
+                    else {
+                        Toast.makeText(this, "Nhập đủ 6 số!", Toast.LENGTH_SHORT).show();
+                        showOtpDialog(email);
+                    }
+                })
+                .setNegativeButton("Hủy", (dialog, which) -> btnRegister.setEnabled(true))
+                .show();
+    }
+
+    private void verifyAndRegister(String email, String otp) {
+        apiService.verifyOtp(email, otp).enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                if (response.isSuccessful()) {
+                    executeFinalRegistration();
+                } else {
+                    Toast.makeText(RegisterActivity.this, "Mã OTP sai hoặc hết hạn!", Toast.LENGTH_SHORT).show();
+                    showOtpDialog(email);
+                }
+            }
+            @Override public void onFailure(Call<ResponseBody> call, Throwable t) { }
+        });
+    }
+
+    private void executeFinalRegistration() {
+        User u = new User();
+        u.setFullName(etFullName.getText().toString().trim());
+        u.setUsername(etUsername.getText().toString().trim());
+        u.setEmail(etEmail.getText().toString().trim());
+        u.setPhoneNumber(etPhone.getText().toString().trim());
+        u.setKtxBuilding(etKtxBuilding.getText().toString().trim());
+        u.setKtxRoom(etKtxRoom.getText().toString().trim());
+        u.setShopName(etShopName.getText().toString().trim());
+        u.setShopAddress(etShopAddress.getText().toString().trim());
+        u.setCccdNumber(etCccd.getText().toString().trim());
+        u.setPasswordHash(etPassword.getText().toString().trim());
+        u.setRoleId(1);
+        u.setAccountType(selectedAccountType);
+
+        apiService.register(u).enqueue(new Callback<User>() {
             @Override
             public void onResponse(Call<User> call, Response<User> response) {
                 if (response.isSuccessful()) {
-                    if (selectedAccountType == 1) {
-                        Toast.makeText(RegisterActivity.this, "Đăng ký thành công! Hồ sơ quán đang chờ duyệt.", Toast.LENGTH_LONG).show();
-                    } else {
-                        Toast.makeText(RegisterActivity.this, "Đăng ký thành công!", Toast.LENGTH_LONG).show();
-                    }
+                    Toast.makeText(RegisterActivity.this, "Đăng ký thành công!", Toast.LENGTH_SHORT).show();
                     finish();
                 } else {
-                    Toast.makeText(RegisterActivity.this, "Đăng ký thất bại! Kiểm tra lại thông tin.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(RegisterActivity.this, "Lỗi khi lưu tài khoản!", Toast.LENGTH_SHORT).show();
                 }
             }
-
-            @Override
-            public void onFailure(Call<User> call, Throwable t) {
-                Log.e("REGISTER_ERROR", t.getMessage());
-                Toast.makeText(RegisterActivity.this, "Lỗi kết nối Server!", Toast.LENGTH_SHORT).show();
-            }
+            @Override public void onFailure(Call<User> call, Throwable t) { }
         });
     }
 }

@@ -66,6 +66,16 @@
             android:paddingLeft="15dp"
             android:textSize="15sp" />
 
+        <TextView
+            android:id="@+id/tvForgotPassword"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginTop="10dp"
+            android:text="Quên mật khẩu?"
+            android:textColor="#757575"
+            android:textSize="14sp" />
+
         <Button
             android:id="@+id/btnLogin"
             android:layout_width="match_parent"

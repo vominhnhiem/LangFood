@@ -2,7 +2,11 @@ package com.example.langfood;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.UnderlineSpan;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
@@ -23,7 +27,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private EditText etUsername, etPassword;
     private Button btnLogin;
-    private TextView tvRegisterLink, tvAppTitle;
+    private TextView tvRegisterLink, tvAppTitle, tvForgotPassword;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,24 +40,17 @@ public class LoginActivity extends AppCompatActivity {
         btnLogin = findViewById(R.id.btnLogin);
         tvRegisterLink = findViewById(R.id.tvRegisterLink);
         tvAppTitle = findViewById(R.id.tvAppTitle);
+        tvForgotPassword = findViewById(R.id.tvForgotPassword);
 
-        // Phím tắt bí mật: Nhấn giữ vào tiêu đề để điền tài khoản test (Seller)
-        if (tvAppTitle != null) {
-            tvAppTitle.setOnLongClickListener(v -> {
-                etUsername.setText("sell");
-                etPassword.setText("123");
-                Toast.makeText(this, "Đã điền tài khoản Seller Test", Toast.LENGTH_SHORT).show();
-                btnLogin.performClick(); 
-                return true;
-            });
-            
-            // Nhấn bình thường vào tiêu đề để điền tài khoản Shipper test
-            tvAppTitle.setOnClickListener(v -> {
-                etUsername.setText("shipper_test");
-                etPassword.setText("123456");
-                Toast.makeText(this, "Đã điền tài khoản Shipper Test", Toast.LENGTH_SHORT).show();
-            });
+        // Gạch chân cho "Đăng ký ngay"
+        String content = "Chưa có tài khoản? Đăng ký ngay";
+        SpannableString ss = new SpannableString(content);
+        int start = content.indexOf("Đăng ký ngay");
+        if (start != -1) {
+            ss.setSpan(new UnderlineSpan(), start, content.length(), 0);
+            ss.setSpan(new ForegroundColorSpan(Color.parseColor("#FF5722")), start, content.length(), 0);
         }
+        tvRegisterLink.setText(ss);
 
         // 2. Xử lý sự kiện click Đăng nhập
         btnLogin.setOnClickListener(v -> {
@@ -61,51 +58,58 @@ public class LoginActivity extends AppCompatActivity {
             String password = etPassword.getText().toString().trim();
 
             if (username.isEmpty() || password.isEmpty()) {
-                Toast.makeText(this, "Nhập đủ đi mày ơi!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Vui lòng nhập đầy đủ thông tin!", Toast.LENGTH_SHORT).show();
             } else {
                 handleLogin(username, password);
             }
         });
 
-        // 3. Xử lý click chuyển sang màn hình Đăng ký
-        if (tvRegisterLink != null) {
-            tvRegisterLink.setOnClickListener(v -> {
-                Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
-                startActivity(intent);
+        // 3. Chuyển sang Đăng ký
+        tvRegisterLink.setOnClickListener(v -> {
+            startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
+        });
+
+        // 4. Chuyển sang Quên mật khẩu
+        if (tvForgotPassword != null) {
+            tvForgotPassword.setOnClickListener(v -> {
+                startActivity(new Intent(LoginActivity.this, ForgotPasswordActivity.class));
+            });
+        }
+
+        // Phím tắt test (giữ nguyên logic cũ của bạn)
+        setupTestShortcuts();
+    }
+
+    private void setupTestShortcuts() {
+        if (tvAppTitle != null) {
+            tvAppTitle.setOnLongClickListener(v -> {
+                etUsername.setText("sell");
+                etPassword.setText("123");
+                btnLogin.performClick(); 
+                return true;
             });
         }
     }
 
     private void handleLogin(String user, String pass) {
-        // Tạo object gửi lên Backend
         User loginData = new User();
         loginData.setUsername(user);
-        loginData.setPasswordHash(pass); // Backend sẽ check pass này
+        loginData.setPasswordHash(pass);
 
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
 
-        // Gọi API Login
         apiService.login(loginData).enqueue(new Callback<User>() {
             @Override
             public void onResponse(Call<User> call, Response<User> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     User userResponse = response.body();
-
-                    // 3. Tối ưu hóa Authentication: Chặn Admin đăng nhập trên Mobile
                     if (userResponse.getRoleId() == 0) {
-                        Toast.makeText(LoginActivity.this, "Tài khoản quản trị vui lòng truy cập hệ thống Web Admin", Toast.LENGTH_LONG).show();
+                        Toast.makeText(LoginActivity.this, "Admin vui lòng dùng Web", Toast.LENGTH_LONG).show();
                         return;
                     }
-
-                    // Đăng nhập ngon lành -> Lưu lại toàn bộ thông tin để hiển thị ở Profile
                     saveUserToLocal(userResponse);
-
-                    Toast.makeText(LoginActivity.this, "Chào mừng " + userResponse.getFullName(), Toast.LENGTH_SHORT).show();
-
-                    // Chuyển sang Home
-                    Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
-                    startActivity(intent);
-                    finish(); // Đóng luôn màn login cho đỡ tốn ram
+                    startActivity(new Intent(LoginActivity.this, HomeActivity.class));
+                    finish();
                 } else {
                     Toast.makeText(LoginActivity.this, "Sai tài khoản hoặc mật khẩu!", Toast.LENGTH_SHORT).show();
                 }
@@ -113,8 +117,7 @@ public class LoginActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<User> call, Throwable t) {
-                Log.e("API_ERROR", "Lỗi: " + t.getMessage());
-                Toast.makeText(LoginActivity.this, "Không kết nối được với Server!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this, "Lỗi kết nối Server!", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -126,8 +129,6 @@ public class LoginActivity extends AppCompatActivity {
         editor.putString("USERNAME", user.getUsername());
         editor.putString("FULL_NAME", user.getFullName());
         editor.putString("PHONE", user.getPhoneNumber());
-        editor.putString("BUILDING", user.getKtxBuilding());
-        editor.putString("ROOM", user.getKtxRoom());
         editor.putInt("ROLE_ID", user.getRoleId());
         editor.apply();
     }

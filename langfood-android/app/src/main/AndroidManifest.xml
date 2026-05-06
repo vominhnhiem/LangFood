@@ -15,7 +15,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LangFood">
 
-        <!-- Thêm Activity này -->
+        <activity
+            android:name=".ForgotPasswordActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ChangePasswordActivity"
+            android:exported="false" />
+
         <activity
             android:name=".CheckoutActivity"
             android:exported="false" />
