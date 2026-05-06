@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LangFoodAdmin")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+afdf2e5b153916f2f8984090c514be63cf3c2fe1")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+263b028bee7b1a562eee777dfae69c159aec8bf0")]
 [assembly: System.Reflection.AssemblyProductAttribute("LangFoodAdmin")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LangFoodAdmin")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
