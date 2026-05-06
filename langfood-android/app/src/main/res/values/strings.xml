@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">LangFood</string>
+    <string name="login_title">Làng Food</string>
+    <string name="login_subtitle">Ship đồ ăn nhanh cho sinh viên VNU</string>
+    <string name="hint_email_phone">Email hoặc Số điện thoại</string>
+    <string name="hint_password">Mật khẩu</string>
+    <string name="btn_login">ĐĂNG NHẬP</string>
+    <string name="footer_signup">Chưa có tài khoản? Đăng ký ngay</string>
+</resources>

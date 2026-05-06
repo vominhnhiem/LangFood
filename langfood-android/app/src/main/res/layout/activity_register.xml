@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="30dp">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_marginTop="20dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp">
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@drawable/lang_food_avt" />
+        </androidx.cardview.widget.CardView>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Tham gia Làng Food"
+            android:textColor="#FF5722"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="vertical">
+
+            <!-- Lựa chọn Vai trò (Sinh viên KTX / Người bán ngoại khu) -->
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/toggleRole"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:singleSelection="true"
+                app:checkedButton="@id/btnRoleStudent">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRoleStudent"
+                    android:layout_width="0dp"
+                    android:layout_height="55dp"
+                    android:layout_weight="1"
+                    android:text="Sinh viên KTX"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    app:strokeColor="#F24E1E"
+                    android:textColor="#F24E1E"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRoleMerchant"
+                    android:layout_width="0dp"
+                    android:layout_height="55dp"
+                    android:layout_weight="1"
+                    android:text="Người bán ngoại khu"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    app:strokeColor="#F24E1E"
+                    android:textColor="#F24E1E"/>
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+
+            <EditText
+                android:id="@+id/etFullName"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:background="@android:drawable/editbox_background"
+                android:hint="Họ và tên"
+                android:paddingLeft="15dp"
+                android:textSize="15sp"
+                android:inputType="textPersonName" />
+
+            <EditText
+                android:id="@+id/etUsername"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:layout_marginTop="12dp"
+                android:background="@android:drawable/editbox_background"
+                android:hint="Tên đăng nhập"
+                android:paddingLeft="15dp"
+                android:textSize="15sp"
+                android:inputType="text" />
+
+            <EditText
+                android:id="@+id/etEmail"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:layout_marginTop="12dp"
+                android:background="@android:drawable/editbox_background"
+                android:hint="Email (vnu.edu.vn)"
+                android:paddingLeft="15dp"
+                android:textSize="15sp"
+                android:inputType="textEmailAddress" />
+
+            <EditText
+                android:id="@+id/etPhone"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:layout_marginTop="12dp"
+                android:background="@android:drawable/editbox_background"
+                android:hint="Số điện thoại"
+                android:paddingLeft="15dp"
+                android:textSize="15sp"
+                android:inputType="phone" />
+
+            <LinearLayout
+                android:id="@+id/llKtxInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/etKtxBuilding"
+                    android:layout_width="0dp"
+                    android:layout_height="55dp"
+                    android:layout_weight="1"
+                    android:background="@android:drawable/editbox_background"
+                    android:hint="Tòa KTX (tùy chọn)"
+                    android:paddingLeft="15dp"
+                    android:textSize="15sp"
+                    android:inputType="text" />
+
+                <View
+                    android:layout_width="10dp"
+                    android:layout_height="match_parent" />
+
+                <EditText
+                    android:id="@+id/etKtxRoom"
+                    android:layout_width="0dp"
+                    android:layout_height="55dp"
+                    android:layout_weight="1"
+                    android:background="@android:drawable/editbox_background"
+                    android:hint="Số phòng (tùy chọn)"
+                    android:paddingLeft="15dp"
+                    android:textSize="15sp"
+                    android:inputType="text" />
+            </LinearLayout>
+
+            <!-- THÔNG TIN CHO NGƯỜI BÁN NGOẠI KHU (MẶC ĐỊNH ẨN) -->
+            <LinearLayout
+                android:id="@+id/llMerchantInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <EditText
+                    android:id="@+id/etShopName"
+                    android:layout_width="match_parent"
+                    android:layout_height="55dp"
+                    android:background="@android:drawable/editbox_background"
+                    android:hint="Tên quán ăn"
+                    android:paddingLeft="15dp"
+                    android:textSize="15sp"
+                    android:inputType="text" />
+
+                <EditText
+                    android:id="@+id/etShopAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="55dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@android:drawable/editbox_background"
+                    android:hint="Địa chỉ quán ăn"
+                    android:paddingLeft="15dp"
+                    android:textSize="15sp"
+                    android:inputType="textPostalAddress" />
+
+                <EditText
+                    android:id="@+id/etCccd"
+                    android:layout_width="match_parent"
+                    android:layout_height="55dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@android:drawable/editbox_background"
+                    android:hint="Số CCCD / CMND"
+                    android:paddingLeft="15dp"
+                    android:textSize="15sp"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <EditText
+                android:id="@+id/etPassword"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:layout_marginTop="12dp"
+                android:background="@android:drawable/editbox_background"
+                android:hint="Mật khẩu"
+                android:inputType="textPassword"
+                android:paddingLeft="15dp"
+                android:textSize="15sp" />
+
+            <EditText
+                android:id="@+id/etConfirmPassword"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:layout_marginTop="12dp"
+                android:background="@android:drawable/editbox_background"
+                android:hint="Xác nhận mật khẩu"
+                android:inputType="textPassword"
+                android:paddingLeft="15dp"
+                android:textSize="15sp" />
+
+            <Button
+                android:id="@+id/btnRegister"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginTop="25dp"
+                android:backgroundTint="#FF5722"
+                android:text="ĐĂNG KÝ NGAY"
+                android:textColor="@color/white"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvLoginLink"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="20dp"
+                android:text="Đã có tài khoản? Đăng nhập"
+                android:textColor="#757575" />
+
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

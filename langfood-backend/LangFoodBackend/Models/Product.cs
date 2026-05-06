@@ -1,0 +1,20 @@
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace LangFoodBackend.Models
+{
+    public class Product
+    {
+        public int Id { get; set; }
+        public string SellerId { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        [Column(TypeName = "decimal(18,2)")] // Thêm dòng này Nhiệm nhé
+        public decimal Price { get; set; }
+        public string? ImageUrl { get; set; }
+        public bool IsAvailable { get; set; } = true;
+
+        // Tạo khóa ngoại nối với Seller (User)
+        [ForeignKey("SellerId")]
+        public virtual User? Seller { get; set; }
+    }
+}
