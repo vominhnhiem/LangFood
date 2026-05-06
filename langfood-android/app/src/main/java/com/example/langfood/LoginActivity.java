@@ -40,8 +40,8 @@ public class LoginActivity extends AppCompatActivity {
         // Phím tắt bí mật: Nhấn giữ vào tiêu đề để điền tài khoản test (Seller)
         if (tvAppTitle != null) {
             tvAppTitle.setOnLongClickListener(v -> {
-                etUsername.setText("seller_test");
-                etPassword.setText("123456");
+                etUsername.setText("sell");
+                etPassword.setText("123");
                 Toast.makeText(this, "Đã điền tài khoản Seller Test", Toast.LENGTH_SHORT).show();
                 btnLogin.performClick(); 
                 return true;

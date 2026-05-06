@@ -36,3 +36,43 @@ C:\Users\Asus\OneDrive\Video\Documents\Tài liệu học của nguyên\LangFoodA
 C:\Users\Asus\OneDrive\Video\Documents\Tài liệu học của nguyên\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\LangFoodAdmin.pdb
 C:\Users\Asus\OneDrive\Video\Documents\Tài liệu học của nguyên\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\LangFoodAdmin.genruntimeconfig.cache
 C:\Users\Asus\OneDrive\Video\Documents\Tài liệu học của nguyên\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\ref\LangFoodAdmin.dll
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\bin\Debug\net8.0\appsettings.Development.json
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\bin\Debug\net8.0\appsettings.json
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\bin\Debug\net8.0\LangFoodAdmin.staticwebassets.runtime.json
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\bin\Debug\net8.0\LangFoodAdmin.staticwebassets.endpoints.json
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\bin\Debug\net8.0\LangFoodAdmin.exe
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\bin\Debug\net8.0\LangFoodAdmin.deps.json
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\bin\Debug\net8.0\LangFoodAdmin.runtimeconfig.json
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\bin\Debug\net8.0\LangFoodAdmin.dll
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\bin\Debug\net8.0\LangFoodAdmin.pdb
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\bin\Debug\net8.0\Microsoft.OpenApi.dll
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\bin\Debug\net8.0\Swashbuckle.AspNetCore.Swagger.dll
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerUI.dll
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\LangFoodAdmin.csproj.AssemblyReference.cache
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\rpswa.dswa.cache.json
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\LangFoodAdmin.GeneratedMSBuildEditorConfig.editorconfig
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\LangFoodAdmin.AssemblyInfoInputs.cache
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\LangFoodAdmin.AssemblyInfo.cs
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\LangFoodAdmin.csproj.CoreCompileInputs.cache
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\LangFoodAdmin.MvcApplicationPartsAssemblyInfo.cs
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\LangFoodAdmin.MvcApplicationPartsAssemblyInfo.cache
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\LangFoodAdmin.RazorAssemblyInfo.cache
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\LangFoodAdmin.RazorAssemblyInfo.cs
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\LangFoodAdmin.sourcelink.json
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\rjimswa.dswa.cache.json
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\scopedcss\bundle\LangFoodAdmin.styles.css
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\staticwebassets.build.json
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\staticwebassets.build.json.cache
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\staticwebassets.development.json
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\staticwebassets.build.endpoints.json
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\swae.build.ex.cache
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\LangFood.E08393ED.Up2Date
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\LangFoodAdmin.dll
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\refint\LangFoodAdmin.dll
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\LangFoodAdmin.pdb
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\LangFoodAdmin.genruntimeconfig.cache
+D:\Study\Subject\DoAnCoSo\LangFood\LangFoodAdmin\LangFoodAdmin\obj\Debug\net8.0\ref\LangFoodAdmin.dll

@@ -1,24 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Asus\\OneDrive\\Video\\Documents\\Tài liệu học của nguyên\\LangFoodAdmin\\LangFoodAdmin\\LangFoodAdmin.csproj": {}
+    "D:\\Study\\Subject\\DoAnCoSo\\LangFood\\LangFoodAdmin\\LangFoodAdmin\\LangFoodAdmin.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Asus\\OneDrive\\Video\\Documents\\Tài liệu học của nguyên\\LangFoodAdmin\\LangFoodAdmin\\LangFoodAdmin.csproj": {
+    "D:\\Study\\Subject\\DoAnCoSo\\LangFood\\LangFoodAdmin\\LangFoodAdmin\\LangFoodAdmin.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Asus\\OneDrive\\Video\\Documents\\Tài liệu học của nguyên\\LangFoodAdmin\\LangFoodAdmin\\LangFoodAdmin.csproj",
+        "projectUniqueName": "D:\\Study\\Subject\\DoAnCoSo\\LangFood\\LangFoodAdmin\\LangFoodAdmin\\LangFoodAdmin.csproj",
         "projectName": "LangFoodAdmin",
-        "projectPath": "C:\\Users\\Asus\\OneDrive\\Video\\Documents\\Tài liệu học của nguyên\\LangFoodAdmin\\LangFoodAdmin\\LangFoodAdmin.csproj",
-        "packagesPath": "C:\\Users\\Asus\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Asus\\OneDrive\\Video\\Documents\\Tài liệu học của nguyên\\LangFoodAdmin\\LangFoodAdmin\\obj\\",
+        "projectPath": "D:\\Study\\Subject\\DoAnCoSo\\LangFood\\LangFoodAdmin\\LangFoodAdmin\\LangFoodAdmin.csproj",
+        "packagesPath": "C:\\Users\\vomin\\.nuget\\packages\\",
+        "outputPath": "D:\\Study\\Subject\\DoAnCoSo\\LangFood\\LangFoodAdmin\\LangFoodAdmin\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\Asus\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Users\\vomin\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -26,11 +22,11 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0": {
+            "framework": "net8.0",
             "targetAlias": "net8.0",
             "projectReferences": {}
           }
@@ -45,10 +41,11 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net8.0": {
+          "framework": "net8.0",
           "targetAlias": "net8.0",
           "dependencies": {
             "Swashbuckle.AspNetCore": {
@@ -75,7 +72,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.203/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

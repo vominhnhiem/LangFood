@@ -1,0 +1,27 @@
+# .gitignore chuẩn cho .NET & Android
+
+## [Visual Studio]
+bin/
+obj/
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+
+## [Android Studio]
+.gradle/
+build/
+captures/
+local.properties
+.cxx/
+*.keystore
+!public.keystore
+intermediate/
+
+## [OS & IDE]
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+*.swp
+*.log

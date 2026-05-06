@@ -2,6 +2,7 @@ using LangFoodBackend.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Net.Sockets;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,7 +45,25 @@ app.UseStaticFiles();
 app.MapControllers();
 
 Console.WriteLine($"Starting on port {portToUse}");
-app.Run();
+
+// Start the app so Kestrel binds before opening the browser.
+// Use StartAsync + WaitForShutdownAsync so we can open the correct Swagger URL (with the actual port) when debugging.
+await app.StartAsync();
+
+if (app.Environment.IsDevelopment() && Debugger.IsAttached)
+{
+    var swaggerUrl = $"http://localhost:{portToUse}/swagger";
+    try
+    {
+        Process.Start(new ProcessStartInfo { FileName = swaggerUrl, UseShellExecute = true });
+    }
+    catch
+    {
+        // ignore failures to launch browser
+    }
+}
+
+await app.WaitForShutdownAsync();
 
 static bool IsPortAvailable(int port)
 {
