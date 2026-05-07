@@ -28,6 +28,10 @@ public interface ApiService {
     @GET("api/Products")
     Call<List<Product>> getProducts(@Query("categoryId") Integer categoryId);
 
+    // Thêm API lấy sản phẩm theo người bán (để hiện cả món đang chờ duyệt)
+    @GET("api/Products/seller/{sellerId}")
+    Call<List<Product>> getProductsBySeller(@Path("sellerId") String sellerId);
+
     @GET("api/Users/check-username")
     Call<UsernameCheckResponse> checkUsername(@Query("username") String username);
 

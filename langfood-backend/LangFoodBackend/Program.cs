@@ -1,4 +1,4 @@
-using LangFoodBackend.Models;
+using LangFood.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Net.Sockets;
@@ -52,18 +52,8 @@ Console.WriteLine($"Starting on port {portToUse}");
 // Use StartAsync + WaitForShutdownAsync so we can open the correct Swagger URL (with the actual port) when debugging.
 await app.StartAsync();
 
-if (app.Environment.IsDevelopment() && Debugger.IsAttached)
-{
-    var swaggerUrl = $"http://localhost:{portToUse}/swagger";
-    try
-    {
-        Process.Start(new ProcessStartInfo { FileName = swaggerUrl, UseShellExecute = true });
-    }
-    catch
-    {
-        // ignore failures to launch browser
-    }
-}
+// Removed automatic browser launch to avoid duplicate browser windows when Visual Studio
+// already opens the app's launch URL. Visual Studio will open the configured launch URL(s).
 
 await app.WaitForShutdownAsync();
 

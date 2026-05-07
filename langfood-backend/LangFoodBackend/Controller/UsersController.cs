@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using LangFoodBackend.Models;
+using LangFood.Shared.Models;
 using Microsoft.Extensions.Caching.Memory;
 using LangFoodBackend.Services; // Đảm bảo bạn đã tạo thư mục Services và file EmailService.cs
 using System;
@@ -9,7 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace LangFoodBackend.Controllers
+namespace LangFoodBackend.Controller
 {
     [Route("api/[controller]")]
     [ApiController]

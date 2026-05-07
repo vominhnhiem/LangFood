@@ -1,0 +1,43 @@
+@model IEnumerable<LangFood.Shared.DTOs.RoleRequestDTO>
+
+@{
+    ViewData["Title"] = "Duyệt yêu cầu";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4">Danh sách yêu cầu chờ duyệt</h2>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    <table class="table table-bordered shadow-sm">
+        <thead class="table-dark">
+            <tr>
+                <th>Người gửi</th>
+                <th>Loại yêu cầu</th>
+                <th>Tên quán (nếu có)</th>
+                <th>Minh chứng</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.FullName</td>
+                    <td>@(item.RequestType == 1 ? "Seller" : "Shipper")</td>
+                    <td>@item.ShopName</td>
+                    <td>
+                        <a href="http://localhost:5222@item.ImageProof" target="_blank">Xem ảnh</a>
+                    </td>
+                    <td>
+                        <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-primary btn-sm">Duyệt</a>
+                        <button class="btn btn-danger btn-sm">Từ chối</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

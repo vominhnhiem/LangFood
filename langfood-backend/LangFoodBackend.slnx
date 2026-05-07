@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="LangFood.Shared/LangFood.Shared.csproj" Id="e11a9616-ea89-4738-8067-1809c2d5e9a5" />
+  <Project Path="LangFoodAdmin/LangFoodAdmin.csproj" Id="d19c365d-783a-4a8b-8f2d-c3cf5a7b089f" />
   <Project Path="LangFoodBackend/LangFoodBackend.csproj" />
 </Solution>

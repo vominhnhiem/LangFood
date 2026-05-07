@@ -1,12 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using LangFoodBackend.Models;
+using LangFood.Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace LangFoodBackend.Controllers
+namespace LangFoodBackend.Controller
 {
     [Route("api/[controller]")]
     [ApiController]

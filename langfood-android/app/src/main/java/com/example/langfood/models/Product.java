@@ -31,6 +31,9 @@ public class Product implements Serializable {
     @SerializedName(value = "categoryId", alternate = {"CategoryId"})
     private int categoryId;
 
+    @SerializedName(value = "status", alternate = {"Status"})
+    private int status; // 0: Pending, 1: Approved, 2: Rejected
+
     public Product() {}
 
     public int getId() { return id; }
@@ -59,4 +62,7 @@ public class Product implements Serializable {
 
     public int getCategoryId() { return categoryId; }
     public void setCategoryId(int categoryId) { this.categoryId = categoryId; }
+
+    public int getStatus() { return status; }
+    public void setStatus(int status) { this.status = status; }
 }

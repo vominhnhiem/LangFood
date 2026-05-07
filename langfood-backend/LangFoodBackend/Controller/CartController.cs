@@ -1,13 +1,12 @@
-﻿using LangFoodAPI.Controllers; // Thay bằng namespace thật của bạn
-using LangFoodBackend.Models;
+﻿using LangFood.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using YourProjectName.Models;
+// Removed stray placeholder using and fixed models namespace
 
-namespace LangFoodAPI.Controllers // Thay bằng namespace thật của bạn
+namespace LangFoodBackend.Controller // Thay bằng namespace thật của bạn
 {
     [Route("api/[controller]")]
     [ApiController]

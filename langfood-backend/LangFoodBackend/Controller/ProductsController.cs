@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using LangFoodBackend.Models;
+using LangFood.Shared.Models;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace LangFoodBackend.Controllers
+namespace LangFoodBackend.Controller
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -21,12 +21,13 @@ namespace LangFoodBackend.Controllers
             _context = context;
         }
 
-        // 1. LẤY TẤT CẢ MÓN ĂN (Hiện lên trang chủ App)
+        // 1. LẤY TẤT CẢ MÓN ĂN (Chỉ hiện món ĐÃ DUYỆT lên trang chủ App)
         [HttpGet]
         public async Task<ActionResult<IEnumerable<object>>> GetProducts()
         {
             return await _context.Products
-                .Where(p => p.IsAvailable)
+                .Include(p => p.Seller)
+                .Where(p => p.IsAvailable && p.Status == 1) // CHỈ LẤY MÓN CÓ STATUS = 1 (APPROVED)
                 .OrderByDescending(p => p.Id)
                 .Select(p => new {
                     p.Id,
@@ -35,6 +36,7 @@ namespace LangFoodBackend.Controllers
                     p.Description,
                     p.ImageUrl,
                     p.IsAvailable,
+                    p.Status, // Trả về để App biết trạng thái
                     p.SellerId,
                     p.CategoryId,
                     SellerName = p.Seller != null ? p.Seller.FullName : "Ẩn danh"
@@ -63,6 +65,7 @@ namespace LangFoodBackend.Controllers
                 product.Description,
                 product.ImageUrl,
                 product.IsAvailable,
+                product.Status, // Trả về Status
                 product.SellerId,
                 product.CategoryId,
                 SellerName = product.Seller?.FullName,
@@ -70,17 +73,21 @@ namespace LangFoodBackend.Controllers
             };
         }
 
+        // 3. LẤY DANH SÁCH MÓN CỦA MỘT NGƯỜI BÁN (Để hiện trong trang Quản lý món ăn của Seller)
         // 3. LẤY DANH SÁCH MÓN CỦA MỘT NGƯỜI BÁN
         [HttpGet("seller/{sellerId}")]
         public async Task<ActionResult<IEnumerable<Product>>> GetProductsBySeller(string sellerId)
         {
-            return await _context.Products
+            // Phải lấy TOÀN BỘ, không được có .Where(p => p.Status == 1) ở đây
+            var products = await _context.Products
                 .Where(p => p.SellerId == sellerId)
                 .OrderByDescending(p => p.Id)
                 .ToListAsync();
+
+            return Ok(products);
         }
 
-        // 4. ĐĂNG MÓN ĂN MỚI (Dạng JSON - Không ảnh)
+        // 4. ĐĂNG MÓN ĂN MỚI (Dạng JSON)
         [HttpPost]
         public async Task<ActionResult<Product>> PostProduct(Product product)
         {
@@ -91,6 +98,8 @@ namespace LangFoodBackend.Controllers
             }
 
             product.IsAvailable = true;
+            product.Status = 0; // MẶC ĐỊNH LÀ CHỜ DUYỆT (PENDING)
+
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
 
@@ -104,7 +113,7 @@ namespace LangFoodBackend.Controllers
             [FromForm] decimal price,
             [FromForm] string description,
             [FromForm] string sellerId,
-            [FromForm] int categoryId, // Đã thêm để hết lỗi 500
+            [FromForm] int categoryId,
             IFormFile image)
         {
             // Kiểm tra Seller có tồn tại không
@@ -119,11 +128,9 @@ namespace LangFoodBackend.Controllers
 
             if (image != null && image.Length > 0)
             {
-                // Tạo thư mục images/products trong wwwroot nếu chưa có
                 var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "products");
                 if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
 
-                // Tạo tên file duy nhất (GUID)
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
                 var filePath = Path.Combine(uploadsFolder, fileName);
 
@@ -140,9 +147,10 @@ namespace LangFoodBackend.Controllers
                 Price = price,
                 Description = description,
                 SellerId = sellerId,
-                CategoryId = categoryId, // Gán ID danh mục vào đây
+                CategoryId = categoryId,
                 ImageUrl = imageUrl,
-                IsAvailable = true
+                IsAvailable = true,
+                Status = 0 // MẶC ĐỊNH LÀ CHỜ DUYỆT KHI MỚI UP
             };
 
             _context.Products.Add(product);
@@ -157,6 +165,9 @@ namespace LangFoodBackend.Controllers
         {
             if (id != product.Id) return BadRequest();
 
+            // Khi Seller sửa món, có thể giữ nguyên Status hoặc reset về 0 tùy mày muốn
+            product.Status = 0;
+            // Ở đây tao giữ nguyên Status cũ để tránh việc cứ sửa là phải duyệt lại
             _context.Entry(product).State = EntityState.Modified;
 
             try

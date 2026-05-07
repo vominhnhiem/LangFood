@@ -251,7 +251,7 @@
                         android:layout_height="wrap_content"
                         android:paddingVertical="16dp"
                         android:paddingHorizontal="24dp"
-                        android:text="🍱  Quản lý món ăn đã đăng"
+                        android:text="🍱  Quản lý món ăn"
                         android:textSize="16sp"
                         android:textColor="#333333"
                         android:visibility="gone"

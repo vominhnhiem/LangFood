@@ -24,4 +24,8 @@
     <Folder Include="wwwroot\images\products\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\LangFood.Shared\LangFood.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -1,0 +1,39 @@
+﻿@model IEnumerable<LangFood.Shared.DTOs.ProductDTO>
+
+<div class="container mt-4">
+    <h2>Duyệt món ăn mới đăng</h2>
+    
+    @if (TempData["Msg"] != null)
+    {
+        <div class="alert alert-success">@TempData["Msg"]</div>
+    }
+
+    <table class="table table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Ảnh</th>
+                <th>Tên món</th>
+                <th>Giá</th>
+                <th>Người bán</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        <img src="http://localhost:5289/@item.ImageUrl" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;" />
+                    </td>
+                    <td>@item.Name</td>
+                    <td>@item.Price.ToString("N0")đ</td>
+                    <td>@item.SellerName</td>
+                    <td>
+                        <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-success btn-sm">Duyệt</a>
+                        <button class="btn btn-danger btn-sm">Xóa</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

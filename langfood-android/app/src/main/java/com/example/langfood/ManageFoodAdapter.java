@@ -1,6 +1,7 @@
 package com.example.langfood;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -43,14 +44,23 @@ public class ManageFoodAdapter extends RecyclerView.Adapter<ManageFoodAdapter.Vi
         Product product = productList.get(position);
         holder.tvFoodName.setText(product.getName());
         holder.tvFoodPrice.setText(String.format(Locale.getDefault(), "%,.0fđ", product.getPrice()));
-        
-        // Cập nhật trạng thái
-        if (product.isAvailable()) {
-            holder.tvFoodStatus.setText("Đang bán");
-            holder.tvFoodStatus.setTextColor(context.getResources().getColor(android.R.color.holo_green_dark));
-        } else {
-            holder.tvFoodStatus.setText("Tạm hết");
-            holder.tvFoodStatus.setTextColor(context.getResources().getColor(android.R.color.holo_red_dark));
+
+        // Cập nhật trạng thái dựa trên status từ backend
+        int status = product.getStatus();
+        if (status == 0) { // Pending (Chờ duyệt)
+            holder.tvFoodStatus.setText("Đang duyệt");
+            holder.tvFoodStatus.setTextColor(Color.parseColor("#FF9800")); // Màu cam
+        } else if (status == 1) { // Approved (Đã duyệt)
+            if (product.isAvailable()) {
+                holder.tvFoodStatus.setText("Đang bán");
+                holder.tvFoodStatus.setTextColor(context.getResources().getColor(android.R.color.holo_green_dark));
+            } else {
+                holder.tvFoodStatus.setText("Tạm hết");
+                holder.tvFoodStatus.setTextColor(context.getResources().getColor(android.R.color.holo_red_dark));
+            }
+        } else if (status == 2) { // Rejected (Bị từ chối)
+            holder.tvFoodStatus.setText("Bị từ chối");
+            holder.tvFoodStatus.setTextColor(Color.parseColor("#F44336")); // Màu đỏ
         }
 
         // Load ảnh bằng Glide với BASE_URL

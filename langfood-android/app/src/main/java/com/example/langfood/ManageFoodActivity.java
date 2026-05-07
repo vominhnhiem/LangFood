@@ -66,17 +66,15 @@ public class ManageFoodActivity extends AppCompatActivity implements ManageFoodA
     }
 
     private void loadMyFoods() {
-        // Pass null to get all products, then filter by sellerId
-        apiService.getProducts(null).enqueue(new Callback<List<Product>>() {
+        if (sellerId == null || sellerId.isEmpty()) return;
+
+        // FIX: Gọi đúng API lấy món của riêng Seller này (trả về cả món status = 0)
+        apiService.getProductsBySeller(sellerId).enqueue(new Callback<List<Product>>() {
             @Override
             public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     productList.clear();
-                    for (Product p : response.body()) {
-                        if (p.getSellerId() != null && p.getSellerId().equals(sellerId)) {
-                            productList.add(p);
-                        }
-                    }
+                    productList.addAll(response.body());
                     
                     adapter.updateList(productList);
                     layoutEmpty.setVisibility(productList.isEmpty() ? View.VISIBLE : View.GONE);
@@ -85,7 +83,7 @@ public class ManageFoodActivity extends AppCompatActivity implements ManageFoodA
 
             @Override
             public void onFailure(Call<List<Product>> call, Throwable t) {
-                Toast.makeText(ManageFoodActivity.this, "Lỗi tải dữ liệu", Toast.LENGTH_SHORT).show();
+                Toast.makeText(ManageFoodActivity.this, "Lỗi tải dữ liệu cá nhân", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -118,6 +116,7 @@ public class ManageFoodActivity extends AppCompatActivity implements ManageFoodA
     @Override
     protected void onResume() {
         super.onResume();
+        // Tự động load lại khi quay lại từ màn hình AddFoodActivity
         loadMyFoods();
     }
 }
