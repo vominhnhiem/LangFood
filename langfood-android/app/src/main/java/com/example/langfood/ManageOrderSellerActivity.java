@@ -10,7 +10,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.langfood.api.ApiClient;
 import com.example.langfood.api.ApiService;
 import com.example.langfood.models.Order;
-import com.example.langfood.models.OrderItem;
 import java.util.ArrayList;
 import java.util.List;
 import retrofit2.Call;
@@ -48,8 +47,6 @@ public class ManageOrderSellerActivity extends AppCompatActivity {
         
         adapter = new SellerOrderAdapter(this, sellerOrders, order -> {
             // Chức năng xác nhận đơn hàng (Dành cho Seller)
-            // Vì backend hiện tại tập trung vào Shipper Accept, 
-            // Ở đây ta có thể giả lập hoặc cập nhật trạng thái nếu cần.
             confirmOrder(order);
         });
         rvOrders.setLayoutManager(new LinearLayoutManager(this));
@@ -57,11 +54,14 @@ public class ManageOrderSellerActivity extends AppCompatActivity {
     }
 
     private void loadOrders() {
-        apiService.getAllOrders().enqueue(new Callback<List<Order>>() {
+        // Lấy danh sách đơn hàng dành riêng cho Seller này
+        apiService.getOrdersForSeller(sellerId).enqueue(new Callback<List<Order>>() {
             @Override
             public void onResponse(Call<List<Order>> call, Response<List<Order>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    filterOrdersForSeller(response.body());
+                    sellerOrders.clear();
+                    sellerOrders.addAll(response.body());
+                    adapter.notifyDataSetChanged();
                 }
             }
 
@@ -72,34 +72,23 @@ public class ManageOrderSellerActivity extends AppCompatActivity {
         });
     }
 
-    private void filterOrdersForSeller(List<Order> allOrders) {
-        sellerOrders.clear();
-        for (Order order : allOrders) {
-            boolean hasSellerProduct = false;
-            if (order.getOrderItems() != null) {
-                for (OrderItem item : order.getOrderItems()) {
-                    // Kiểm tra xem món ăn này có phải của Seller này không
-                    // Cần đảm bảo model OrderItem/Product có chứa SellerId
-                    if (item.getProduct() != null && sellerId.equals(item.getProduct().getSellerId())) {
-                        hasSellerProduct = true;
-                        break;
-                    }
+    private void confirmOrder(Order order) {
+        // Gọi API xác nhận đơn hàng, chuyển trạng thái từ Pending -> Confirmed
+        apiService.confirmOrder(order.getId()).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(ManageOrderSellerActivity.this, "Đã xác nhận đơn hàng #" + order.getId() + ". Đang chờ shipper nhận đơn.", Toast.LENGTH_LONG).show();
+                    loadOrders(); // Tải lại danh sách để cập nhật trạng thái UI
+                } else {
+                    Toast.makeText(ManageOrderSellerActivity.this, "Xác nhận đơn thất bại", Toast.LENGTH_SHORT).show();
                 }
             }
-            if (hasSellerProduct) {
-                sellerOrders.add(order);
-            }
-        }
-        adapter.notifyDataSetChanged();
-    }
 
-    private void confirmOrder(Order order) {
-        // Backend hiện chưa có endpoint xác nhận đơn riêng cho Seller
-        // Ta có thể tạm thời thông báo hoặc thêm logic cập nhật status sang "Confirmed" nếu Backend hỗ trợ
-        Toast.makeText(this, "Đã xác nhận đơn hàng #" + order.getId() + ". Đang chờ shipper nhận đơn.", Toast.LENGTH_LONG).show();
-        
-        // Giả lập: Cập nhật UI ngay lập tức
-        order.setStatus("Confirmed");
-        adapter.notifyDataSetChanged();
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                Toast.makeText(ManageOrderSellerActivity.this, "Lỗi kết nối server", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

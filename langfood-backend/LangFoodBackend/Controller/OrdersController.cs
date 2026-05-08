@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LangFood.Shared.Models;
+using LangFood.Shared; // Đảm bảo có namespace này để nhận diện DbContext
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,7 +38,6 @@ namespace LangFoodBackend.Controller
 
             try
             {
-                // SỬA TẠI ĐÂY: Gán trực tiếp DateTime.Now (không dùng .ToString)
                 order.CreatedAt = DateTime.Now;
                 order.Status = "Pending";
 
@@ -61,12 +61,13 @@ namespace LangFoodBackend.Controller
             }
         }
 
-        // 3. Lấy đơn hàng theo BuyerId
+        // 3. Lấy đơn hàng theo BuyerId (Lịch sử mua hàng của khách)
         [HttpGet("buyer/{buyerId}")]
         public async Task<ActionResult<IEnumerable<Order>>> GetOrdersByBuyer(string buyerId)
         {
             var orders = await _context.Orders
                 .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
                 .Where(o => o.BuyerId == buyerId)
                 .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
@@ -84,14 +85,14 @@ namespace LangFoodBackend.Controller
             return NoContent();
         }
 
-        // 5. Lấy đơn hàng cho Shipper
+        // 5. Lấy đơn hàng cho Shipper (Các đơn chưa có người nhận)
         [HttpGet("available")]
         public async Task<ActionResult<IEnumerable<Order>>> GetAvailableOrders()
         {
             var orders = await _context.Orders
-                .Include(o => o.Buyer) // THÊM DÒNG NÀY ĐỂ LẤY TÊN KHÁCH
+                .Include(o => o.Buyer)
                 .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.Product) // Đã có cái này để lấy món ăn
+                    .ThenInclude(oi => oi.Product)
                 .Where(o => o.Status == "Pending" && string.IsNullOrEmpty(o.ShipperId))
                 .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
@@ -122,13 +123,46 @@ namespace LangFoodBackend.Controller
             if (order == null) return NotFound();
 
             order.Status = "Delivered";
-            // SỬA TẠI ĐÂY: Gán trực tiếp DateTime.Now
             order.DeliveredAt = DateTime.Now;
 
             _context.Orders.Update(order);
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Giao hàng thành công!" });
+        }
+
+        // 8. API QUAN TRỌNG: Lấy đơn hàng dành cho NGƯỜI BÁN (Shop)
+        [HttpGet("seller/{sellerId}")]
+        public async Task<ActionResult<IEnumerable<object>>> GetOrdersBySeller(string sellerId)
+        {
+            var orders = await _context.Orders
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                .Where(o => o.OrderItems.Any(oi => oi.Product.SellerId == sellerId))
+                .OrderByDescending(o => o.CreatedAt)
+                .Select(o => new {
+                    o.Id,
+                    o.BuyerId,
+                    o.BuyerName,
+                    o.Status,
+                    o.TotalAmount,
+                    o.ShippingFee,
+                    o.CreatedAt,
+                    o.DeliveryBuilding,
+                    // Chỉ lấy danh sách món ăn thuộc về shop này trong đơn hàng đó
+                    Items = o.OrderItems
+                        .Where(oi => oi.Product.SellerId == sellerId)
+                        .Select(oi => new {
+                            oi.ProductId,
+                            ProductName = oi.Product.Name,
+                            oi.Product.ImageUrl,
+                            oi.Quantity,
+                            oi.UnitPrice
+                        })
+                })
+                .ToListAsync();
+
+            return Ok(orders);
         }
     }
 }

@@ -3,64 +3,57 @@ package com.example.langfood.models;
 import com.google.gson.annotations.SerializedName;
 
 public class User {
-    @SerializedName("id")
+    // Sử dụng camelCase làm tên chính để khớp với mặc định của ASP.NET Core JSON
+    @SerializedName(value = "id", alternate = {"Id"})
     private String id;
 
-    @SerializedName("username")
+    @SerializedName(value = "username", alternate = {"Username"})
     private String username;
 
-    @SerializedName("passwordHash")
+    @SerializedName(value = "passwordHash", alternate = {"PasswordHash", "password", "Password"})
     private String passwordHash;
 
-    @SerializedName("roleId")
+    @SerializedName(value = "roleId", alternate = {"RoleId"})
     private int roleId;
 
-    @SerializedName("fullName")
+    @SerializedName(value = "fullName", alternate = {"FullName"})
     private String fullName;
 
-    @SerializedName("email")
+    @SerializedName(value = "email", alternate = {"Email"})
     private String email;
 
-    @SerializedName("phoneNumber")
+    @SerializedName(value = "phoneNumber", alternate = {"PhoneNumber"})
     private String phoneNumber;
 
-    @SerializedName("ktxBuilding")
+    @SerializedName(value = "ktxBuilding", alternate = {"KtxBuilding"})
     private String ktxBuilding;
 
-    @SerializedName("ktxRoom")
+    @SerializedName(value = "ktxRoom", alternate = {"KtxRoom"})
     private String ktxRoom;
 
-    @SerializedName("isVerifiedResident")
+    @SerializedName(value = "isVerifiedResident", alternate = {"IsVerifiedResident"})
     private boolean isVerifiedResident;
 
-    @SerializedName("studentCardImageUrl")
+    @SerializedName(value = "studentCardImageUrl", alternate = {"StudentCardImageUrl"})
     private String studentCardImageUrl;
 
-    @SerializedName("avatarUrl")
+    @SerializedName(value = "avatarUrl", alternate = {"AvatarUrl"})
     private String avatarUrl;
 
-    @SerializedName("accountType")
+    @SerializedName(value = "accountType", alternate = {"AccountType"})
     private int accountType;
 
-    @SerializedName("shopName")
+    @SerializedName(value = "shopName", alternate = {"ShopName"})
     private String shopName;
 
-    @SerializedName("shopAddress")
+    @SerializedName(value = "shopAddress", alternate = {"ShopAddress"})
     private String shopAddress;
 
-    @SerializedName("cccdNumber")
+    @SerializedName(value = "cccdNumber", alternate = {"CccdNumber"})
     private String cccdNumber;
 
-    // Constructor không tham số (Bắt buộc)
     public User() {}
 
-    // Constructor dùng khi Đăng nhập (chỉ cần username/password)
-    public User(String username, String passwordHash) {
-        this.username = username;
-        this.passwordHash = passwordHash;
-    }
-
-    // --- GETTER AND SETTER ---
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 

@@ -18,6 +18,10 @@ namespace LangFood.Shared.Models
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Category>().HasQueryFilter(c => !c.IsDeleted);
+            modelBuilder.Entity<Product>().HasQueryFilter(p => !p.IsDeleted);
+
+            base.OnModelCreating(modelBuilder);
             // 1. Fix lỗi 1785: Chặn xóa dây chuyền (Cascade) để SQL không báo lỗi Path cycles
             foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
             {
@@ -49,5 +53,6 @@ namespace LangFood.Shared.Models
                 .HasForeignKey(o => o.ExternalShipperId)
                 .OnDelete(DeleteBehavior.NoAction);
         }
+
     }
 }

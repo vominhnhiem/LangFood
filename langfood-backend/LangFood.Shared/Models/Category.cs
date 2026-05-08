@@ -15,7 +15,8 @@ namespace LangFood.Shared.Models
         [Required]
         [StringLength(100)]
         public string Name { get; set; }
-
+        // Thêm dòng này vào cả 2 class Category và Product
+        public bool IsDeleted { get; set; } = false;
         public string? ImageUrl { get; set; }
 
         // Liên kết ngược lại: Một thể loại có nhiều sản phẩm

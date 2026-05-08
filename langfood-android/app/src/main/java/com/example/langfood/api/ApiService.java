@@ -28,7 +28,6 @@ public interface ApiService {
     @GET("api/Products")
     Call<List<Product>> getProducts(@Query("categoryId") Integer categoryId);
 
-    // Thêm API lấy sản phẩm theo người bán (để hiện cả món đang chờ duyệt)
     @GET("api/Products/seller/{sellerId}")
     Call<List<Product>> getProductsBySeller(@Path("sellerId") String sellerId);
 
@@ -68,6 +67,9 @@ public interface ApiService {
 
     @GET("api/Orders")
     Call<List<Order>> getAllOrders();
+
+    @PUT("api/Orders/confirm/{id}")
+    Call<Void> confirmOrder(@Path("id") int id);
 
     @PUT("api/Orders/accept/{id}")
     Call<Void> acceptOrder(@Path("id") int id, @Query("shipperId") String shipperId);
@@ -136,4 +138,7 @@ public interface ApiService {
             @Query("oldPassword") String oldPassword,
             @Query("newPassword") String newPassword
     );
+
+    @GET("api/Orders/seller/{sellerId}")
+    Call<List<Order>> getOrdersForSeller(@Path("sellerId") String sellerId);
 }

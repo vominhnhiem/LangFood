@@ -11,6 +11,8 @@ namespace LangFood.Shared.Models
         [Column(TypeName = "decimal(18,2)")] // Thêm dòng này Nhiệm nhé
         public decimal Price { get; set; }
         public string? ImageUrl { get; set; }
+        // Thêm dòng này vào cả 2 class Category và Product
+        public bool IsDeleted { get; set; } = false;
         public int Status { get; set; } = 0;
         public bool IsAvailable { get; set; } = true;
         // Mở file Product.cs và thêm các dòng này vào

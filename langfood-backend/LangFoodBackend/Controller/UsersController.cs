@@ -44,20 +44,24 @@ namespace LangFoodBackend.Controller
         // --- 1. API GỬI MÃ OTP ---
         // Cập nhật lại hàm SendOtp trong UsersController.cs
         [HttpPost("send-otp")]
-        public async Task<IActionResult> SendOtp([FromQuery] string email, [FromQuery] string username)
+        public async Task<IActionResult> SendOtp([FromQuery] string email, [FromQuery] string? username)
         {
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(username))
-                return BadRequest(new { message = "Vui lòng nhập đủ Tên đăng nhập và Email." });
+            if (string.IsNullOrEmpty(email))
+                return BadRequest(new { message = "Vui lòng nhập Email." });
 
-            // KIỂM TRA: Tìm user có khớp cả Username và Email không
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username && u.Email == email);
-
-            if (user == null)
+            // TRƯỜNG HỢP 1: Nếu có truyền username -> Dùng cho Quên mật khẩu (Cần check tồn tại)
+            if (!string.IsNullOrEmpty(username))
             {
-                return BadRequest(new { message = "Tên đăng nhập hoặc Email không chính xác!" });
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username && u.Email == email);
+                if (user == null)
+                {
+                    return BadRequest(new { message = "Tên đăng nhập hoặc Email không chính xác!" });
+                }
             }
+            // TRƯỜNG HỢP 2: Nếu username null -> Dùng cho Đăng ký mới (Không cần check user)
+            // (Lưu ý: RegisterActivity đã check trùng email trước khi gọi hàm này rồi nên cứ thế gửi thôi)
 
-            // Nếu khớp thì mới tạo OTP và gửi mail
+            // Tạo mã OTP
             string otp = new Random().Next(100000, 999999).ToString();
             _cache.Set(email, otp, TimeSpan.FromMinutes(5));
 

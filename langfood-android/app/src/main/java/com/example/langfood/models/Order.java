@@ -32,7 +32,8 @@ public class Order implements Serializable {
     @SerializedName(value = "createdAt", alternate = {"CreatedAt"})
     private String createdAt;
 
-    @SerializedName(value = "orderItems", alternate = {"OrderItems"})
+    // Phối hợp cả 2: backend trả về "orderItems" cho khách, "Items" cho shop
+    @SerializedName(value = "orderItems", alternate = {"Items", "items", "OrderItems"})
     private List<OrderItem> orderItems;
 
     public Order() {}

@@ -1,0 +1,35 @@
+﻿@model IEnumerable<LangFood.Shared.DTOs.CategoryDTO>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between mb-3">
+        <h2>Quản lý Danh mục</h2>
+        <a asp-action="Create" class="btn btn-primary">Thêm mới</a>
+    </div>
+
+    <table class="table table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>Ảnh</th>
+                <th>Tên danh mục</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model) {
+                <tr>
+                    @* Thay 5289 bằng cổng Backend của bạn nếu khác *@
+                    <td>
+                        <img src="http://localhost:5289/@item.ImageUrl"
+                             style="width:60px; height:60px; object-fit:cover; border-radius:8px;"
+                             alt="Category Image" />
+                    </td>
+                    <td>@item.Name</td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Sửa</a>
+                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm" onclick="return confirm('Xóa hả?')">Xóa</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

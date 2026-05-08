@@ -1,105 +1,58 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using LangFood.Shared.Models;
 using LangFood.Shared.DTOs;
+using System.Net.Http.Json;
 
-namespace LangFoodBackend.Controller
+namespace LangFoodAdmin.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class AdminApiController : ControllerBase
+    // Đây là Controller của trang WEB Admin (MVC), không phải API
+    public class RoleRequestsController : Controller
     {
-        private readonly LangFoodDbContext _context;
+        private readonly HttpClient _httpClient;
 
-        public AdminApiController(LangFoodDbContext context)
+        public RoleRequestsController(IHttpClientFactory httpClientFactory)
         {
-            _context = context;
+            // "BackendApi" đã được cấu hình trong Program.cs của Admin
+            _httpClient = httpClientFactory.CreateClient("BackendApi");
         }
 
-        // ==========================================
-        // 1. PHẦN DUYỆT MÓN ĂN (PRODUCTS)
-        // ==========================================
-
-        [HttpGet("pending-products")]
-        public async Task<IActionResult> GetPendingProducts()
+        // 1. Trang hiển thị danh sách yêu cầu chờ duyệt (HÀM NÀY ĐỂ VẼ GIAO DIỆN)
+        public async Task<IActionResult> Index()
         {
-            var products = await _context.Products
-                .Include(p => p.Seller)
-                .Where(p => p.Status == 0) // Lấy món đang chờ duyệt
-                .Select(p => new ProductDTO
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Price = p.Price,
-                    ImageUrl = p.ImageUrl,
-                    SellerName = p.Seller != null ? p.Seller.FullName : "Ẩn danh",
-                    Status = p.Status
-                }).ToListAsync();
-
-            return Ok(products);
-        }
-
-        [HttpPost("approve-product/{id}")]
-        public async Task<IActionResult> ApproveProduct(int id)
-        {
-            var product = await _context.Products.FindAsync(id);
-            if (product == null) return NotFound();
-
-            product.Status = 1; // Chuyển trạng thái thành Đã Duyệt
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Đã duyệt món ăn thành công!" });
-        }
-
-        // ==========================================
-        // 2. PHẦN DUYỆT QUYỀN (ROLE REQUESTS)
-        // ==========================================
-
-        [HttpGet("pending-role-requests")]
-        public async Task<IActionResult> GetPendingRequests()
-        {
-            var requests = await _context.RoleRequests
-                .Include(r => r.User)
-                .Where(r => r.Status == 0) // Lấy yêu cầu đang chờ
-                .Select(r => new RoleRequestDTO
-                {
-                    Id = r.Id,
-                    UserId = r.UserId,
-                    FullName = r.User.FullName,
-                    RequestType = r.RequestType,
-                    ShopName = r.ShopName,
-                    ShopAddress = r.ShopAddress,
-                    ImageProof = r.ImageProof,
-                    Status = r.Status
-                })
-                .ToListAsync();
-
-            return Ok(requests);
-        }
-
-        [HttpPost("approve-role-request/{id}")]
-        public async Task<IActionResult> ApproveRequest(int id)
-        {
-            var request = await _context.RoleRequests.FindAsync(id);
-            if (request == null) return NotFound(new { message = "Không tìm thấy yêu cầu." });
-
-            var user = await _context.Users.FindAsync(request.UserId);
-            if (user == null) return NotFound(new { message = "Không tìm thấy người dùng." });
-
-            request.Status = 1; // Đã duyệt yêu cầu
-            user.IsApproved = true;
-
-            if (request.RequestType == 1) // Seller
+            try
             {
-                user.RoleId = 2;
+                // Gọi sang Backend để lấy dữ liệu
+                var requests = await _httpClient.GetFromJsonAsync<List<RoleRequestDTO>>("api/AdminApi/pending-role-requests");
+                return View(requests ?? new List<RoleRequestDTO>());
             }
-            else if (request.RequestType == 2) // Shipper
+            catch (Exception ex)
             {
-                user.RoleId = 3;
+                // Nếu Backend chưa chạy hoặc lỗi cổng (Port) sẽ nhảy vào đây
+                return View(new List<RoleRequestDTO>());
+            }
+        }
+
+        // 2. Xử lý khi Admin nhấn nút "Duyệt" trên Web
+        public async Task<IActionResult> Approve(int id)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsync($"api/AdminApi/approve-role-request/{id}", null);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["Success"] = "Đã duyệt quyền thành công!";
+                }
+                else
+                {
+                    TempData["Error"] = "Lỗi hệ thống khi duyệt.";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Không thể kết nối tới Backend!";
             }
 
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Đã duyệt nâng cấp quyền thành công!" });
+            return RedirectToAction(nameof(Index));
         }
     }
 }

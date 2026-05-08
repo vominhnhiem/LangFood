@@ -19,6 +19,8 @@ import com.example.langfood.api.ApiClient;
 import com.example.langfood.api.ApiService;
 import com.example.langfood.models.User;
 
+import java.io.IOException;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -34,7 +36,6 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        // 1. Ánh xạ View
         etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
         btnLogin = findViewById(R.id.btnLogin);
@@ -42,7 +43,6 @@ public class LoginActivity extends AppCompatActivity {
         tvAppTitle = findViewById(R.id.tvAppTitle);
         tvForgotPassword = findViewById(R.id.tvForgotPassword);
 
-        // Gạch chân cho "Đăng ký ngay"
         String content = "Chưa có tài khoản? Đăng ký ngay";
         SpannableString ss = new SpannableString(content);
         int start = content.indexOf("Đăng ký ngay");
@@ -52,7 +52,6 @@ public class LoginActivity extends AppCompatActivity {
         }
         tvRegisterLink.setText(ss);
 
-        // 2. Xử lý sự kiện click Đăng nhập
         btnLogin.setOnClickListener(v -> {
             String username = etUsername.getText().toString().trim();
             String password = etPassword.getText().toString().trim();
@@ -64,19 +63,16 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
-        // 3. Chuyển sang Đăng ký
         tvRegisterLink.setOnClickListener(v -> {
             startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
         });
 
-        // 4. Chuyển sang Quên mật khẩu
         if (tvForgotPassword != null) {
             tvForgotPassword.setOnClickListener(v -> {
                 startActivity(new Intent(LoginActivity.this, ForgotPasswordActivity.class));
             });
         }
 
-        // Phím tắt test (giữ nguyên logic cũ của bạn)
         setupTestShortcuts();
     }
 
@@ -94,6 +90,7 @@ public class LoginActivity extends AppCompatActivity {
     private void handleLogin(String user, String pass) {
         User loginData = new User();
         loginData.setUsername(user);
+        // Lưu ý quan trọng: Một số Backend yêu cầu tên trường là "password" khi login
         loginData.setPasswordHash(pass);
 
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
@@ -108,16 +105,23 @@ public class LoginActivity extends AppCompatActivity {
                         return;
                     }
                     saveUserToLocal(userResponse);
+                    Toast.makeText(LoginActivity.this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
                     startActivity(new Intent(LoginActivity.this, HomeActivity.class));
                     finish();
                 } else {
-                    Toast.makeText(LoginActivity.this, "Sai tài khoản hoặc mật khẩu!", Toast.LENGTH_SHORT).show();
+                    String errorMsg = "Sai tài khoản hoặc mật khẩu!";
+                    if (response.code() == 404) errorMsg = "Lỗi 404: Không tìm thấy API";
+                    else if (response.code() == 500) errorMsg = "Lỗi 500: Server đang bị lỗi";
+                    
+                    Log.e("LOGIN_ERROR", "Code: " + response.code() + " Message: " + response.message());
+                    Toast.makeText(LoginActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Call<User> call, Throwable t) {
-                Toast.makeText(LoginActivity.this, "Lỗi kết nối Server!", Toast.LENGTH_SHORT).show();
+                Log.e("LOGIN_FAILURE", t.getMessage());
+                Toast.makeText(LoginActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
     }
