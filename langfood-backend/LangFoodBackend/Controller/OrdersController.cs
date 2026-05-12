@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LangFood.Shared.Models;
 using LangFood.Shared; // Đảm bảo có namespace này để nhận diện DbContext
@@ -42,7 +42,10 @@ namespace LangFoodBackend.Controller
                 order.Status = "Pending";
 
                 order.Buyer = null;
-                order.Shipper = null;
+                order.Buyer = null;
+                order.Leg1Shipper = null;
+                order.Leg2Shipper = null;
+                order.Shop = null;
 
                 foreach (var item in order.OrderItems)
                 {
@@ -93,7 +96,7 @@ namespace LangFoodBackend.Controller
                 .Include(o => o.Buyer)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Product)
-                .Where(o => o.Status == "Pending" && string.IsNullOrEmpty(o.ShipperId))
+                .Where(o => o.Status == "Pending" && o.Leg1ShipperId == null)
                 .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
             return Ok(orders);
@@ -101,13 +104,16 @@ namespace LangFoodBackend.Controller
 
         // 6. Shipper nhận đơn
         [HttpPut("accept/{id}")]
-        public async Task<IActionResult> AcceptOrder(int id, [FromQuery] string shipperId)
+        public async Task<IActionResult> AcceptOrder(int id, [FromQuery] string userId)
         {
+            var shipper = await _context.Shippers.FirstOrDefaultAsync(s => s.UserId == userId);
+            if (shipper == null) return BadRequest(new { message = "Bạn chưa đăng ký làm Shipper!" });
+
             var order = await _context.Orders.FindAsync(id);
             if (order == null) return NotFound();
-            if (!string.IsNullOrEmpty(order.ShipperId)) return BadRequest(new { message = "Đã có người nhận" });
+            if (order.Leg1ShipperId != null) return BadRequest(new { message = "Đã có người nhận" });
 
-            order.ShipperId = shipperId;
+            order.Leg1ShipperId = shipper.Id;
             order.Status = "Shipping";
 
             _context.Orders.Update(order);
@@ -135,10 +141,13 @@ namespace LangFoodBackend.Controller
         [HttpGet("seller/{sellerId}")]
         public async Task<ActionResult<IEnumerable<object>>> GetOrdersBySeller(string sellerId)
         {
+            var shop = await _context.Shops.FirstOrDefaultAsync(s => s.UserId == sellerId);
+            if (shop == null) return NotFound(new { message = "Không tìm thấy Shop!" });
+
             var orders = await _context.Orders
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Product)
-                .Where(o => o.OrderItems.Any(oi => oi.Product.SellerId == sellerId))
+                .Where(o => o.ShopId == shop.Id || o.OrderItems.Any(oi => oi.Product.ShopId == shop.Id))
                 .OrderByDescending(o => o.CreatedAt)
                 .Select(o => new {
                     o.Id,
@@ -149,9 +158,8 @@ namespace LangFoodBackend.Controller
                     o.ShippingFee,
                     o.CreatedAt,
                     o.DeliveryBuilding,
-                    // Chỉ lấy danh sách món ăn thuộc về shop này trong đơn hàng đó
                     Items = o.OrderItems
-                        .Where(oi => oi.Product.SellerId == sellerId)
+                        .Where(oi => oi.Product.ShopId == shop.Id)
                         .Select(oi => new {
                             oi.ProductId,
                             ProductName = oi.Product.Name,

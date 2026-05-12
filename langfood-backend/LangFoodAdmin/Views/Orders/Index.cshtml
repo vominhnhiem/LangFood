@@ -1,0 +1,96 @@
+@{
+    ViewData["Title"] = "Quản lý Đơn hàng";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800 fw-bold">Danh sách Đơn hàng</h1>
+</div>
+
+<div class="admin-card shadow mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <h6 class="m-0 font-weight-bold" style="color: var(--accent-color);">Tất cả Đơn hàng</h6>
+        
+        <!-- Bộ lọc -->
+        <div class="d-flex align-items-center gap-2">
+            <label for="dormFilter" class="fw-bold mb-0 text-nowrap">Lọc theo KTX:</label>
+            <select id="dormFilter" class="form-select form-select-sm" style="width: auto;" asp-items="ViewBag.Dormitories">
+                <option value="">-- Tất cả tòa nhà --</option>
+            </select>
+            
+            <button class="btn btn-sm btn-primary ms-2"><i class="fas fa-filter"></i> Lọc</button>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã đơn</th>
+                    <th>Ngày đặt</th>
+                    <th>Khách hàng</th>
+                    <th>Tòa nhà KTX</th>
+                    <th>Cửa hàng</th>
+                    <th>Tổng tiền</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Dummy Data -->
+                <tr>
+                    <td class="fw-bold">#LF-001</td>
+                    <td>12/05/2026 10:30</td>
+                    <td>Nguyễn Văn A</td>
+                    <td><span class="badge bg-secondary">AH1</span></td>
+                    <td>Cơm Tấm Bà Ba</td>
+                    <td class="fw-bold text-danger">45,000₫</td>
+                    <td><span class="badge bg-warning text-dark">Chờ xác nhận</span></td>
+                    <td>
+                        <a href="#" class="btn btn-sm btn-info text-white" title="Chi tiết"><i class="fas fa-eye"></i></a>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="fw-bold">#LF-002</td>
+                    <td>12/05/2026 11:15</td>
+                    <td>Trần Thị B</td>
+                    <td><span class="badge bg-secondary">BA4</span></td>
+                    <td>Trà Sữa KOI</td>
+                    <td class="fw-bold text-danger">120,000₫</td>
+                    <td><span class="badge bg-info text-dark">Đang giao</span></td>
+                    <td>
+                        <a href="#" class="btn btn-sm btn-info text-white" title="Chi tiết"><i class="fas fa-eye"></i></a>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="fw-bold">#LF-003</td>
+                    <td>12/05/2026 09:45</td>
+                    <td>Lê Văn C</td>
+                    <td><span class="badge bg-secondary">BA1</span></td>
+                    <td>Bún Bò Huế 39</td>
+                    <td class="fw-bold text-danger">65,000₫</td>
+                    <td><span class="badge bg-success">Đã giao</span></td>
+                    <td>
+                        <a href="#" class="btn btn-sm btn-info text-white" title="Chi tiết"><i class="fas fa-eye"></i></a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Phân trang -->
+    <div class="d-flex justify-content-end mt-4">
+        <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Trang trước</a>
+                </li>
+                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="#">Trang sau</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>

@@ -40,5 +40,11 @@ namespace LangFood.Shared.Models
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
         [JsonIgnore]
         public virtual ICollection<RoleRequest> RoleRequests { get; set; } = new List<RoleRequest>();
+        
+        [JsonIgnore]
+        public virtual Shop? Shop { get; set; }
+        
+        [JsonIgnore]
+        public virtual Shipper? Shipper { get; set; }
     }
 }
