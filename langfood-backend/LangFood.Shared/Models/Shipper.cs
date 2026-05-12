@@ -12,8 +12,6 @@ namespace LangFood.Shared.Models
 
         public string UserId { get; set; } = string.Empty;
 
-        public int? ActiveBuildingId { get; set; }
-
         public decimal WalletBalance { get; set; } = 0;
 
         public bool IsOnline { get; set; } = false;
@@ -24,12 +22,9 @@ namespace LangFood.Shared.Models
         [ForeignKey("UserId")]
         public virtual User? User { get; set; }
 
+        // THAY THẾ Leg1Orders và Leg2Orders bằng 1 danh sách duy nhất
         [JsonIgnore]
-        [InverseProperty("Leg1Shipper")]
-        public virtual ICollection<Order> Leg1Orders { get; set; } = new List<Order>();
-
-        [JsonIgnore]
-        [InverseProperty("Leg2Shipper")]
-        public virtual ICollection<Order> Leg2Orders { get; set; } = new List<Order>();
+        [InverseProperty("Shipper")]
+        public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
     }
 }

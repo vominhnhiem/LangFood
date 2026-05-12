@@ -28,6 +28,9 @@ public class Product implements Serializable {
     @SerializedName(value = "shopName", alternate = {"ShopName", "SellerName"})
     private String shopName;
 
+    @SerializedName(value = "sellerId", alternate = {"SellerId"})
+    private String sellerId;
+
     @SerializedName(value = "categoryId", alternate = {"CategoryId", "CategoryID"})
     private int categoryId;
 
@@ -62,6 +65,12 @@ public class Product implements Serializable {
 
     public String getShopName() { return shopName; }
     public void setShopName(String shopName) { this.shopName = shopName; }
+
+    public String getSellerId() { return sellerId; }
+    public void setSellerId(String sellerId) { this.sellerId = sellerId; }
+
+    public String getSellerName() { return shopName; }
+    public void setSellerName(String sellerName) { this.shopName = sellerName; }
 
     public int getCategoryId() { return categoryId; }
     public void setCategoryId(int categoryId) { this.categoryId = categoryId; }

@@ -14,7 +14,13 @@ namespace LangFood.Shared.Models
         public string? FullName { get; set; }
         public string? Email { get; set; }
         public string? PhoneNumber { get; set; }
-        public string? KtxBuilding { get; set; }
+
+        // --- THAY ĐỔI: Sử dụng BuildingId thay vì KtxBuilding kiểu string ---
+        public int? BuildingId { get; set; }
+
+        [ForeignKey("BuildingId")]
+        public virtual Building? Building { get; set; }
+
         public string? KtxRoom { get; set; }
         public bool IsVerifiedResident { get; set; }
         public string? StudentCardImageUrl { get; set; }
@@ -23,13 +29,13 @@ namespace LangFood.Shared.Models
         // --- NEW FIELDS FOR ONBOARDING ---
         public bool IsApproved { get; set; } = false;
         public int AccountType { get; set; } = 0; // 0: Student, 1: Merchant
-        
+
         [StringLength(20)]
         public string? CccdNumber { get; set; }
 
         [NotMapped]
         public string? ShopName { get; set; }
-        
+
         [NotMapped]
         public string? ShopAddress { get; set; }
 
@@ -40,10 +46,10 @@ namespace LangFood.Shared.Models
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
         [JsonIgnore]
         public virtual ICollection<RoleRequest> RoleRequests { get; set; } = new List<RoleRequest>();
-        
+
         [JsonIgnore]
         public virtual Shop? Shop { get; set; }
-        
+
         [JsonIgnore]
         public virtual Shipper? Shipper { get; set; }
     }

@@ -25,6 +25,9 @@ public class User {
     @SerializedName(value = "phoneNumber", alternate = {"PhoneNumber"})
     private String phoneNumber;
 
+    @SerializedName(value = "buildingId", alternate = {"BuildingId"})
+    private Integer buildingId;
+
     @SerializedName(value = "ktxBuilding", alternate = {"KtxBuilding"})
     private String ktxBuilding;
 
@@ -74,6 +77,9 @@ public class User {
 
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+
+    public Integer getBuildingId() { return buildingId; }
+    public void setBuildingId(Integer buildingId) { this.buildingId = buildingId; }
 
     public String getKtxBuilding() { return ktxBuilding; }
     public void setKtxBuilding(String ktxBuilding) { this.ktxBuilding = ktxBuilding; }

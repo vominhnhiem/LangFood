@@ -84,7 +84,13 @@ namespace LangFoodBackend.Controller
             var request = await _context.RoleRequests.FindAsync(id);
             if (request == null) return NotFound(new { message = "Không tìm thấy yêu cầu." });
 
-            var user = await _context.Users.FindAsync(request.UserId);
+            // SỬA TẠI ĐÂY: Dùng FirstOrDefaultAsync kèm Include để lấy thông tin Building
+            var user = await _context.Users
+                .Include(u => u.Building)
+                .Include(u => u.Shop)
+                .Include(u => u.Shipper)
+                .FirstOrDefaultAsync(u => u.Id == request.UserId);
+
             if (user == null) return NotFound(new { message = "Không tìm thấy người dùng." });
 
             request.Status = 1; // Đã duyệt yêu cầu
@@ -100,7 +106,8 @@ namespace LangFoodBackend.Controller
                     {
                         UserId = user.Id,
                         Name = request.ShopName ?? (user.FullName + "'s Shop"),
-                        Address = request.ShopAddress ?? user.KtxBuilding ?? "KTX Khu B",
+                        // SỬA TẠI ĐÂY: Thay user.KtxBuilding bằng tên tòa nhà từ bảng Building
+                        Address = request.ShopAddress ?? user.Building?.Name ?? "KTX Khu B",
                         IsActive = true,
                         IsOpen = true
                     };

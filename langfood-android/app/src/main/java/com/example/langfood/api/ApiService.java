@@ -1,5 +1,6 @@
 package com.example.langfood.api;
 
+import com.example.langfood.models.Building;
 import com.example.langfood.models.CartItem;
 import com.example.langfood.models.Category;
 import com.example.langfood.models.Product;
@@ -128,6 +129,10 @@ public interface ApiService {
     // --- CATEGORY API ---
     @GET("api/Categories")
     Call<List<Category>> getCategories();
+
+    // --- BUILDING API ---
+    @GET("api/Buildings")
+    Call<List<Building>> getBuildings();
 
     // --- OTHERS ---
     @Multipart

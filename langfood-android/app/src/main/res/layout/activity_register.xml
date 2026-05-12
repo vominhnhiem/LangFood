@@ -124,9 +124,9 @@
                     android:id="@+id/etKtxBuilding"
                     android:layout_width="0dp"
                     android:layout_height="55dp"
-                    android:layout_weight="1"
+                    android:layout_weight="1.5"
                     android:background="@android:drawable/editbox_background"
-                    android:hint="Tòa KTX (tùy chọn)"
+                    android:hint="Tòa"
                     android:paddingLeft="15dp"
                     android:textSize="15sp"
                     android:inputType="text" />
@@ -141,7 +141,7 @@
                     android:layout_height="55dp"
                     android:layout_weight="1"
                     android:background="@android:drawable/editbox_background"
-                    android:hint="Số phòng (tùy chọn)"
+                    android:hint="Phòng"
                     android:paddingLeft="15dp"
                     android:textSize="15sp"
                     android:inputType="text" />

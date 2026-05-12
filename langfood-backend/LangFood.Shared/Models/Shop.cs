@@ -24,8 +24,11 @@ namespace LangFood.Shared.Models
 
         public string? ImageUrl { get; set; }
 
+        // Ví tiền của cửa hàng để lưu doanh thu bán hàng
+        public decimal WalletBalance { get; set; } = 0;
+
         public bool IsActive { get; set; } = true;
-        
+
         public bool IsOpen { get; set; } = true;
 
         [JsonIgnore]

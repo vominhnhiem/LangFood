@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LangFood.Shared.Models;
 using Microsoft.Extensions.Caching.Memory;
-using LangFoodBackend.Services; // Đảm bảo bạn đã tạo thư mục Services và file EmailService.cs
+using LangFoodBackend.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -41,15 +41,14 @@ namespace LangFoodBackend.Controller
             var exists = await _context.Users.AnyAsync(u => u.PhoneNumber == phone);
             return Ok(new { exists });
         }
+
         // --- 1. API GỬI MÃ OTP ---
-        // Cập nhật lại hàm SendOtp trong UsersController.cs
         [HttpPost("send-otp")]
         public async Task<IActionResult> SendOtp([FromQuery] string email, [FromQuery] string? username)
         {
             if (string.IsNullOrEmpty(email))
                 return BadRequest(new { message = "Vui lòng nhập Email." });
 
-            // TRƯỜNG HỢP 1: Nếu có truyền username -> Dùng cho Quên mật khẩu (Cần check tồn tại)
             if (!string.IsNullOrEmpty(username))
             {
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username && u.Email == email);
@@ -58,10 +57,7 @@ namespace LangFoodBackend.Controller
                     return BadRequest(new { message = "Tên đăng nhập hoặc Email không chính xác!" });
                 }
             }
-            // TRƯỜNG HỢP 2: Nếu username null -> Dùng cho Đăng ký mới (Không cần check user)
-            // (Lưu ý: RegisterActivity đã check trùng email trước khi gọi hàm này rồi nên cứ thế gửi thôi)
 
-            // Tạo mã OTP
             string otp = new Random().Next(100000, 999999).ToString();
             _cache.Set(email, otp, TimeSpan.FromMinutes(5));
 
@@ -84,9 +80,8 @@ namespace LangFoodBackend.Controller
             {
                 if (sendedOtp == otp)
                 {
-                    // Lưu trạng thái đã xác thực vào cache trong 10 phút để bước Register kiểm tra
                     _cache.Set(email + "_verified", true, TimeSpan.FromMinutes(10));
-                    _cache.Remove(email); // Xóa mã OTP sau khi dùng xong
+                    _cache.Remove(email);
                     return Ok(new { success = true, message = "Xác thực thành công!" });
                 }
             }
@@ -112,7 +107,6 @@ namespace LangFoodBackend.Controller
         [HttpPost("register")]
         public async Task<ActionResult<User>> Register([FromBody] User user)
         {
-            // KIỂM TRA: Chỉ cho đăng ký nếu email đã qua bước verify-otp
             if (!_cache.TryGetValue(user.Email + "_verified", out bool isVerified) || !isVerified)
             {
                 return BadRequest(new { message = "Email chưa được xác thực OTP!" });
@@ -124,7 +118,7 @@ namespace LangFoodBackend.Controller
             }
 
             user.Id = Guid.NewGuid().ToString();
-            _cache.Remove(user.Email + "_verified"); // Xóa trạng thái xác thực sau khi tạo xong tài khoản
+            _cache.Remove(user.Email + "_verified");
 
             if (user.AccountType == 1) // Ngoại khu
             {
@@ -153,14 +147,13 @@ namespace LangFoodBackend.Controller
             }
         }
 
-        // Thêm vào file UsersController.cs
         [HttpGet("check-username")]
         public async Task<IActionResult> CheckUsername([FromQuery] string username)
         {
             var exists = await _context.Users.AnyAsync(u => u.Username == username);
             return Ok(new { exists });
         }
-        // POST: api/Users/apply-shipper
+
         [HttpPost("apply-shipper")]
         public async Task<IActionResult> ApplyShipper([FromForm] string userId, IFormFile imageProof)
         {
@@ -219,7 +212,9 @@ namespace LangFoodBackend.Controller
 
             user.FullName = updatedUser.FullName;
             user.PhoneNumber = updatedUser.PhoneNumber;
-            user.KtxBuilding = updatedUser.KtxBuilding;
+
+            // SỬA LỖI TẠI ĐÂY: Thay KtxBuilding bằng BuildingId
+            user.BuildingId = updatedUser.BuildingId;
             user.KtxRoom = updatedUser.KtxRoom;
 
             await _context.SaveChangesAsync();
@@ -247,32 +242,28 @@ namespace LangFoodBackend.Controller
             await _context.SaveChangesAsync();
             return Ok(new { message = "Upload thành công", url = user.AvatarUrl });
         }
-        // Thêm vào trong file UsersController.cs (Dự án Backend)
+
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromQuery] string id, [FromQuery] string oldPassword, [FromQuery] string newPassword)
         {
-            // 1. Tìm user theo Id
             var user = await _context.Users.FindAsync(id);
             if (user == null)
                 return NotFound(new { message = "Không tìm thấy người dùng!" });
 
-            // 2. Kiểm tra mật khẩu cũ (So khớp trực tiếp vì database của bạn đang lưu text thuần)
             if (user.PasswordHash != oldPassword)
             {
                 return BadRequest(new { message = "Mật khẩu cũ không chính xác!" });
             }
 
-            // 3. Cập nhật mật khẩu mới
             user.PasswordHash = newPassword;
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Đổi mật khẩu thành công rồi đó mày!" });
         }
-        // --- 3. API ĐẶT LẠI MẬT KHẨU (Dùng sau khi VerifyOtp thành công) ---
+
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromQuery] string email, [FromQuery] string newPassword)
         {
-            // Kiểm tra xem email này đã qua bước xác thực OTP chưa (tận dụng lại cache verified của mày)
             if (!_cache.TryGetValue(email + "_verified", out bool isVerified) || !isVerified)
             {
                 return BadRequest(new { message = "Mày chưa xác thực OTP mà đòi đổi mật khẩu à?" });
@@ -281,14 +272,14 @@ namespace LangFoodBackend.Controller
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
             if (user == null) return NotFound(new { message = "Email này không tồn tại trên hệ thống!" });
 
-            // Cập nhật mật khẩu mới (nhớ hash mật khẩu nếu mày có dùng mã hóa nhé)
             user.PasswordHash = newPassword;
 
-            _cache.Remove(email + "_verified"); // Đổi xong thì xóa cache xác thực đi
+            _cache.Remove(email + "_verified");
             await _context.SaveChangesAsync();
 
             return Ok(new { success = true, message = "Đổi mật khẩu thành công rồi đó mày!" });
         }
+
         private bool UserExists(string id)
         {
             return _context.Users.Any(e => e.Id == id);

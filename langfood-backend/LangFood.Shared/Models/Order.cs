@@ -1,4 +1,6 @@
-using System.Text.Json.Serialization; // Thêm dòng này
+using System;
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LangFood.Shared.Models
@@ -9,21 +11,21 @@ namespace LangFood.Shared.Models
         public string BuyerId { get; set; } = string.Empty;
         public string? BuyerName { get; set; }
         public int ShopId { get; set; }
-        
-        public int? Leg1ShipperId { get; set; } // Shipper ngoại khu (từ Quán đến cổng KTX)
-        
-        public int? Leg2ShipperId { get; set; } // Shipper nội khu (từ chốt/KTX vào phòng)
-        
-        public int DeliveryStage { get; set; } = 0; // 0: ShippingExternal, 1: WaitingAtGate, 2: ShippingInternal
+
+        // CHỈ DÙNG 1 SHIPPER DUY NHẤT
+        public int? ShipperId { get; set; }
 
         public string Status { get; set; } = "Pending";
         public decimal TotalAmount { get; set; }
         public decimal ShippingFee { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? DeliveredAt { get; set; }
-        public string? DeliveryBuilding { get; set; }
 
-        [JsonIgnore] // THÊM DÒNG NÀY
+        // THÔNG TIN GIAO HÀNG CHI TIẾT
+        public string? DeliveryBuilding { get; set; }
+        public string? DeliveryRoom { get; set; }
+
+        [JsonIgnore]
         [ForeignKey("BuyerId")]
         public virtual User? Buyer { get; set; }
 
@@ -31,13 +33,10 @@ namespace LangFood.Shared.Models
         [ForeignKey("ShopId")]
         public virtual Shop? Shop { get; set; }
 
+        // LIÊN KẾT ĐẾN SHIPPER (Sửa chỗ này để hết lỗi ở DbContext)
         [JsonIgnore]
-        [ForeignKey("Leg1ShipperId")]
-        public virtual Shipper? Leg1Shipper { get; set; }
-
-        [JsonIgnore]
-        [ForeignKey("Leg2ShipperId")]
-        public virtual Shipper? Leg2Shipper { get; set; }
+        [ForeignKey("ShipperId")]
+        public virtual Shipper? Shipper { get; set; }
 
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
