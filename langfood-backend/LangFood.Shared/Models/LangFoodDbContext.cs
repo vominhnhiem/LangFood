@@ -61,6 +61,12 @@ namespace LangFood.Shared.Models
                 .HasForeignKey(o => o.ShipperId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.Building)
+                .WithMany()
+                .HasForeignKey(o => o.BuildingId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             // 4. Cấu hình quan hệ 1-1
             modelBuilder.Entity<Shop>()
                 .HasOne(s => s.User)

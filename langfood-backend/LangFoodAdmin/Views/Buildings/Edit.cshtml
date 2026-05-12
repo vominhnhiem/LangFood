@@ -1,7 +1,7 @@
 @model LangFood.Shared.Models.Building
 
 @{
-    ViewData["Title"] = "Thêm tòa nhà KTX mới";
+    ViewData["Title"] = "Chỉnh sửa tòa nhà KTX";
 }
 
 <div class="container-fluid py-4">
@@ -9,11 +9,13 @@
         <div class="col-md-6">
             <div class="card border-0 shadow-sm" style="border-radius: 16px;">
                 <div class="card-header bg-white border-0 py-3 mt-2 text-center">
-                    <h4 class="fw-bold mb-0 text-dark"><i class="fas fa-plus-circle me-2 text-success"></i>Thêm tòa nhà mới</h4>
-                    <p class="text-muted small mb-0">Thiết lập tòa nhà KTX mới vào hệ thống vận hành</p>
+                    <h4 class="fw-bold mb-0 text-dark"><i class="fas fa-edit me-2 text-primary"></i>Chỉnh sửa tòa nhà</h4>
+                    <p class="text-muted small mb-0">Cập nhật thông tin tòa nhà KTX trong hệ thống</p>
                 </div>
                 <div class="card-body p-4">
-                    <form asp-action="Create">
+                    <form asp-action="Edit">
+                        <input type="hidden" asp-for="Id" />
+                        
                         <div class="mb-4">
                             <label asp-for="Name" class="form-label fw-bold small text-uppercase text-muted">Tên tòa nhà</label>
                             <div class="input-group">
@@ -26,19 +28,19 @@
                         <div class="mb-4">
                             <div class="form-check form-switch p-0 d-flex align-items-center justify-content-between">
                                 <label class="form-check-label fw-bold small text-uppercase text-muted mb-0" for="isActiveSwitch">Trạng thái hoạt động</label>
-                                <input class="form-check-input ms-0 mt-0" type="checkbox" role="switch" id="isActiveSwitch" asp-for="IsActive" checked style="width: 2.5em; height: 1.25em;">
+                                <input class="form-check-input ms-0 mt-0" type="checkbox" role="switch" id="isActiveSwitch" asp-for="IsActive" style="width: 2.5em; height: 1.25em;">
                             </div>
-                            <div class="form-text small mt-1">Mặc định tòa nhà mới sẽ ở trạng thái Hoạt động.</div>
+                            <div class="form-text small mt-1">Bật để cho phép Shipper hoạt động tại tòa này.</div>
                         </div>
 
                         <hr class="my-4 opacity-50">
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn text-white fw-bold py-2 shadow-sm" style="background-color: #F24E1E; border-radius: 10px;">
-                                <i class="fas fa-check-circle me-2"></i>Tạo tòa nhà
+                                <i class="fas fa-save me-2"></i>Lưu thay đổi
                             </button>
                             <a asp-action="Index" class="btn btn-light fw-bold py-2 border" style="border-radius: 10px;">
-                                <i class="fas fa-times me-2 text-muted"></i>Hủy bỏ
+                                <i class="fas fa-chevron-left me-2 text-muted"></i>Quay lại danh sách
                             </a>
                         </div>
                     </form>

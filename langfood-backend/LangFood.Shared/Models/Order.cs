@@ -11,6 +11,7 @@ namespace LangFood.Shared.Models
         public string BuyerId { get; set; } = string.Empty;
         public string? BuyerName { get; set; }
         public int ShopId { get; set; }
+        public int? BuildingId { get; set; }
 
         // CHỈ DÙNG 1 SHIPPER DUY NHẤT
         public int? ShipperId { get; set; }
@@ -33,10 +34,13 @@ namespace LangFood.Shared.Models
         [ForeignKey("ShopId")]
         public virtual Shop? Shop { get; set; }
 
-        // LIÊN KẾT ĐẾN SHIPPER (Sửa chỗ này để hết lỗi ở DbContext)
         [JsonIgnore]
         [ForeignKey("ShipperId")]
         public virtual Shipper? Shipper { get; set; }
+
+        [JsonIgnore]
+        [ForeignKey("BuildingId")]
+        public virtual Building? Building { get; set; }
 
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
