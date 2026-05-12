@@ -1,0 +1,128 @@
+@{
+    ViewData["Title"] = "Người giao hàng";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800 fw-bold">Quản lý người giao hàng</h1>
+</div>
+
+<div class="admin-card shadow mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="m-0 font-weight-bold" style="color: var(--accent-color);">Danh sách Shipper chờ duyệt</h6>
+        <div>
+            <button class="btn btn-primary btn-sm" id="btnBulkApprove">
+                <i class="fas fa-check-double me-1"></i> Duyệt hàng loạt
+            </button>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 50px;">
+                        <input class="form-check-input" type="checkbox" id="selectAll">
+                    </th>
+                    <th>Họ và tên</th>
+                    <th>Số điện thoại</th>
+                    <th>Tòa nhà KTX</th>
+                    <th>Ảnh Thẻ SV/CCCD</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Dummy Data -->
+                <tr>
+                    <td>
+                        <input class="form-check-input shipper-checkbox" type="checkbox" value="1">
+                    </td>
+                    <td class="fw-bold">Nguyễn Văn D</td>
+                    <td>0901234567</td>
+                    <td>AH1</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-info view-image-btn" data-img-src="https://via.placeholder.com/600x400.png?text=CCCD+Mat+Truoc">
+                            <i class="fas fa-image"></i> Xem ảnh
+                        </button>
+                    </td>
+                    <td><span class="badge bg-warning text-dark">Chờ duyệt</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-success"><i class="fas fa-check"></i></button>
+                        <button class="btn btn-sm btn-danger"><i class="fas fa-times"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input class="form-check-input shipper-checkbox" type="checkbox" value="2">
+                    </td>
+                    <td class="fw-bold">Trần Thị E</td>
+                    <td>0912345678</td>
+                    <td>BA4</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-info view-image-btn" data-img-src="https://via.placeholder.com/600x400.png?text=The+Sinh+Vien">
+                            <i class="fas fa-image"></i> Xem ảnh
+                        </button>
+                    </td>
+                    <td><span class="badge bg-warning text-dark">Chờ duyệt</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-success"><i class="fas fa-check"></i></button>
+                        <button class="btn btn-sm btn-danger"><i class="fas fa-times"></i></button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Hiển thị ảnh -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="imageModalLabel">Ảnh Thẻ SV / CCCD</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img id="modalImage" src="" alt="ID Image" class="img-fluid rounded" style="max-height: 70vh;" />
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Select All logic
+            $('#selectAll').change(function () {
+                $('.shipper-checkbox').prop('checked', $(this).prop('checked'));
+            });
+
+            // View Image logic
+            $('.view-image-btn').click(function () {
+                var imgSrc = $(this).data('img-src');
+                $('#modalImage').attr('src', imgSrc);
+                var imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
+                imageModal.show();
+            });
+
+            // Bulk Approve logic
+            $('#btnBulkApprove').click(function () {
+                var selectedIds = [];
+                $('.shipper-checkbox:checked').each(function () {
+                    selectedIds.push($(this).val());
+                });
+
+                if (selectedIds.length === 0) {
+                    toastr.warning("Vui lòng chọn ít nhất 1 shipper để duyệt!");
+                    return;
+                }
+
+                // Call API here...
+                toastr.success("Đã duyệt " + selectedIds.length + " shipper thành công!");
+                // Uncheck all after success (dummy)
+                $('.shipper-checkbox').prop('checked', false);
+                $('#selectAll').prop('checked', false);
+            });
+        });
+    </script>
+}

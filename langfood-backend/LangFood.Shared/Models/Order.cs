@@ -8,9 +8,11 @@ namespace LangFood.Shared.Models
         public int Id { get; set; }
         public string BuyerId { get; set; } = string.Empty;
         public string? BuyerName { get; set; }
-        public string? ShipperId { get; set; } // Shipper nội khu (từ chốt/KTX vào phòng)
+        public int ShopId { get; set; }
         
-        public string? ExternalShipperId { get; set; } // Shipper ngoại khu (từ Quán đến cổng KTX)
+        public int? Leg1ShipperId { get; set; } // Shipper ngoại khu (từ Quán đến cổng KTX)
+        
+        public int? Leg2ShipperId { get; set; } // Shipper nội khu (từ chốt/KTX vào phòng)
         
         public int DeliveryStage { get; set; } = 0; // 0: ShippingExternal, 1: WaitingAtGate, 2: ShippingInternal
 
@@ -25,13 +27,17 @@ namespace LangFood.Shared.Models
         [ForeignKey("BuyerId")]
         public virtual User? Buyer { get; set; }
 
-        [JsonIgnore] // THÊM DÒNG NÀY
-        [ForeignKey("ShipperId")]
-        public virtual User? Shipper { get; set; }
+        [JsonIgnore]
+        [ForeignKey("ShopId")]
+        public virtual Shop? Shop { get; set; }
 
         [JsonIgnore]
-        [ForeignKey("ExternalShipperId")]
-        public virtual User? ExternalShipper { get; set; }
+        [ForeignKey("Leg1ShipperId")]
+        public virtual Shipper? Leg1Shipper { get; set; }
+
+        [JsonIgnore]
+        [ForeignKey("Leg2ShipperId")]
+        public virtual Shipper? Leg2Shipper { get; set; }
 
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }

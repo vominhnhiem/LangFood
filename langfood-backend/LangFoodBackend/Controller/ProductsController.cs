@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LangFood.Shared.Models;
 using Microsoft.AspNetCore.Http;
@@ -26,8 +26,9 @@ namespace LangFoodBackend.Controller
         public async Task<ActionResult<IEnumerable<object>>> GetProducts()
         {
             return await _context.Products
-                .Include(p => p.Seller)
-                .Where(p => p.IsAvailable && p.Status == 1) // CHỈ LẤY MÓN CÓ STATUS = 1 (APPROVED)
+                .Include(p => p.Shop)
+                    .ThenInclude(s => s.User)
+                .Where(p => p.IsAvailable && p.Status == 1)
                 .OrderByDescending(p => p.Id)
                 .Select(p => new {
                     p.Id,
@@ -36,10 +37,10 @@ namespace LangFoodBackend.Controller
                     p.Description,
                     p.ImageUrl,
                     p.IsAvailable,
-                    p.Status, // Trả về để App biết trạng thái
-                    p.SellerId,
+                    p.Status,
+                    p.ShopId,
                     p.CategoryId,
-                    SellerName = p.Seller != null ? p.Seller.FullName : "Ẩn danh"
+                    SellerName = (p.Shop != null && p.Shop.User != null) ? p.Shop.User.FullName : (p.Shop != null ? p.Shop.Name : "Ẩn danh")
                 })
                 .ToListAsync();
         }
@@ -49,7 +50,8 @@ namespace LangFoodBackend.Controller
         public async Task<ActionResult<object>> GetProduct(int id)
         {
             var product = await _context.Products
-                .Include(p => p.Seller)
+                .Include(p => p.Shop)
+                    .ThenInclude(s => s.User)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null)
@@ -65,11 +67,11 @@ namespace LangFoodBackend.Controller
                 product.Description,
                 product.ImageUrl,
                 product.IsAvailable,
-                product.Status, // Trả về Status
-                product.SellerId,
+                product.Status,
+                product.ShopId,
                 product.CategoryId,
-                SellerName = product.Seller?.FullName,
-                SellerPhone = product.Seller?.PhoneNumber
+                SellerName = product.Shop?.User?.FullName ?? product.Shop?.Name,
+                SellerPhone = product.Shop?.User?.PhoneNumber
             };
         }
 
@@ -78,9 +80,11 @@ namespace LangFoodBackend.Controller
         [HttpGet("seller/{sellerId}")]
         public async Task<ActionResult<IEnumerable<Product>>> GetProductsBySeller(string sellerId)
         {
-            // Phải lấy TOÀN BỘ, không được có .Where(p => p.Status == 1) ở đây
+            var shop = await _context.Shops.FirstOrDefaultAsync(s => s.UserId == sellerId);
+            if (shop == null) return NotFound(new { message = "Không tìm thấy Shop của người bán này!" });
+
             var products = await _context.Products
-                .Where(p => p.SellerId == sellerId)
+                .Where(p => p.ShopId == shop.Id)
                 .OrderByDescending(p => p.Id)
                 .ToListAsync();
 
@@ -91,14 +95,14 @@ namespace LangFoodBackend.Controller
         [HttpPost]
         public async Task<ActionResult<Product>> PostProduct(Product product)
         {
-            var sellerExists = await _context.Users.AnyAsync(u => u.Id == product.SellerId);
-            if (!sellerExists)
+            var shopExists = await _context.Shops.AnyAsync(s => s.Id == product.ShopId);
+            if (!shopExists)
             {
-                return BadRequest(new { message = "Lỗi: Người bán không tồn tại!" });
+                return BadRequest(new { message = "Lỗi: Shop không tồn tại!" });
             }
 
             product.IsAvailable = true;
-            product.Status = 0; // MẶC ĐỊNH LÀ CHỜ DUYỆT (PENDING)
+            product.Status = 0;
 
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
@@ -112,13 +116,13 @@ namespace LangFoodBackend.Controller
             [FromForm] string name,
             [FromForm] decimal price,
             [FromForm] string description,
-            [FromForm] string sellerId,
+            [FromForm] string sellerId, // Vẫn nhận userId từ App để tìm Shop
             [FromForm] int categoryId,
             IFormFile image)
         {
-            // Kiểm tra Seller có tồn tại không
-            var sellerExists = await _context.Users.AnyAsync(u => u.Id == sellerId);
-            if (!sellerExists) return BadRequest(new { message = "Người bán không tồn tại!" });
+            // Tìm Shop dựa trên UserId
+            var shop = await _context.Shops.FirstOrDefaultAsync(s => s.UserId == sellerId);
+            if (shop == null) return BadRequest(new { message = "Shop của người bán này không tồn tại!" });
 
             // Kiểm tra Category có tồn tại không
             var categoryExists = await _context.Categories.AnyAsync(c => c.Id == categoryId);
@@ -146,11 +150,11 @@ namespace LangFoodBackend.Controller
                 Name = name,
                 Price = price,
                 Description = description,
-                SellerId = sellerId,
+                ShopId = shop.Id,
                 CategoryId = categoryId,
                 ImageUrl = imageUrl,
                 IsAvailable = true,
-                Status = 0 // MẶC ĐỊNH LÀ CHỜ DUYỆT KHI MỚI UP
+                Status = 0
             };
 
             _context.Products.Add(product);

@@ -1,11 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LangFood.Shared.Models
 {
     public class Product
     {
         public int Id { get; set; }
-        public string SellerId { get; set; } = string.Empty;
+        public int ShopId { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         [Column(TypeName = "decimal(18,2)")] // Thêm dòng này Nhiệm nhé
@@ -20,8 +20,8 @@ namespace LangFood.Shared.Models
 
         [ForeignKey("CategoryId")]
         public virtual Category? Category { get; set; }
-        // Tạo khóa ngoại nối với Seller (User)
-        [ForeignKey("SellerId")]
-        public virtual User? Seller { get; set; }
+        // Tạo khóa ngoại nối với Shop
+        [ForeignKey("ShopId")]
+        public virtual Shop? Shop { get; set; }
     }
 }

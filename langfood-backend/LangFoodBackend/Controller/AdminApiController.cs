@@ -24,15 +24,16 @@ namespace LangFoodBackend.Controller
         public async Task<IActionResult> GetPendingProducts()
         {
             var products = await _context.Products
-                .Include(p => p.Seller)
-                .Where(p => p.Status == 0) // Lấy món đang chờ duyệt
+                .Include(p => p.Shop)
+                    .ThenInclude(s => s.User)
+                .Where(p => p.Status == 0)
                 .Select(p => new ProductDTO
                 {
                     Id = p.Id,
                     Name = p.Name,
                     Price = p.Price,
                     ImageUrl = p.ImageUrl,
-                    SellerName = p.Seller != null ? p.Seller.FullName : "Ẩn danh",
+                    SellerName = p.Shop != null ? (p.Shop.Name ?? p.Shop.User.FullName) : "Ẩn danh",
                     Status = p.Status
                 }).ToListAsync();
 
@@ -92,10 +93,35 @@ namespace LangFoodBackend.Controller
             if (request.RequestType == 1) // Seller
             {
                 user.RoleId = 2;
+                // Tạo Shop mới cho người bán
+                if (user.Shop == null)
+                {
+                    var newShop = new Shop
+                    {
+                        UserId = user.Id,
+                        Name = request.ShopName ?? (user.FullName + "'s Shop"),
+                        Address = request.ShopAddress ?? user.KtxBuilding ?? "KTX Khu B",
+                        IsActive = true,
+                        IsOpen = true
+                    };
+                    _context.Shops.Add(newShop);
+                }
             }
             else if (request.RequestType == 2) // Shipper
             {
                 user.RoleId = 3;
+                // Tạo hồ sơ Shipper mới
+                if (user.Shipper == null)
+                {
+                    var newShipper = new Shipper
+                    {
+                        UserId = user.Id,
+                        IsApproved = true,
+                        IsOnline = false,
+                        WalletBalance = 0
+                    };
+                    _context.Shippers.Add(newShipper);
+                }
             }
 
             await _context.SaveChangesAsync();
