@@ -1,20 +1,19 @@
 package com.example.langfood.models;
 
 import com.google.gson.annotations.SerializedName;
-
 import androidx.annotation.NonNull;
 
 public class Category {
-    @SerializedName("id")
+    @SerializedName(value = "id", alternate = {"Id", "ID"})
     private int id;
 
-    @SerializedName("name")
+    @SerializedName(value = "name", alternate = {"Name"})
     private String name;
 
-    @SerializedName("description")
+    @SerializedName(value = "description", alternate = {"Description"})
     private String description;
 
-    @SerializedName("imageUrl")
+    @SerializedName(value = "imageUrl", alternate = {"ImageUrl"})
     private String imageUrl;
 
     public Category() {}
@@ -24,41 +23,19 @@ public class Category {
         this.name = name;
     }
 
-    public int getId() {
-        return id;
-    }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
-    public void setId(int id) {
-        this.id = id;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public String getName() {
-        return name;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
     @NonNull
     @Override
-    public String toString() {
-        return name;
-    }
+    public String toString() { return name != null ? name : ""; }
 }

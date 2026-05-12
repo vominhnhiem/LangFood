@@ -8,6 +8,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
+import com.example.langfood.api.ApiClient;
 import com.example.langfood.models.Product;
 import java.util.List;
 import java.util.Locale;
@@ -15,7 +16,6 @@ import java.util.Locale;
 public class SellerProductAdapter extends RecyclerView.Adapter<SellerProductAdapter.ViewHolder> {
 
     private List<Product> productList;
-    private static final String BASE_URL = "http://192.168.100.192:5289/";
 
     public SellerProductAdapter(List<Product> productList) {
         this.productList = productList;
@@ -31,18 +31,33 @@ public class SellerProductAdapter extends RecyclerView.Adapter<SellerProductAdap
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Product product = productList.get(position);
+        
         holder.tvName.setText(product.getName());
-        holder.tvPrice.setText(String.format(Locale.getDefault(), "%,.0f", product.getPrice()));
 
+        // Hiển thị tên thể loại
+        if (holder.tvCategoryName != null) {
+            holder.tvCategoryName.setText(product.getCategoryName() != null ? product.getCategoryName() : "Khác");
+        }
+        
+        // Fix lỗi hiển thị giá tiền: Thêm đ và format dấu chấm
+        String formattedPrice = String.format(Locale.getDefault(), "%,.0fđ", product.getPrice());
+        holder.tvPrice.setText(formattedPrice);
+
+        // Hiển thị mô tả nếu có
+        if (holder.tvDescription != null) {
+            holder.tvDescription.setText(product.getDescription() != null ? product.getDescription() : "Món ngon mỗi ngày");
+        }
+
+        // Dùng BASE_URL tập trung từ ApiClient để tránh lỗi load ảnh
         Glide.with(holder.itemView.getContext())
-                .load(BASE_URL + product.getImageUrl())
+                .load(ApiClient.BASE_URL + product.getImageUrl())
                 .placeholder(R.drawable.lang_food_avt)
                 .error(R.drawable.lang_food_avt)
                 .into(holder.ivProduct);
 
-        holder.btnAddToCart.setOnClickListener(v -> {
-            CartManager.getInstance().addToCart(product, 1);
-            // Có thể thêm Toast thông báo ở đây
+        // Xử lý click vào cả item để xem chi tiết hoặc thêm vào giỏ
+        holder.itemView.setOnClickListener(v -> {
+            // Logic xử lý khi click vào món ăn
         });
     }
 
@@ -53,15 +68,15 @@ public class SellerProductAdapter extends RecyclerView.Adapter<SellerProductAdap
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivProduct;
-        View btnAddToCart;
-        TextView tvName, tvPrice;
+        TextView tvName, tvPrice, tvDescription, tvCategoryName;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             ivProduct = itemView.findViewById(R.id.ivProductImage);
-            btnAddToCart = itemView.findViewById(R.id.btnAddToCart);
             tvName = itemView.findViewById(R.id.tvProductName);
+            tvCategoryName = itemView.findViewById(R.id.tvCategoryName);
             tvPrice = itemView.findViewById(R.id.tvProductPrice);
+            tvDescription = itemView.findViewById(R.id.tvProductDescription);
         }
     }
 }

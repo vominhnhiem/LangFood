@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName;
 import java.io.Serializable;
 
 public class Product implements Serializable {
-    @SerializedName(value = "id", alternate = {"Id"})
+    @SerializedName(value = "id", alternate = {"Id", "ID"})
     private int id;
 
     @SerializedName(value = "name", alternate = {"Name"})
@@ -28,11 +28,14 @@ public class Product implements Serializable {
     @SerializedName(value = "sellerName", alternate = {"SellerName"})
     private String sellerName;
 
-    @SerializedName(value = "categoryId", alternate = {"CategoryId"})
+    @SerializedName(value = "categoryId", alternate = {"CategoryId", "CategoryID"})
     private int categoryId;
 
+    @SerializedName(value = "categoryName", alternate = {"CategoryName"})
+    private String categoryName;
+
     @SerializedName(value = "status", alternate = {"Status"})
-    private int status; // 0: Pending, 1: Approved, 2: Rejected
+    private int status;
 
     public Product() {}
 
@@ -62,6 +65,9 @@ public class Product implements Serializable {
 
     public int getCategoryId() { return categoryId; }
     public void setCategoryId(int categoryId) { this.categoryId = categoryId; }
+
+    public String getCategoryName() { return categoryName; }
+    public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
 
     public int getStatus() { return status; }
     public void setStatus(int status) { this.status = status; }

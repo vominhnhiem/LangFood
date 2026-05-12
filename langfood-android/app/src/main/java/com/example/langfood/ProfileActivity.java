@@ -14,8 +14,8 @@ import de.hdodenhof.circleimageview.CircleImageView;
 
 public class ProfileActivity extends AppCompatActivity {
 
-    private TextView tvUserName, tvUserRole, tvPhone, tvEmail, tvBuilding;
-    private TextView btnEditProfile, btnChangePassword, btnMyAddresses, btnAddFood, btnManageFood, btnRegisterPartner, btnLogout, btnShipperManage, btnManageOrder;
+    private TextView tvUserName, tvUserRole, tvPhone, tvEmail;
+    private TextView btnEditProfile, btnChangePassword, btnAddFood, btnManageFood, btnRegisterPartner, btnLogout, btnShipperManage, btnManageOrder;
     private View dividerAddFood, dividerManageFood, dividerShipperManage, dividerManageOrder;
     private CircleImageView ivAvatar;
 
@@ -39,12 +39,10 @@ public class ProfileActivity extends AppCompatActivity {
         tvUserRole = findViewById(R.id.tvUserRole);
         tvPhone = findViewById(R.id.tvPhone);
         tvEmail = findViewById(R.id.tvEmail);
-        tvBuilding = findViewById(R.id.tvBuilding);
         ivAvatar = findViewById(R.id.ivAvatar);
 
         btnEditProfile = findViewById(R.id.btnEditProfile);
         btnChangePassword = findViewById(R.id.btnChangePassword);
-        btnMyAddresses = findViewById(R.id.btnMyAddresses);
         btnAddFood = findViewById(R.id.btnAddFood);
         dividerAddFood = findViewById(R.id.dividerAddFood);
         btnManageFood = findViewById(R.id.btnManageFood);
@@ -63,20 +61,12 @@ public class ProfileActivity extends AppCompatActivity {
         String fullName = prefs.getString("FULL_NAME", "Chưa cập nhật");
         String username = prefs.getString("USERNAME", "");
         String phone = prefs.getString("PHONE", "Chưa có SĐT");
-        String building = prefs.getString("BUILDING", "");
-        String room = prefs.getString("ROOM", "");
         String avatarUrl = prefs.getString("AVATAR_URL", "");
         int roleId = prefs.getInt("ROLE_ID", 1); // 1: Buyer, 2: Seller, 3: Shipper, 0: Admin (giả định)
 
         tvUserName.setText(fullName);
         tvPhone.setText("SĐT: " + phone);
         tvEmail.setText("Username: " + username);
-        
-        if (!building.isEmpty() && !room.isEmpty()) {
-            tvBuilding.setText("Ký túc xá: Tòa " + building + " - Phòng " + room);
-        } else {
-            tvBuilding.setText("Ký túc xá: Chưa cập nhật");
-        }
 
         // Load Avatar
         if (avatarUrl != null && !avatarUrl.isEmpty()) {
@@ -143,10 +133,6 @@ public class ProfileActivity extends AppCompatActivity {
 
         btnChangePassword.setOnClickListener(v -> {
             startActivity(new Intent(ProfileActivity.this, ChangePasswordActivity.class));
-        });
-
-        btnMyAddresses.setOnClickListener(v -> {
-            Toast.makeText(this, "Chức năng quản lý địa chỉ đang phát triển", Toast.LENGTH_SHORT).show();
         });
 
         if (btnRegisterPartner != null) {

@@ -32,14 +32,13 @@ public class HomeActivity extends AppCompatActivity {
     private RecyclerView rcvProducts, rcvCategories;
     private ProductAdapter productAdapter;
     private CategoryHomeAdapter categoryAdapter;
-    private List<Product> allProducts = new ArrayList<>(); // Giữ toàn bộ data gốc
-    private List<Product> filteredList = new ArrayList<>(); // Data đang hiển thị
+    private List<Product> allProducts = new ArrayList<>(); 
+    private List<Product> filteredList = new ArrayList<>(); 
     private List<Category> categoryList = new ArrayList<>();
     private EditText editSearch;
     private ApiService apiService;
-    private int selectedCategoryId = -1; // -1 nghĩa là xem tất cả
+    private int selectedCategoryId = -1; 
 
-    // Auto-sliding Banner
     private ViewPager2 vpBanners;
     private Handler bannerHandler = new Handler(Looper.getMainLooper());
     private Runnable bannerRunnable;
@@ -53,16 +52,26 @@ public class HomeActivity extends AppCompatActivity {
         apiService = ApiClient.getClient().create(ApiService.class);
         CartManager.getInstance().init(this);
 
+        // Xử lý Insets để tránh bị Status Bar (icon pin, sóng) đè lên Header
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
+            
+            // Chỉ Padding Bottom cho thanh điều hướng dưới cùng
+            v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom);
+            
+            // Đẩy riêng phần NỘI DUNG của Header xuống dưới Status Bar
+            android.view.View header = findViewById(R.id.headerContent);
+            if (header != null) {
+                header.setPadding(header.getPaddingLeft(), systemBars.top, header.getPaddingRight(), header.getPaddingBottom());
+            }
+            
+            return WindowInsetsCompat.CONSUMED;
         });
 
         initViews();
         setupRecyclerViews();
         loadCategories();
-        fetchAllProducts(); // Luôn tải tất cả về để tự lọc
+        fetchAllProducts(); 
         setupNavigation();
         setupSearch();
         setupBanners();
@@ -75,25 +84,18 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerViews() {
-        // 1. Danh mục dạng lưới 2 hàng (5 cột mỗi hàng)
+        // 1. Categories
         categoryAdapter = new CategoryHomeAdapter(categoryList, category -> {
             selectedCategoryId = category.getId();
             applyFilters();
-            Toast.makeText(this, "Đang xem: " + category.getName(), Toast.LENGTH_SHORT).show();
         });
         rcvCategories.setLayoutManager(new androidx.recyclerview.widget.GridLayoutManager(this, 2, androidx.recyclerview.widget.GridLayoutManager.HORIZONTAL, false));
         rcvCategories.setAdapter(categoryAdapter);
 
-        // 2. Danh sách món ăn gợi ý (Gợi ý hôm nay) - Dạng lưới 2 cột dọc
+        // 2. Recommendations (Grid)
         productAdapter = new ProductAdapter(filteredList);
         rcvProducts.setLayoutManager(new androidx.recyclerview.widget.GridLayoutManager(this, 2));
         rcvProducts.setAdapter(productAdapter);
-        
-        // 3. Flash Sale (Best Seller cũ) - Dạng ngang
-        RecyclerView rvFlashSale = findViewById(R.id.rv_best_seller);
-        ProductAdapter flashSaleAdapter = new ProductAdapter(allProducts); // Dùng tạm data allProducts
-        rvFlashSale.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        rvFlashSale.setAdapter(flashSaleAdapter);
     }
 
     private void loadCategories() {
@@ -105,6 +107,8 @@ public class HomeActivity extends AppCompatActivity {
                     categoryList.add(new Category(-1, "Tất cả"));
                     categoryList.addAll(response.body());
                     categoryAdapter.updateData(categoryList);
+                    
+                    if (productAdapter != null) productAdapter.setCategories(categoryList);
                 }
             }
             @Override
@@ -119,46 +123,29 @@ public class HomeActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     allProducts.clear();
                     allProducts.addAll(response.body());
-                    applyFilters(); // Hiển thị dữ liệu lần đầu
+                    applyFilters(); 
                 }
             }
             @Override
-            public void onFailure(Call<List<Product>> call, Throwable t) {
-                Toast.makeText(HomeActivity.this, "Lỗi kết nối server", Toast.LENGTH_SHORT).show();
-            }
+            public void onFailure(Call<List<Product>> call, Throwable t) {}
         });
     }
 
     private void setupSearch() {
         editSearch.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                applyFilters();
-            }
-            @Override
-            public void afterTextChanged(Editable s) {}
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { applyFilters(); }
+            @Override public void afterTextChanged(Editable s) {}
         });
     }
 
-    // HÀM LỌC CHÍNH (Kết hợp cả Category và Search)
     private void applyFilters() {
         filteredList.clear();
         String searchQuery = editSearch.getText().toString().toLowerCase().trim();
-
         for (Product p : allProducts) {
-            // 1. Kiểm tra Category
             boolean matchesCategory = (selectedCategoryId == -1) || (p.getCategoryId() == selectedCategoryId);
-            
-            // 2. Kiểm tra Search
-            boolean matchesSearch = searchQuery.isEmpty() || 
-                                   p.getName().toLowerCase().contains(searchQuery) ||
-                                   (p.getDescription() != null && p.getDescription().toLowerCase().contains(searchQuery));
-
-            if (matchesCategory && matchesSearch) {
-                filteredList.add(p);
-            }
+            boolean matchesSearch = searchQuery.isEmpty() || p.getName().toLowerCase().contains(searchQuery);
+            if (matchesCategory && matchesSearch) filteredList.add(p);
         }
         productAdapter.notifyDataSetChanged();
     }
@@ -167,7 +154,7 @@ public class HomeActivity extends AppCompatActivity {
         findViewById(R.id.iv_profile).setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
         findViewById(R.id.iv_cart).setOnClickListener(v -> startActivity(new Intent(this, CartActivity.class)));
         findViewById(R.id.btnNavOrder).setOnClickListener(v -> startActivity(new Intent(this, HistoryActivity.class)));
-        findViewById(R.id.btnNavSupport).setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class))); // "Tôi" -> Profile
+        findViewById(R.id.btnNavSupport).setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
     }
 
     private void setupBanners() {
@@ -175,31 +162,28 @@ public class HomeActivity extends AppCompatActivity {
         List<Integer> banners = new ArrayList<>();
         banners.add(R.drawable.banner_khu_b);
         banners.add(R.drawable.banner_khu_b_2);
-
         BannerAdapter adapter = new BannerAdapter(banners);
         vpBanners.setAdapter(adapter);
 
         bannerRunnable = new Runnable() {
-            @Override
-            public void run() {
-                int currentItem = vpBanners.getCurrentItem();
-                int nextItem = (currentItem + 1) % banners.size();
-                vpBanners.setCurrentItem(nextItem, true);
-                bannerHandler.postDelayed(this, 3000); // 3 giây chuyển 1 lần
+            @Override public void run() {
+                if (vpBanners != null && banners.size() > 0) {
+                    int nextItem = (vpBanners.getCurrentItem() + 1) % banners.size();
+                    vpBanners.setCurrentItem(nextItem, true);
+                    bannerHandler.postDelayed(this, 3000);
+                }
             }
         };
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        fetchAllProducts(); // Cập nhật lại khi quay lại từ màn hình khác
-        bannerHandler.postDelayed(bannerRunnable, 3000);
+    @Override protected void onResume() { 
+        super.onResume(); 
+        fetchAllProducts(); 
+        bannerHandler.postDelayed(bannerRunnable, 3000); 
     }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        bannerHandler.removeCallbacks(bannerRunnable);
+    
+    @Override protected void onPause() { 
+        super.onPause(); 
+        bannerHandler.removeCallbacks(bannerRunnable); 
     }
 }

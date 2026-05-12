@@ -130,8 +130,8 @@
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Tòa KTX"
-                        app:startIconDrawable="@android:drawable/ic_dialog_map"
+                        android:hint="Tòa nhà"
+                        app:startIconDrawable="@android:drawable/ic_menu_myplaces"
                         app:startIconTint="#FF5722"
                         android:layout_marginBottom="16dp">
 
@@ -147,8 +147,8 @@
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Số phòng"
-                        app:startIconDrawable="@android:drawable/ic_menu_myplaces"
+                        android:hint="Phòng"
+                        app:startIconDrawable="@android:drawable/ic_menu_compass"
                         app:startIconTint="#FF5722">
 
                         <com.google.android.material.textfield.TextInputEditText
