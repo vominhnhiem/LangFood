@@ -1,8 +1,336 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Trung tâm Điều hành - Làng Food";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container-fluid py-4">
+    <!-- Phần 1: Lời chào & Thông tin nhanh -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold text-dark">Chào buổi sáng, <span style="color: var(--accent-color);">Admin!</span></h2>
+            <p class="text-muted"><i class="far fa-calendar-alt me-2"></i> Thứ Ba, 12 Tháng 5, 2026 | Hệ thống đang hoạt động ổn định.</p>
+        </div>
+    </div>
+
+    <!-- Phần 1: Việc cần làm (Pending Actions) -->
+    <div class="row mb-5">
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card border-0 shadow-sm" style="background-color: #FFF9E6; border-left: 5px solid #FFC107 !important; border-radius: 12px;">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="fw-bold mb-1 text-warning-emphasis">Hồ sơ Shipper</h6>
+                        <p class="small mb-2 text-muted">Có <strong>3 hồ sơ</strong> đang chờ duyệt danh tính.</p>
+                        <a asp-controller="Shippers" asp-action="Index" class="btn btn-sm btn-warning text-white fw-bold px-3" style="border-radius: 8px;">Xử lý ngay</a>
+                    </div>
+                    <div class="ms-3">
+                        <i class="fas fa-id-card fa-2x text-warning opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card border-0 shadow-sm" style="background-color: #FFF2F2; border-left: 5px solid #DC3545 !important; border-radius: 12px;">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="fw-bold mb-1 text-danger-emphasis">Khiếu nại đơn hàng</h6>
+                        <p class="small mb-2 text-muted">Có <strong>1 khiếu nại</strong> mới từ khách hàng.</p>
+                        <a href="#" class="btn btn-sm btn-danger fw-bold px-3" style="border-radius: 8px;">Xem ngay</a>
+                    </div>
+                    <div class="ms-3">
+                        <i class="fas fa-exclamation-circle fa-2x text-danger opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card border-0 shadow-sm" style="background-color: #EBFBEE; border-left: 5px solid #28A745 !important; border-radius: 12px;">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="fw-bold mb-1 text-success-emphasis">Yêu cầu rút tiền</h6>
+                        <p class="small mb-2 text-muted">Có <strong>5 yêu cầu</strong> từ Shipper đã sẵn sàng.</p>
+                        <a href="#" class="btn btn-sm btn-success fw-bold px-3" style="border-radius: 8px;">Duyệt lệnh</a>
+                    </div>
+                    <div class="ms-3">
+                        <i class="fas fa-wallet fa-2x text-success opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Phần 2: Lối tắt truy cập nhanh (Quick Shortcuts) -->
+        <div class="col-lg-8 mb-4">
+            <h5 class="fw-bold mb-4">Lối tắt truy cập nhanh</h5>
+            <div class="row g-4">
+                <div class="col-6 col-md-4">
+                    <a href="javascript:void(0)" class="quick-tile shadow-sm" data-bs-toggle="modal" data-bs-target="#addPartnerModal">
+                        <i class="fas fa-store"></i>
+                        <span>Thêm Đối Tác Mới</span>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4">
+                    <a href="#" class="quick-tile shadow-sm">
+                        <i class="fas fa-bullhorn"></i>
+                        <span>Gửi Thông Báo Toàn Sàn</span>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4">
+                    <a href="#" class="quick-tile shadow-sm">
+                        <i class="fas fa-cog"></i>
+                        <span>Cài Đặt Hệ Thống</span>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4">
+                    <a asp-controller="Orders" asp-action="Index" class="quick-tile shadow-sm">
+                        <i class="fas fa-shipping-fast"></i>
+                        <span>Quản Lý Vận Chuyển</span>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4">
+                    <a href="#" class="quick-tile shadow-sm">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Xem Báo Cáo Tài Chính</span>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4">
+                    <a href="#" class="quick-tile shadow-sm">
+                        <i class="fas fa-user-shield"></i>
+                        <span>Phân Quyền Admin</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phần 3: Nhịp đập hệ thống (Live Activity Timeline) -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="fw-bold mb-0">Nhịp đập hệ thống</h5>
+                </div>
+                <div class="card-body pt-0">
+                    <div class="activity-timeline">
+                        <div class="timeline-item">
+                            <span class="timeline-dot bg-success"></span>
+                            <div class="timeline-content">
+                                <p class="mb-0 fw-bold">Khách hàng <span class="text-primary">@("user_99")</span> vừa đặt đơn #ORD-882</p>
+                                <span class="text-muted small">2 phút trước</span>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <span class="timeline-dot bg-warning"></span>
+                            <div class="timeline-content">
+                                <p class="mb-0 fw-bold">Shipper <span class="text-primary">Nguyễn Văn A</span> đã Online</p>
+                                <span class="text-muted small">15 phút trước</span>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <span class="timeline-dot bg-info"></span>
+                            <div class="timeline-content">
+                                <p class="mb-0 fw-bold">Quán <span class="text-primary">Cơm Tấm Bụi</span> vừa mở cửa</p>
+                                <span class="text-muted small">30 phút trước</span>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <span class="timeline-dot bg-danger"></span>
+                            <div class="timeline-content">
+                                <p class="mb-0 fw-bold">Đơn hàng #ORD-879 bị hủy</p>
+                                <span class="text-muted small">1 giờ trước</span>
+                            </div>
+                        </div>
+                        <div class="timeline-item last">
+                            <span class="timeline-dot bg-secondary"></span>
+                            <div class="timeline-content">
+                                <p class="mb-0 fw-bold">Hệ thống đã Backup tự động</p>
+                                <span class="text-muted small">4 giờ trước</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Modal Thêm Đối Tác Mới -->
+<div class="modal fade" id="addPartnerModal" tabindex="-1" aria-labelledby="addPartnerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+            <div class="modal-header text-white" style="background-color: var(--accent-color);">
+                <h5 class="modal-title fw-bold" id="addPartnerModalLabel"><i class="fas fa-plus-circle me-2"></i>Thêm Đối Tác & Gian Hàng Mới</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formAddPartner" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <div class="row">
+                        <!-- Cột trái: Thông tin tài khoản -->
+                        <div class="col-md-6 border-end">
+                            <h6 class="fw-bold mb-3 text-muted"><i class="fas fa-user-circle me-2"></i>Thông tin tài khoản</h6>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Số điện thoại (Tên đăng nhập)</label>
+                                <input type="text" name="PhoneNumber" class="form-control rounded-3" placeholder="Ví dụ: 0987654321" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Họ tên chủ quán</label>
+                                <input type="text" name="FullName" class="form-control rounded-3" placeholder="Nhập tên người đại diện" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Mật khẩu khởi tạo</label>
+                                <input type="password" name="Password" class="form-control rounded-3" placeholder="Ít nhất 6 ký tự" required>
+                            </div>
+                        </div>
+                        <!-- Cột phải: Thông tin gian hàng -->
+                        <div class="col-md-6 ps-md-4">
+                            <h6 class="fw-bold mb-3 text-muted"><i class="fas fa-store-alt me-2"></i>Thông tin gian hàng</h6>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Tên gian hàng / Quán ăn</label>
+                                <input type="text" name="ShopName" class="form-control rounded-3" placeholder="Ví dụ: Bún đậu Mắm Tôm Cô Ba" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Địa chỉ</label>
+                                <input type="text" name="Address" class="form-control rounded-3" placeholder="Nhập địa chỉ chi tiết" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Ảnh đại diện quán</label>
+                                <input type="file" name="ShopImage" class="form-control rounded-3" accept="image/*">
+                            </div>
+                        </div>
+                        <div class="col-12 mt-3">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Mô tả ngắn</label>
+                                <textarea name="Description" class="form-control rounded-3" rows="2" placeholder="Quán chuyên về món gì..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary fw-bold px-4 rounded-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary fw-bold px-4 rounded-3" style="background-color: var(--accent-color); border-color: var(--accent-color);">
+                        <i class="fas fa-check-circle me-2"></i>Tạo Đối Tác
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#formAddPartner').on('submit', function (e) {
+                e.preventDefault();
+                
+                var formData = new FormData(this);
+                
+                // Hiển thị trạng thái đang xử lý
+                var btnSubmit = $(this).find('button[type="submit"]');
+                var originalText = btnSubmit.html();
+                btnSubmit.html('<span class="spinner-border spinner-border-sm me-2"></span> Đang xử lý...').attr('disabled', true);
+
+                $.ajax({
+                    url: '/Partners/Create',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.success) {
+                            toastr.success(res.message);
+                            $('#addPartnerModal').modal('hide');
+                            $('#formAddPartner')[0].reset();
+                            // Có thể reload trang hoặc cập nhật danh sách tại đây
+                            setTimeout(function() { location.reload(); }, 1500);
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("Có lỗi xảy ra trong quá trình kết nối với máy chủ.");
+                    },
+                    complete: function() {
+                        btnSubmit.html(originalText).attr('disabled', false);
+                    }
+                });
+            });
+        });
+    </script>
+}
+
+<style>
+    .quick-tile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #FFFFFF;
+        padding: 30px 20px;
+        border-radius: 16px;
+        text-decoration: none;
+        color: #333;
+        transition: all 0.3s ease;
+        height: 100%;
+        text-align: center;
+    }
+
+    .quick-tile i {
+        font-size: 2.5rem;
+        color: var(--accent-color);
+        margin-bottom: 15px;
+        transition: transform 0.3s ease;
+    }
+
+    .quick-tile span {
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .quick-tile:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        color: var(--accent-color);
+    }
+
+    .quick-tile:hover i {
+        transform: scale(1.1);
+    }
+
+    /* Timeline Styles */
+    .activity-timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+
+    .activity-timeline::before {
+        content: '';
+        position: absolute;
+        left: 7px;
+        top: 10px;
+        bottom: 10px;
+        width: 2px;
+        background: #E9ECEF;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: 25px;
+    }
+
+    .timeline-dot {
+        position: absolute;
+        left: -30px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 3px solid #FFF;
+        z-index: 1;
+    }
+
+    .timeline-content p {
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+    .timeline-item.last {
+        padding-bottom: 0;
+    }
+</style>
