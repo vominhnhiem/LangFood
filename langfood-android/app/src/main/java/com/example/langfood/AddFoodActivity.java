@@ -119,7 +119,12 @@ public class AddFoodActivity extends AppCompatActivity {
         }
 
         SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
-        String sellerId = prefs.getString("USER_ID", "");
+        int shopId = prefs.getInt("SHOP_ID", -1);
+        
+        if (shopId == -1) {
+            Toast.makeText(this, "Không tìm thấy thông tin cửa hàng. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
+            return;
+        }
         
         Category selectedCategory = (Category) spCategory.getSelectedItem();
         String categoryIdStr = String.valueOf(selectedCategory.getId());
@@ -128,17 +133,17 @@ public class AddFoodActivity extends AppCompatActivity {
         RequestBody rbName = RequestBody.create(MediaType.parse("text/plain"), name);
         RequestBody rbPrice = RequestBody.create(MediaType.parse("text/plain"), priceStr);
         RequestBody rbDescription = RequestBody.create(MediaType.parse("text/plain"), description);
-        RequestBody rbSellerId = RequestBody.create(MediaType.parse("text/plain"), sellerId);
+        RequestBody rbShopId = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(shopId));
         RequestBody rbCategoryId = RequestBody.create(MediaType.parse("text/plain"), categoryIdStr);
 
         // Xử lý File ảnh
         MultipartBody.Part imagePart = prepareImagePart("image");
 
-        apiService.addProductWithImage(rbName, rbPrice, rbDescription, rbSellerId, rbCategoryId, imagePart).enqueue(new Callback<Product>() {
+        apiService.addProductWithImage(rbName, rbPrice, rbDescription, rbShopId, rbCategoryId, imagePart).enqueue(new Callback<Product>() {
             @Override
             public void onResponse(Call<Product> call, Response<Product> response) {
                 if (response.isSuccessful()) {
-                    Toast.makeText(AddFoodActivity.this, "Đăng món thành công kèm ảnh!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(AddFoodActivity.this, "Đăng món thành công!", Toast.LENGTH_SHORT).show();
                     finish();
                 } else {
                     Toast.makeText(AddFoodActivity.this, "Lỗi server: " + response.code(), Toast.LENGTH_SHORT).show();

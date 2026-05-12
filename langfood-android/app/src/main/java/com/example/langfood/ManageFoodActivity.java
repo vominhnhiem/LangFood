@@ -29,7 +29,7 @@ public class ManageFoodActivity extends AppCompatActivity implements ManageFoodA
     private MaterialButton btnAddNewFood;
     private LinearLayout layoutEmpty;
     private ApiService apiService;
-    private String sellerId;
+    private int shopId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,7 +40,7 @@ public class ManageFoodActivity extends AppCompatActivity implements ManageFoodA
         setupRecyclerView();
         
         SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
-        sellerId = prefs.getString("USER_ID", "");
+        shopId = prefs.getInt("SHOP_ID", -1);
         
         apiService = ApiClient.getClient().create(ApiService.class);
         
@@ -66,10 +66,12 @@ public class ManageFoodActivity extends AppCompatActivity implements ManageFoodA
     }
 
     private void loadMyFoods() {
-        if (sellerId == null || sellerId.isEmpty()) return;
+        if (shopId == -1) {
+            Toast.makeText(this, "Không tìm thấy thông tin cửa hàng", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        // FIX: Gọi đúng API lấy món của riêng Seller này (trả về cả món status = 0)
-        apiService.getProductsBySeller(sellerId).enqueue(new Callback<List<Product>>() {
+        apiService.getProductsByShop(shopId).enqueue(new Callback<List<Product>>() {
             @Override
             public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -83,7 +85,7 @@ public class ManageFoodActivity extends AppCompatActivity implements ManageFoodA
 
             @Override
             public void onFailure(Call<List<Product>> call, Throwable t) {
-                Toast.makeText(ManageFoodActivity.this, "Lỗi tải dữ liệu cá nhân", Toast.LENGTH_SHORT).show();
+                Toast.makeText(ManageFoodActivity.this, "Lỗi tải dữ liệu cửa hàng", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -116,7 +118,6 @@ public class ManageFoodActivity extends AppCompatActivity implements ManageFoodA
     @Override
     protected void onResume() {
         super.onResume();
-        // Tự động load lại khi quay lại từ màn hình AddFoodActivity
         loadMyFoods();
     }
 }

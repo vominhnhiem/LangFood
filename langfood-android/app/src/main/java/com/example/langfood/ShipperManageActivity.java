@@ -26,7 +26,7 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
     private List<Order> orderList = new ArrayList<>();
     private ImageView btnBack;
     private ApiService apiService;
-    private String shipperId;
+    private int shipperId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,7 +37,7 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
         setupRecyclerView();
 
         SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
-        shipperId = prefs.getString("USER_ID", "");
+        shipperId = prefs.getInt("SHIPPER_ID", -1);
 
         apiService = ApiClient.getClient().create(ApiService.class);
 
@@ -62,7 +62,8 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
             @Override
             public void onResponse(Call<List<Order>> call, Response<List<Order>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    orderList = response.body();
+                    orderList.clear();
+                    orderList.addAll(response.body());
                     adapter.updateList(orderList);
                 } else {
                     orderList.clear();
@@ -80,6 +81,11 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
 
     @Override
     public void onAcceptClick(Order order) {
+        if (shipperId == -1) {
+            Toast.makeText(this, "Không tìm thấy thông tin Shipper. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         apiService.acceptOrder(order.getId(), shipperId).enqueue(new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {

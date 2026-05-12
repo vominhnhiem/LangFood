@@ -44,7 +44,6 @@ public class EditFoodActivity extends AppCompatActivity {
     private int productId;
     private Product currentProduct;
     private List<Category> categoryList = new ArrayList<>();
-    private static final String BASE_URL = "http://192.168.100.192:5289/";
     private static final int PICK_IMAGE_REQUEST = 1;
     private Uri imageUri;
 
@@ -151,14 +150,17 @@ public class EditFoodActivity extends AppCompatActivity {
         }
 
         String imageUrl = product.getImageUrl();
-        if (imageUrl != null && imageUrl.startsWith("/")) {
-            imageUrl = BASE_URL.substring(0, BASE_URL.length() - 1) + imageUrl;
-        } else {
-            imageUrl = BASE_URL + imageUrl;
+        String fullImageUrl = ApiClient.BASE_URL;
+        if (imageUrl != null) {
+            if (imageUrl.startsWith("/")) {
+                fullImageUrl = fullImageUrl.substring(0, fullImageUrl.length() - 1) + imageUrl;
+            } else {
+                fullImageUrl = fullImageUrl + imageUrl;
+            }
         }
 
         Glide.with(this)
-                .load(imageUrl)
+                .load(fullImageUrl)
                 .placeholder(R.drawable.lang_food_avt)
                 .error(R.drawable.lang_food_avt)
                 .into(ivFoodImage);
@@ -217,12 +219,11 @@ public class EditFoodActivity extends AppCompatActivity {
             RequestBody rName = RequestBody.create(MediaType.parse("text/plain"), name);
             RequestBody rPrice = RequestBody.create(MediaType.parse("text/plain"), priceStr);
             RequestBody rDesc = RequestBody.create(MediaType.parse("text/plain"), description);
-            RequestBody rSellerId = RequestBody.create(MediaType.parse("text/plain"), currentProduct.getSellerId());
+            RequestBody rShopId = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(currentProduct.getShopId()));
             RequestBody rCategoryId = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(categoryId));
-            RequestBody rAvailable = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(isAvailable));
 
             // Gọi API thêm món mới kèm ảnh
-            apiService.addProductWithImage(rName, rPrice, rDesc, rSellerId, rCategoryId, body).enqueue(new Callback<Product>() {
+            apiService.addProductWithImage(rName, rPrice, rDesc, rShopId, rCategoryId, body).enqueue(new Callback<Product>() {
                 @Override
                 public void onResponse(Call<Product> call, Response<Product> response) {
                     if (response.isSuccessful()) {

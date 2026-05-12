@@ -14,8 +14,11 @@ public class Order implements Serializable {
     @SerializedName(value = "buyerName", alternate = {"BuyerName"})
     private String buyerName;
 
+    @SerializedName(value = "shopId", alternate = {"ShopId"})
+    private int shopId;
+
     @SerializedName(value = "shipperId", alternate = {"ShipperId"})
-    private String shipperId;
+    private Integer shipperId;
 
     @SerializedName(value = "status", alternate = {"Status"})
     private String status;
@@ -29,10 +32,15 @@ public class Order implements Serializable {
     @SerializedName(value = "deliveryBuilding", alternate = {"DeliveryBuilding"})
     private String deliveryBuilding;
 
+    @SerializedName(value = "deliveryRoom", alternate = {"DeliveryRoom"})
+    private String deliveryRoom;
+
     @SerializedName(value = "createdAt", alternate = {"CreatedAt"})
     private String createdAt;
 
-    // Phối hợp cả 2: backend trả về "orderItems" cho khách, "Items" cho shop
+    @SerializedName(value = "deliveredAt", alternate = {"DeliveredAt"})
+    private String deliveredAt;
+
     @SerializedName(value = "orderItems", alternate = {"Items", "items", "OrderItems"})
     private List<OrderItem> orderItems;
 
@@ -47,8 +55,11 @@ public class Order implements Serializable {
     public String getBuyerName() { return buyerName; }
     public void setBuyerName(String buyerName) { this.buyerName = buyerName; }
 
-    public String getShipperId() { return shipperId; }
-    public void setShipperId(String shipperId) { this.shipperId = shipperId; }
+    public int getShopId() { return shopId; }
+    public void setShopId(int shopId) { this.shopId = shopId; }
+
+    public Integer getShipperId() { return shipperId; }
+    public void setShipperId(Integer shipperId) { this.shipperId = shipperId; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
@@ -62,8 +73,14 @@ public class Order implements Serializable {
     public String getDeliveryBuilding() { return deliveryBuilding; }
     public void setDeliveryBuilding(String deliveryBuilding) { this.deliveryBuilding = deliveryBuilding; }
 
+    public String getDeliveryRoom() { return deliveryRoom; }
+    public void setDeliveryRoom(String deliveryRoom) { this.deliveryRoom = deliveryRoom; }
+
     public String getCreatedAt() { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+
+    public String getDeliveredAt() { return deliveredAt; }
+    public void setDeliveredAt(String deliveredAt) { this.deliveredAt = deliveredAt; }
 
     public List<OrderItem> getOrderItems() { return orderItems; }
     public void setOrderItems(List<OrderItem> orderItems) { this.orderItems = orderItems; }

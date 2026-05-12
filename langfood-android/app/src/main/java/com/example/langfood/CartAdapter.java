@@ -10,6 +10,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
+import com.example.langfood.api.ApiClient;
 import com.example.langfood.models.CartItem;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -22,7 +23,6 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
     private Context context;
     private List<CartGroup> cartGroups;
     private OnCartChangeListener listener;
-    private static final String BASE_URL = "http://192.168.100.192:5289/";
 
     public interface OnCartChangeListener {
         void onQuantityChanged();
@@ -35,20 +35,19 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
     }
 
     public void setCartItems(List<CartItem> cartItems) {
-        Map<String, CartGroup> groupMap = new HashMap<>();
+        Map<Integer, CartGroup> groupMap = new HashMap<>();
         for (CartItem item : cartItems) {
-            String sellerId = item.getProduct().getSellerId();
-            if (sellerId == null) sellerId = "unknown";
+            int shopId = item.getProduct().getShopId();
             
-            if (!groupMap.containsKey(sellerId)) {
+            if (!groupMap.containsKey(shopId)) {
                 CartGroup group = new CartGroup();
-                group.sellerId = sellerId;
-                group.sellerName = item.getProduct().getSellerName();
-                group.sellerAvatar = item.getProduct().getImageUrl(); 
+                group.shopId = shopId;
+                group.shopName = item.getProduct().getShopName();
+                group.shopAvatar = item.getProduct().getImageUrl(); 
                 group.items = new ArrayList<>();
-                groupMap.put(sellerId, group);
+                groupMap.put(shopId, group);
             }
-            groupMap.get(sellerId).items.add(item);
+            groupMap.get(shopId).items.add(item);
         }
         this.cartGroups = new ArrayList<>(groupMap.values());
         notifyDataSetChanged();
@@ -65,8 +64,8 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
     public void onBindViewHolder(@NonNull CartViewHolder holder, int position) {
         CartGroup group = cartGroups.get(position);
         
-        String sellerName = group.sellerName != null ? group.sellerName : "Quán ăn Lang Food";
-        holder.tvStoreName.setText(sellerName);
+        String shopName = group.shopName != null ? group.shopName : "Quán ăn Lang Food";
+        holder.tvStoreName.setText(shopName);
         
         int totalItems = 0;
         for (CartItem item : group.items) {
@@ -74,9 +73,9 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
         }
         holder.tvStoreSummary.setText(totalItems + " món • Đang hoạt động");
 
-        String imageUrl = group.sellerAvatar;
+        String imageUrl = group.shopAvatar;
         if (imageUrl != null && !imageUrl.startsWith("http")) {
-            imageUrl = BASE_URL + imageUrl;
+            imageUrl = ApiClient.BASE_URL + (imageUrl.startsWith("/") ? imageUrl.substring(1) : imageUrl);
         }
 
         Glide.with(context)
@@ -109,9 +108,9 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
     }
 
     public static class CartGroup implements Serializable {
-        String sellerId;
-        String sellerName;
-        String sellerAvatar;
+        int shopId;
+        String shopName;
+        String shopAvatar;
         List<CartItem> items;
     }
 }

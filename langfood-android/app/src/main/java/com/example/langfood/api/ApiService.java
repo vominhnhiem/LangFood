@@ -5,6 +5,8 @@ import com.example.langfood.models.Category;
 import com.example.langfood.models.Product;
 import com.example.langfood.models.User;
 import com.example.langfood.models.Order;
+import com.example.langfood.models.Shop;
+import com.example.langfood.models.Shipper;
 import com.example.langfood.models.UsernameCheckResponse;
 
 import java.util.List;
@@ -25,11 +27,49 @@ import retrofit2.http.Query;
 
 public interface ApiService {
 
+    // --- PRODUCT API ---
     @GET("api/Products")
     Call<List<Product>> getProducts(@Query("categoryId") Integer categoryId);
 
-    @GET("api/Products/seller/{sellerId}")
-    Call<List<Product>> getProductsBySeller(@Path("sellerId") String sellerId);
+    @GET("api/Products/shop/{shopId}")
+    Call<List<Product>> getProductsByShop(@Path("shopId") int shopId);
+
+    @GET("api/Products/{id}")
+    Call<Product> getProductById(@Path("id") int id);
+
+    @POST("api/Products/upload")
+    @Multipart
+    Call<Product> addProductWithImage(
+            @Part("name") RequestBody name,
+            @Part("price") RequestBody price,
+            @Part("description") RequestBody description,
+            @Part("shopId") RequestBody shopId,
+            @Part("categoryId") RequestBody categoryId,
+            @Part MultipartBody.Part image
+    );
+
+    @DELETE("api/Products/{id}")
+    Call<Void> deleteProduct(@Path("id") int id);
+
+    @PUT("api/Products/{id}")
+    Call<Void> updateProduct(@Path("id") int id, @Body Product product);
+
+    // --- USER API ---
+    @POST("api/Users/login")
+    Call<User> login(@Body User user);
+
+    @POST("api/Users/register")
+    Call<User> register(@Body User user);
+
+    @GET("api/Users/{id}")
+    Call<User> getUserById(@Path("id") String id);
+
+    @PUT("api/Users/{id}")
+    Call<User> updateUser(@Path("id") String id, @Body User user);
+
+    @POST("api/Users/upload-avatar/{userId}")
+    @Multipart
+    Call<Void> uploadAvatar(@Path("userId") String userId, @Part MultipartBody.Part image);
 
     @GET("api/Users/check-username")
     Call<UsernameCheckResponse> checkUsername(@Query("username") String username);
@@ -40,30 +80,25 @@ public interface ApiService {
     @GET("api/Users/check-phone")
     Call<UsernameCheckResponse> checkPhone(@Query("phone") String phone);
 
-    @GET("api/Products/{id}")
-    Call<Product> getProductById(@Path("id") int id);
+    // --- SHOP & SHIPPER INFO ---
+    @GET("api/Shops/user/{userId}")
+    Call<Shop> getShopByUserId(@Path("userId") String userId);
 
-    @POST("api/Users/login")
-    Call<User> login(@Body User user);
+    @GET("api/Shippers/user/{userId}")
+    Call<Shipper> getShipperByUserId(@Path("userId") String userId);
 
-    @POST("api/Users/register")
-    Call<User> register(@Body User user);
-
-    @PUT("api/Users/{id}")
-    Call<User> updateUser(@Path("id") String id, @Body User user);
-
-    @POST("api/Users/upload-avatar/{userId}")
-    @Multipart
-    Call<Void> uploadAvatar(@Path("userId") String userId, @Part MultipartBody.Part image);
-
-    @GET("api/Users/{id}")
-    Call<User> getUserById(@Path("id") String id);
-
+    // --- ORDER API ---
     @POST("api/Orders")
     Call<Order> createOrder(@Body Order order);
 
     @GET("api/Orders/buyer/{buyerId}")
     Call<List<Order>> getOrdersByBuyer(@Path("buyerId") String buyerId);
+
+    @GET("api/Orders/shop/{shopId}")
+    Call<List<Order>> getOrdersByShop(@Path("shopId") int shopId);
+
+    @GET("api/Orders/available")
+    Call<List<Order>> getAvailableOrders();
 
     @GET("api/Orders")
     Call<List<Order>> getAllOrders();
@@ -72,12 +107,12 @@ public interface ApiService {
     Call<Void> confirmOrder(@Path("id") int id);
 
     @PUT("api/Orders/accept/{id}")
-    Call<Void> acceptOrder(@Path("id") int id, @Query("shipperId") String shipperId);
+    Call<Void> acceptOrder(@Path("id") int id, @Query("shipperId") int shipperId);
 
     @PUT("api/Orders/complete/{id}")
     Call<Void> completeOrder(@Path("id") int id);
 
-    // --- API GIỎ HÀNG (SERVER) ---
+    // --- CART API ---
     @GET("api/Cart/{userId}")
     Call<List<CartItem>> getCart(@Path("userId") String userId);
 
@@ -90,31 +125,11 @@ public interface ApiService {
     @DELETE("api/Cart/{userId}")
     Call<Void> clearCart(@Path("userId") String userId);
 
-    // --- API MỚI CHO SHIPPER ---
-    @GET("api/Orders/available")
-    Call<List<Order>> getAvailableOrders();
-
-    @POST("api/Products/upload")
-    @Multipart
-    Call<Product> addProductWithImage(
-            @Part("name") RequestBody name,
-            @Part("price") RequestBody price,
-            @Part("description") RequestBody description,
-            @Part("sellerId") RequestBody sellerId,
-            @Part("categoryId") RequestBody categoryId,
-            @Part MultipartBody.Part image
-    );
-
-    @DELETE("api/Products/{id}")
-    Call<Void> deleteProduct(@Path("id") int id);
-
-    @PUT("api/Products/{id}")
-    Call<Void> updateProduct(@Path("id") int id, @Body Product product);
-
-    // --- API CATEGORY ---
+    // --- CATEGORY API ---
     @GET("api/Categories")
     Call<List<Category>> getCategories();
 
+    // --- OTHERS ---
     @Multipart
     @POST("api/Users/apply-shipper")
     Call<ResponseBody> applyShipper(
@@ -122,7 +137,6 @@ public interface ApiService {
             @Part MultipartBody.Part imageProof
     );
 
-    // --- API OTP ---
     @POST("api/Users/send-otp")
     Call<ResponseBody> sendOtp(@Query("email") String email, @Query("username") String username);
 
@@ -138,7 +152,4 @@ public interface ApiService {
             @Query("oldPassword") String oldPassword,
             @Query("newPassword") String newPassword
     );
-
-    @GET("api/Orders/seller/{sellerId}")
-    Call<List<Order>> getOrdersForSeller(@Path("sellerId") String sellerId);
 }

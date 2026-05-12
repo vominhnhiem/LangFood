@@ -22,11 +22,11 @@ public class Product implements Serializable {
     @SerializedName(value = "isAvailable", alternate = {"IsAvailable"})
     private boolean isAvailable;
 
-    @SerializedName(value = "sellerId", alternate = {"SellerId"})
-    private String sellerId;
+    @SerializedName(value = "shopId", alternate = {"ShopId"})
+    private int shopId;
 
-    @SerializedName(value = "sellerName", alternate = {"SellerName"})
-    private String sellerName;
+    @SerializedName(value = "shopName", alternate = {"ShopName", "SellerName"})
+    private String shopName;
 
     @SerializedName(value = "categoryId", alternate = {"CategoryId", "CategoryID"})
     private int categoryId;
@@ -57,11 +57,11 @@ public class Product implements Serializable {
     public boolean isAvailable() { return isAvailable; }
     public void setAvailable(boolean available) { isAvailable = available; }
 
-    public String getSellerId() { return sellerId; }
-    public void setSellerId(String sellerId) { this.sellerId = sellerId; }
+    public int getShopId() { return shopId; }
+    public void setShopId(int shopId) { this.shopId = shopId; }
 
-    public String getSellerName() { return sellerName; }
-    public void setSellerName(String sellerName) { this.sellerName = sellerName; }
+    public String getShopName() { return shopName; }
+    public void setShopName(String shopName) { this.shopName = shopName; }
 
     public int getCategoryId() { return categoryId; }
     public void setCategoryId(int categoryId) { this.categoryId = categoryId; }

@@ -53,6 +53,8 @@ public class CheckoutActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
         userId = prefs.getString("USER_ID", "");
         fullName = prefs.getString("FULL_NAME", "Người dùng");
+        selectedBuilding = prefs.getString("BUILDING", "");
+        selectedRoom = prefs.getString("ROOM", "");
 
         cartGroup = (CartAdapter.CartGroup) getIntent().getSerializableExtra("CART_GROUP");
 
@@ -80,7 +82,7 @@ public class CheckoutActivity extends AppCompatActivity {
 
     private void setupData() {
         if (cartGroup != null) {
-            tvStoreName.setText(cartGroup.sellerName);
+            tvStoreName.setText(cartGroup.shopName);
             
             List<CartItem> items = cartGroup.items;
             adapter = new CheckoutAdapter(items);
@@ -98,6 +100,10 @@ public class CheckoutActivity extends AppCompatActivity {
         TextView tvUserName = findViewById(R.id.tvUserName);
         if (tvUserName != null) {
             tvUserName.setText(fullName);
+        }
+
+        if (!selectedBuilding.isEmpty() && !selectedRoom.isEmpty()) {
+            tvDormitoryDetails.setText("Tòa " + selectedBuilding + " - Phòng " + selectedRoom);
         }
     }
 
@@ -121,12 +127,14 @@ public class CheckoutActivity extends AppCompatActivity {
         Order order = new Order();
         order.setBuyerId(userId);
         order.setBuyerName(fullName);
+        order.setShopId(cartGroup.shopId);
         order.setStatus("Pending");
-        order.setDeliveryBuilding("Tòa " + selectedBuilding + " - Phòng " + selectedRoom);
+        order.setDeliveryBuilding(selectedBuilding);
+        order.setDeliveryRoom(selectedRoom);
         
         double total = calculateTotal();
         order.setTotalAmount(total);
-        order.setShippingFee(15000); // Phí ship cố định hoặc tính toán tùy ý
+        order.setShippingFee(15000); // Phí ship cố định
 
         List<OrderItem> orderItems = new ArrayList<>();
         for (CartItem cartItem : cartGroup.items) {
@@ -200,6 +208,12 @@ public class CheckoutActivity extends AppCompatActivity {
             
             if (!selectedBuilding.isEmpty() && !selectedRoom.isEmpty()) {
                 tvDormitoryDetails.setText("Tòa " + selectedBuilding + " - Phòng " + selectedRoom);
+                
+                // Lưu vào preferences luôn để lần sau không phải nhập lại
+                SharedPreferences.Editor editor = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE).edit();
+                editor.putString("BUILDING", selectedBuilding);
+                editor.putString("ROOM", selectedRoom);
+                editor.apply();
             } else {
                 tvDormitoryDetails.setText("Chưa cập nhật tòa và phòng");
             }

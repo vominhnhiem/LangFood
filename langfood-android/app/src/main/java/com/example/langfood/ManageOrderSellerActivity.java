@@ -22,7 +22,7 @@ public class ManageOrderSellerActivity extends AppCompatActivity {
     private SellerOrderAdapter adapter;
     private List<Order> sellerOrders = new ArrayList<>();
     private ApiService apiService;
-    private String sellerId;
+    private int shopId;
     private ImageView btnBack;
 
     @Override
@@ -31,7 +31,7 @@ public class ManageOrderSellerActivity extends AppCompatActivity {
         setContentView(R.layout.activity_manage_order_seller);
 
         SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
-        sellerId = prefs.getString("USER_ID", "");
+        shopId = prefs.getInt("SHOP_ID", -1);
 
         initViews();
         apiService = ApiClient.getClient().create(ApiService.class);
@@ -54,8 +54,13 @@ public class ManageOrderSellerActivity extends AppCompatActivity {
     }
 
     private void loadOrders() {
-        // Lấy danh sách đơn hàng dành riêng cho Seller này
-        apiService.getOrdersForSeller(sellerId).enqueue(new Callback<List<Order>>() {
+        if (shopId == -1) {
+            Toast.makeText(this, "Không tìm thấy thông tin cửa hàng", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Lấy danh sách đơn hàng dành riêng cho Shop này
+        apiService.getOrdersByShop(shopId).enqueue(new Callback<List<Order>>() {
             @Override
             public void onResponse(Call<List<Order>> call, Response<List<Order>> response) {
                 if (response.isSuccessful() && response.body() != null) {
