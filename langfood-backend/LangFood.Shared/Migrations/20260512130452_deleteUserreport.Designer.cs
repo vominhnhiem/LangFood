@@ -4,6 +4,7 @@ using LangFood.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LangFoodBackend.Migrations
 {
     [DbContext(typeof(LangFoodDbContext))]
-    partial class LangFoodDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260512130452_deleteUserreport")]
+    partial class deleteUserreport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,27 +24,6 @@ namespace LangFoodBackend.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("LangFood.Shared.Models.Building", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Buildings");
-                });
 
             modelBuilder.Entity("LangFood.Shared.Models.CartItem", b =>
                 {
@@ -102,9 +84,6 @@ namespace LangFoodBackend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("BuildingId")
-                        .HasColumnType("int");
-
                     b.Property<string>("BuyerId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -141,8 +120,6 @@ namespace LangFoodBackend.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("BuildingId");
 
                     b.HasIndex("BuyerId");
 
@@ -357,9 +334,6 @@ namespace LangFoodBackend.Migrations
                     b.Property<string>("AvatarUrl")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("BuildingId")
-                        .HasColumnType("int");
-
                     b.Property<string>("CccdNumber")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
@@ -375,6 +349,9 @@ namespace LangFoodBackend.Migrations
 
                     b.Property<bool>("IsVerifiedResident")
                         .HasColumnType("bit");
+
+                    b.Property<string>("KtxBuilding")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("KtxRoom")
                         .HasColumnType("nvarchar(max)");
@@ -397,8 +374,6 @@ namespace LangFoodBackend.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("BuildingId");
 
                     b.ToTable("Users");
                 });
@@ -424,11 +399,6 @@ namespace LangFoodBackend.Migrations
 
             modelBuilder.Entity("LangFood.Shared.Models.Order", b =>
                 {
-                    b.HasOne("LangFood.Shared.Models.Building", "Building")
-                        .WithMany()
-                        .HasForeignKey("BuildingId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.HasOne("LangFood.Shared.Models.User", "Buyer")
                         .WithMany("Orders")
                         .HasForeignKey("BuyerId")
@@ -445,8 +415,6 @@ namespace LangFoodBackend.Migrations
                         .HasForeignKey("ShopId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Building");
 
                     b.Navigation("Buyer");
 
@@ -529,16 +497,6 @@ namespace LangFoodBackend.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("LangFood.Shared.Models.User", b =>
-                {
-                    b.HasOne("LangFood.Shared.Models.Building", "Building")
-                        .WithMany()
-                        .HasForeignKey("BuildingId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("Building");
                 });
 
             modelBuilder.Entity("LangFood.Shared.Models.Category", b =>

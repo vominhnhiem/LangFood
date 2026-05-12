@@ -4,6 +4,7 @@ using LangFood.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LangFoodBackend.Migrations
 {
     [DbContext(typeof(LangFoodDbContext))]
-    partial class LangFoodDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260512134354_building")]
+    partial class building
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -102,9 +105,6 @@ namespace LangFoodBackend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("BuildingId")
-                        .HasColumnType("int");
-
                     b.Property<string>("BuyerId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -141,8 +141,6 @@ namespace LangFoodBackend.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("BuildingId");
 
                     b.HasIndex("BuyerId");
 
@@ -424,11 +422,6 @@ namespace LangFoodBackend.Migrations
 
             modelBuilder.Entity("LangFood.Shared.Models.Order", b =>
                 {
-                    b.HasOne("LangFood.Shared.Models.Building", "Building")
-                        .WithMany()
-                        .HasForeignKey("BuildingId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.HasOne("LangFood.Shared.Models.User", "Buyer")
                         .WithMany("Orders")
                         .HasForeignKey("BuyerId")
@@ -445,8 +438,6 @@ namespace LangFoodBackend.Migrations
                         .HasForeignKey("ShopId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Building");
 
                     b.Navigation("Buyer");
 

@@ -1,92 +1,227 @@
 @{
-    ViewData["Title"] = "Người giao hàng";
+    ViewData["Title"] = "Quản lý Người giao hàng";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0 text-gray-800 fw-bold">Quản lý người giao hàng</h1>
 </div>
 
-<div class="admin-card shadow mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h6 class="m-0 font-weight-bold" style="color: var(--accent-color);">Danh sách Shipper chờ duyệt</h6>
-        <div>
-            <button class="btn btn-primary btn-sm" id="btnBulkApprove">
-                <i class="fas fa-check-double me-1"></i> Duyệt hàng loạt
-            </button>
+<!-- Tabs Control -->
+<ul class="nav nav-tabs border-bottom-0 mb-3" id="shipperTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-bold px-4 py-2 position-relative" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab" style="border-radius: 10px 10px 0 0;">
+            Yêu cầu chờ duyệt
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7rem;">
+                2
+            </span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold px-4 py-2" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab" style="border-radius: 10px 10px 0 0;">
+            Shipper đang hoạt động
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="shipperTabsContent">
+    <!-- TAB 1: CHỜ DUYỆT -->
+    <div class="tab-pane fade show active" id="pending" role="tabpanel" aria-labelledby="pending-tab">
+        <div class="admin-card shadow-sm border-0" style="border-radius: 0 0 12px 12px;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="m-0 font-weight-bold" style="color: var(--accent-color);">Danh sách Shipper chờ duyệt hồ sơ</h6>
+                <button class="btn btn-primary btn-sm px-3 fw-bold shadow-sm" id="btnBulkApprove">
+                    <i class="fas fa-check-double me-1"></i> Duyệt hàng loạt
+                </button>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 50px;">
+                                <input class="form-check-input" type="checkbox" id="selectAll">
+                            </th>
+                            <th>Họ và tên</th>
+                            <th>Số điện thoại</th>
+                            <th>Tòa nhà KTX</th>
+                            <th>Ảnh Thẻ SV/CCCD</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end pe-4">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input class="form-check-input shipper-checkbox" type="checkbox" value="1"></td>
+                            <td class="fw-bold">Nguyễn Văn D</td>
+                            <td>0901234567</td>
+                            <td><span class="badge bg-secondary">AH1</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-info view-image-btn rounded-pill px-3" data-img-src="https://via.placeholder.com/600x400.png?text=CCCD+Mat+Truoc">
+                                    <i class="fas fa-image me-1"></i> Xem ảnh
+                                </button>
+                            </td>
+                            <td><span class="badge bg-warning text-dark px-3 py-2 rounded-pill">Chờ duyệt</span></td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-success rounded-circle p-2 mx-1 shadow-sm" title="Duyệt"><i class="fas fa-check"></i></button>
+                                <button class="btn btn-sm btn-danger rounded-circle p-2 mx-1 shadow-sm btn-reject" title="Từ chối"><i class="fas fa-times"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><input class="form-check-input shipper-checkbox" type="checkbox" value="2"></td>
+                            <td class="fw-bold">Trần Thị E</td>
+                            <td>0912345678</td>
+                            <td><span class="badge bg-secondary">BA4</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-info view-image-btn rounded-pill px-3" data-img-src="https://via.placeholder.com/600x400.png?text=The+Sinh+Vien">
+                                    <i class="fas fa-image me-1"></i> Xem ảnh
+                                </button>
+                            </td>
+                            <td><span class="badge bg-warning text-dark px-3 py-2 rounded-pill">Chờ duyệt</span></td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-success rounded-circle p-2 mx-1 shadow-sm" title="Duyệt"><i class="fas fa-check"></i></button>
+                                <button class="btn btn-sm btn-danger rounded-circle p-2 mx-1 shadow-sm btn-reject" title="Từ chối"><i class="fas fa-times"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-    
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th style="width: 50px;">
-                        <input class="form-check-input" type="checkbox" id="selectAll">
-                    </th>
-                    <th>Họ và tên</th>
-                    <th>Số điện thoại</th>
-                    <th>Tòa nhà KTX</th>
-                    <th>Ảnh Thẻ SV/CCCD</th>
-                    <th>Trạng thái</th>
-                    <th>Hành động</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Dummy Data -->
-                <tr>
-                    <td>
-                        <input class="form-check-input shipper-checkbox" type="checkbox" value="1">
-                    </td>
-                    <td class="fw-bold">Nguyễn Văn D</td>
-                    <td>0901234567</td>
-                    <td>AH1</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-info view-image-btn" data-img-src="https://via.placeholder.com/600x400.png?text=CCCD+Mat+Truoc">
-                            <i class="fas fa-image"></i> Xem ảnh
-                        </button>
-                    </td>
-                    <td><span class="badge bg-warning text-dark">Chờ duyệt</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-success"><i class="fas fa-check"></i></button>
-                        <button class="btn btn-sm btn-danger"><i class="fas fa-times"></i></button>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <input class="form-check-input shipper-checkbox" type="checkbox" value="2">
-                    </td>
-                    <td class="fw-bold">Trần Thị E</td>
-                    <td>0912345678</td>
-                    <td>BA4</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-info view-image-btn" data-img-src="https://via.placeholder.com/600x400.png?text=The+Sinh+Vien">
-                            <i class="fas fa-image"></i> Xem ảnh
-                        </button>
-                    </td>
-                    <td><span class="badge bg-warning text-dark">Chờ duyệt</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-success"><i class="fas fa-check"></i></button>
-                        <button class="btn btn-sm btn-danger"><i class="fas fa-times"></i></button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+
+    <!-- TAB 2: ĐANG HOẠT ĐỘNG -->
+    <div class="tab-pane fade" id="active" role="tabpanel" aria-labelledby="active-tab">
+        <div class="admin-card shadow-sm border-0" style="border-radius: 0 0 12px 12px;">
+            <!-- Bộ lọc & Tìm kiếm -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" class="form-control border-start-0" placeholder="Tìm theo tên hoặc SĐT...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select">
+                        <option value="">-- Tất cả tòa nhà --</option>
+                        <option>AH1</option>
+                        <option>BA4</option>
+                        <option>B3</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mã SP</th>
+                            <th>Họ và tên</th>
+                            <th>Tòa trực chốt</th>
+                            <th>Số dư ví</th>
+                            <th>Trạng thái Live</th>
+                            <th class="text-end pe-4">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold">#SP-001</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="https://ui-avatars.com/api/?name=NV+A&background=random" class="rounded-circle me-2" width="32" height="32">
+                                    <span>Nguyễn Văn A</span>
+                                </div>
+                            </td>
+                            <td><span class="badge bg-light text-dark border">B3</span></td>
+                            <td class="fw-bold text-success">1,250,000₫</td>
+                            <td><span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="fas fa-circle me-1 small"></i> Sẵn sàng</span></td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-light rounded-circle p-2 mx-1 text-primary shadow-sm"><i class="fas fa-eye"></i></button>
+                                <button class="btn btn-sm btn-light rounded-circle p-2 mx-1 text-danger shadow-sm"><i class="fas fa-lock"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">#SP-002</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="https://ui-avatars.com/api/?name=LT+B&background=random" class="rounded-circle me-2" width="32" height="32">
+                                    <span>Lê Thị B</span>
+                                </div>
+                            </td>
+                            <td><span class="badge bg-light text-dark border">BA4</span></td>
+                            <td class="fw-bold text-success">450,000₫</td>
+                            <td><span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1"><i class="fas fa-circle me-1 small"></i> Đang giao đơn</span></td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-light rounded-circle p-2 mx-1 text-primary shadow-sm"><i class="fas fa-eye"></i></button>
+                                <button class="btn btn-sm btn-light rounded-circle p-2 mx-1 text-danger shadow-sm"><i class="fas fa-lock"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">#SP-003</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="https://ui-avatars.com/api/?name=PH+C&background=random" class="rounded-circle me-2" width="32" height="32">
+                                    <span>Phạm Hoàng C</span>
+                                </div>
+                            </td>
+                            <td><span class="badge bg-light text-dark border">AH1</span></td>
+                            <td class="fw-bold text-danger">-50,000₫</td>
+                            <td><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1"><i class="fas fa-circle me-1 small"></i> Offline</span></td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-light rounded-circle p-2 mx-1 text-primary shadow-sm"><i class="fas fa-eye"></i></button>
+                                <button class="btn btn-sm btn-light rounded-circle p-2 mx-1 text-danger shadow-sm"><i class="fas fa-lock"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- Modal Hiển thị ảnh -->
-<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
       <div class="modal-header">
-        <h5 class="modal-title" id="imageModalLabel">Ảnh Thẻ SV / CCCD</h5>
+        <h5 class="modal-title fw-bold">Ảnh Thẻ SV / CCCD</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body text-center">
-        <img id="modalImage" src="" alt="ID Image" class="img-fluid rounded" style="max-height: 70vh;" />
+      <div class="modal-body text-center p-4">
+        <img id="modalImage" src="" alt="ID Image" class="img-fluid rounded shadow-sm" style="max-height: 70vh;" />
       </div>
     </div>
   </div>
+</div>
+
+<!-- Modal Từ chối duyệt -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header bg-danger text-white" style="border-radius: 16px 16px 0 0;">
+                <h5 class="modal-title fw-bold"><i class="fas fa-user-times me-2"></i>Từ chối duyệt Shipper</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-uppercase text-muted">Lý do từ chối</label>
+                    <select class="form-select border-0 bg-light py-2">
+                        <option value="">-- Chọn lý do --</option>
+                        <option value="invalid_img">Ảnh thẻ bị mờ, không rõ mặt</option>
+                        <option value="invalid_info">Thông tin cá nhân không khớp</option>
+                        <option value="invalid_building">Khu vực đăng ký không phù hợp</option>
+                        <option value="other">Lý do khác...</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-uppercase text-muted">Ghi chú thêm</label>
+                    <textarea class="form-control border-0 bg-light" rows="3" placeholder="Nhập lời nhắn gửi đến Shipper..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-0">
+                <button type="button" class="btn btn-secondary px-4 fw-bold" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger px-4 fw-bold" id="btnConfirmReject">Xác nhận từ chối</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
@@ -105,6 +240,12 @@
                 imageModal.show();
             });
 
+            // Open Reject Modal
+            $('.btn-reject').click(function() {
+                var rejectModal = new bootstrap.Modal(document.getElementById('rejectModal'));
+                rejectModal.show();
+            });
+
             // Bulk Approve logic
             $('#btnBulkApprove').click(function () {
                 var selectedIds = [];
@@ -117,12 +258,36 @@
                     return;
                 }
 
-                // Call API here...
                 toastr.success("Đã duyệt " + selectedIds.length + " shipper thành công!");
-                // Uncheck all after success (dummy)
                 $('.shipper-checkbox').prop('checked', false);
                 $('#selectAll').prop('checked', false);
+            });
+
+            // Confirm Reject
+            $('#btnConfirmReject').click(function() {
+                toastr.error("Đã gửi thông báo từ chối đến Shipper.");
+                $('#rejectModal').modal('hide');
             });
         });
     </script>
 }
+
+<style>
+    .nav-tabs .nav-link {
+        color: #6c757d;
+        border: none;
+        background: #f8f9fa;
+        margin-right: 5px;
+    }
+    .nav-tabs .nav-link.active {
+        color: #fff;
+        background-color: var(--accent-color) !important;
+        border: none;
+    }
+    .bg-success-subtle { background-color: #E8F5E9 !important; }
+    .bg-warning-subtle { background-color: #FFF3E0 !important; }
+    .bg-secondary-subtle { background-color: #F5F5F5 !important; }
+    .nav-link:hover:not(.active) {
+        background-color: #eee;
+    }
+</style>

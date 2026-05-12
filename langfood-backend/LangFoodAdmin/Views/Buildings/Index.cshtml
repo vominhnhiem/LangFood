@@ -1,0 +1,136 @@
+@model IEnumerable<LangFood.Shared.Models.Building>
+
+@{
+    ViewData["Title"] = "Quản lý tòa nhà KTX";
+}
+
+<div class="container-fluid py-4">
+    <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0"><i class="fas fa-building me-2 text-secondary"></i>Danh sách Tòa nhà KTX</h5>
+            <div class="d-flex gap-3">
+                <div class="input-group input-group-sm" style="width: 250px;">
+                    <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" class="form-control bg-light border-0" placeholder="Tìm tên tòa nhà...">
+                </div>
+                <a asp-action="Create" class="btn btn-sm px-3 text-white fw-bold" style="background-color: #F24E1E; border-radius: 8px;">
+                    <i class="fas fa-plus me-2"></i>Thêm tòa mới
+                </a>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger mx-3 mt-3">@TempData["Error"]</div>
+            }
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4 py-3 text-muted small fw-bold text-uppercase">ID</th>
+                            <th class="py-3 text-muted small fw-bold text-uppercase">Tên tòa nhà</th>
+                            <th class="py-3 text-muted small fw-bold text-uppercase">Khu vực</th>
+                            <th class="py-3 text-muted small fw-bold text-uppercase">Trạng thái</th>
+                            <th class="py-3 text-muted small fw-bold text-uppercase text-end pe-4">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="ps-4">#@item.Id</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-light rounded-circle p-2 me-3">
+                                                <i class="fas fa-building text-secondary"></i>
+                                            </div>
+                                            <span class="fw-bold">@item.Name</span>
+                                        </div>
+                                    </td>
+                                    <td><span class="text-muted">Khu B</span></td>
+                                    <td>
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill">Hoạt động</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger-subtle text-danger px-3 py-2 rounded-pill">Bảo trì</span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-light btn-sm rounded-circle p-2" title="Chỉnh sửa">
+                                                <i class="fas fa-edit text-primary"></i>
+                                            </a>
+                                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-light btn-sm rounded-circle p-2" title="Xóa"
+                                               onclick="return confirm('Mày chắc chắn muốn xóa tòa này không?')">
+                                                <i class="fas fa-trash-alt text-danger"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <!-- Mock data rows for demonstration as requested -->
+                            <tr>
+                                <td class="ps-4">#101</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-light rounded-circle p-2 me-3">
+                                            <i class="fas fa-building text-secondary"></i>
+                                        </div>
+                                        <span class="fw-bold">Tòa B1</span>
+                                    </div>
+                                </td>
+                                <td><span class="text-muted">Khu B</span></td>
+                                <td>
+                                    <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill">Hoạt động</span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button class="btn btn-light btn-sm rounded-circle p-2"><i class="fas fa-edit text-primary"></i></button>
+                                        <button class="btn btn-light btn-sm rounded-circle p-2"><i class="fas fa-trash-alt text-danger"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="ps-4">#102</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-light rounded-circle p-2 me-3">
+                                            <i class="fas fa-building text-secondary"></i>
+                                        </div>
+                                        <span class="fw-bold">Tòa B2</span>
+                                    </div>
+                                </td>
+                                <td><span class="text-muted">Khu B</span></td>
+                                <td>
+                                    <span class="badge bg-danger-subtle text-danger px-3 py-2 rounded-pill">Bảo trì</span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button class="btn btn-light btn-sm rounded-circle p-2"><i class="fas fa-edit text-primary"></i></button>
+                                        <button class="btn btn-light btn-sm rounded-circle p-2"><i class="fas fa-trash-alt text-danger"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-success-subtle { background-color: #E8F5E9 !important; }
+    .bg-danger-subtle { background-color: #FFEBEE !important; }
+    .table-hover tbody tr:hover { background-color: #F8F9FA; cursor: pointer; }
+    .btn-light:hover { background-color: #E9ECEF !important; }
+</style>

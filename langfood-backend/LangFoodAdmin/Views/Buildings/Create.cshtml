@@ -1,0 +1,65 @@
+@model LangFood.Shared.Models.Building
+
+@{
+    ViewData["Title"] = "Thêm tòa nhà KTX mới";
+}
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+                <div class="card-header bg-white border-0 py-3 mt-2 text-center">
+                    <h4 class="fw-bold mb-0 text-dark"><i class="fas fa-plus-circle me-2 text-success"></i>Thêm tòa nhà mới</h4>
+                    <p class="text-muted small mb-0">Thiết lập tòa nhà KTX mới vào hệ thống vận hành</p>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Create">
+                        <div class="mb-4">
+                            <label asp-for="Name" class="form-label fw-bold small text-uppercase text-muted">Tên tòa nhà</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i class="fas fa-building text-secondary"></i></span>
+                                <input asp-for="Name" class="form-control bg-light border-0 py-2" placeholder="Ví dụ: Tòa B3, Tòa A1..." required />
+                            </div>
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch p-0 d-flex align-items-center justify-content-between">
+                                <label class="form-check-label fw-bold small text-uppercase text-muted mb-0" for="isActiveSwitch">Trạng thái hoạt động</label>
+                                <input class="form-check-input ms-0 mt-0" type="checkbox" role="switch" id="isActiveSwitch" asp-for="IsActive" checked style="width: 2.5em; height: 1.25em;">
+                            </div>
+                            <div class="form-text small mt-1">Mặc định tòa nhà mới sẽ ở trạng thái Hoạt động.</div>
+                        </div>
+
+                        <hr class="my-4 opacity-50">
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn text-white fw-bold py-2 shadow-sm" style="background-color: #F24E1E; border-radius: 10px;">
+                                <i class="fas fa-check-circle me-2"></i>Tạo tòa nhà
+                            </button>
+                            <a asp-action="Index" class="btn btn-light fw-bold py-2 border" style="border-radius: 10px;">
+                                <i class="fas fa-times me-2 text-muted"></i>Hủy bỏ
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+
+<style>
+    .form-control:focus {
+        background-color: #fff !important;
+        border: 1px solid #F24E1E !important;
+        box-shadow: 0 0 0 0.25rem rgba(242, 78, 30, 0.1) !important;
+    }
+    .form-check-input:checked {
+        background-color: #F24E1E;
+        border-color: #F24E1E;
+    }
+</style>

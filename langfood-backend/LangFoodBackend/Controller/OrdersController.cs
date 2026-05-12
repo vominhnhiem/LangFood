@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LangFood.Shared.Models;
-using LangFood.Shared; // Đảm bảo có namespace này để nhận diện DbContext
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,42 +19,30 @@ namespace LangFoodBackend.Controller
             _context = context;
         }
 
-        // 1. Lấy toàn bộ danh sách đơn hàng
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Order>>> GetOrders()
-        {
-            return await _context.Orders
-                .Include(o => o.OrderItems)
-                .OrderByDescending(o => o.CreatedAt)
-                .ToListAsync();
-        }
-
-        // 2. Buyer Đặt hàng
+        // 1. Buyer Đặt hàng
         [HttpPost]
         public async Task<ActionResult<Order>> PostOrder(Order order)
         {
             if (order == null) return BadRequest(new { message = "Dữ liệu trống!" });
-
             try
             {
                 order.CreatedAt = DateTime.Now;
                 order.Status = "Pending";
-
-                order.Buyer = null;
-                order.Buyer = null;
-                order.Leg1Shipper = null;
-                order.Leg2Shipper = null;
+                order.Buyer = null; // Tránh EF cố tạo mới User
                 order.Shop = null;
+                order.Shipper = null;
 
-                foreach (var item in order.OrderItems)
+                if (order.OrderItems != null)
                 {
-                    item.Order = null;
-                    item.Product = null;
+                    foreach (var item in order.OrderItems)
+                    {
+                        item.Order = null;
+                        item.Product = null;
+                    }
                 }
 
                 _context.Orders.Add(order);
                 await _context.SaveChangesAsync();
-
                 return Ok(order);
             }
             catch (Exception ex)
@@ -64,90 +51,13 @@ namespace LangFoodBackend.Controller
             }
         }
 
-        // 3. Lấy đơn hàng theo BuyerId (Lịch sử mua hàng của khách)
-        [HttpGet("buyer/{buyerId}")]
-        public async Task<ActionResult<IEnumerable<Order>>> GetOrdersByBuyer(string buyerId)
+        // 2. Lấy đơn hàng cho SHOP (Theo ShopId kiểu int)
+        [HttpGet("shop/{shopId}")]
+        public async Task<ActionResult<IEnumerable<object>>> GetOrdersByShop(int shopId)
         {
             var orders = await _context.Orders
-                .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.Product)
-                .Where(o => o.BuyerId == buyerId)
-                .OrderByDescending(o => o.CreatedAt)
-                .ToListAsync();
-            return Ok(orders);
-        }
-
-        // 4. Xóa đơn hàng
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteOrder(int id)
-        {
-            var order = await _context.Orders.FindAsync(id);
-            if (order == null) return NotFound();
-            _context.Orders.Remove(order);
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
-
-        // 5. Lấy đơn hàng cho Shipper (Các đơn chưa có người nhận)
-        [HttpGet("available")]
-        public async Task<ActionResult<IEnumerable<Order>>> GetAvailableOrders()
-        {
-            var orders = await _context.Orders
-                .Include(o => o.Buyer)
-                .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.Product)
-                .Where(o => o.Status == "Pending" && o.Leg1ShipperId == null)
-                .OrderByDescending(o => o.CreatedAt)
-                .ToListAsync();
-            return Ok(orders);
-        }
-
-        // 6. Shipper nhận đơn
-        [HttpPut("accept/{id}")]
-        public async Task<IActionResult> AcceptOrder(int id, [FromQuery] string userId)
-        {
-            var shipper = await _context.Shippers.FirstOrDefaultAsync(s => s.UserId == userId);
-            if (shipper == null) return BadRequest(new { message = "Bạn chưa đăng ký làm Shipper!" });
-
-            var order = await _context.Orders.FindAsync(id);
-            if (order == null) return NotFound();
-            if (order.Leg1ShipperId != null) return BadRequest(new { message = "Đã có người nhận" });
-
-            order.Leg1ShipperId = shipper.Id;
-            order.Status = "Shipping";
-
-            _context.Orders.Update(order);
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Nhận đơn thành công" });
-        }
-
-        // 7. Xác nhận giao hàng thành công
-        [HttpPut("complete/{id}")]
-        public async Task<IActionResult> CompleteOrder(int id)
-        {
-            var order = await _context.Orders.FindAsync(id);
-            if (order == null) return NotFound();
-
-            order.Status = "Delivered";
-            order.DeliveredAt = DateTime.Now;
-
-            _context.Orders.Update(order);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Giao hàng thành công!" });
-        }
-
-        // 8. API QUAN TRỌNG: Lấy đơn hàng dành cho NGƯỜI BÁN (Shop)
-        [HttpGet("seller/{sellerId}")]
-        public async Task<ActionResult<IEnumerable<object>>> GetOrdersBySeller(string sellerId)
-        {
-            var shop = await _context.Shops.FirstOrDefaultAsync(s => s.UserId == sellerId);
-            if (shop == null) return NotFound(new { message = "Không tìm thấy Shop!" });
-
-            var orders = await _context.Orders
-                .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.Product)
-                .Where(o => o.ShopId == shop.Id || o.OrderItems.Any(oi => oi.Product.ShopId == shop.Id))
+                .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
+                .Where(o => o.ShopId == shopId)
                 .OrderByDescending(o => o.CreatedAt)
                 .Select(o => new {
                     o.Id,
@@ -158,19 +68,65 @@ namespace LangFoodBackend.Controller
                     o.ShippingFee,
                     o.CreatedAt,
                     o.DeliveryBuilding,
-                    Items = o.OrderItems
-                        .Where(oi => oi.Product.ShopId == shop.Id)
-                        .Select(oi => new {
-                            oi.ProductId,
-                            ProductName = oi.Product.Name,
-                            oi.Product.ImageUrl,
-                            oi.Quantity,
-                            oi.UnitPrice
-                        })
+                    o.DeliveryRoom,
+                    OrderItems = o.OrderItems.Select(oi => new {
+                        oi.ProductId,
+                        ProductName = oi.Product.Name,
+                        oi.Product.ImageUrl,
+                        oi.Quantity,
+                        oi.UnitPrice
+                    })
                 })
                 .ToListAsync();
-
             return Ok(orders);
+        }
+
+        // 3. Lấy đơn hàng cho Shipper (Các đơn đã xác nhận và chưa có người nhận)
+        [HttpGet("available")]
+        public async Task<ActionResult<IEnumerable<Order>>> GetAvailableOrders()
+        {
+            return await _context.Orders
+                .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
+                .Where(o => o.Status == "Confirmed" && o.ShipperId == null)
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync();
+        }
+
+        // 4. Shipper nhận đơn (Dùng shipperId kiểu int)
+        [HttpPut("accept/{id}")]
+        public async Task<IActionResult> AcceptOrder(int id, [FromQuery] int shipperId)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+            if (order.ShipperId != null) return BadRequest(new { message = "Đã có người nhận rồi!" });
+
+            order.ShipperId = shipperId;
+            order.Status = "Shipping";
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Nhận đơn thành công" });
+        }
+
+        // 5. Shop xác nhận đơn
+        [HttpPut("confirm/{id}")]
+        public async Task<IActionResult> ConfirmOrder(int id)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+            order.Status = "Confirmed";
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Đã xác nhận đơn" });
+        }
+
+        // 6. Hoàn thành đơn
+        [HttpPut("complete/{id}")]
+        public async Task<IActionResult> CompleteOrder(int id)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+            order.Status = "Delivered";
+            order.DeliveredAt = DateTime.Now;
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Giao hàng thành công!" });
         }
     }
 }
