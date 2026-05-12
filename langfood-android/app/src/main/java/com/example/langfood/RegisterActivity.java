@@ -1,12 +1,14 @@
 package com.example.langfood;
 
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.text.SpannableString;
+import android.text.TextUtils;
 import android.text.style.UnderlineSpan;
 import android.util.Patterns;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -18,9 +20,13 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.langfood.api.ApiClient;
 import com.example.langfood.api.ApiService;
+import com.example.langfood.models.Building;
 import com.example.langfood.models.User;
 import com.example.langfood.models.UsernameCheckResponse;
 import com.google.android.material.button.MaterialButtonToggleGroup;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -29,14 +35,16 @@ import retrofit2.Response;
 
 public class RegisterActivity extends AppCompatActivity {
 
-    private EditText etFullName, etUsername, etEmail, etPhone, etKtxBuilding, etKtxRoom, etPassword, etConfirmPassword;
-    private EditText etShopName, etShopAddress, etCccd;
+    private EditText etFullName, etUsername, etEmail, etPhone, etKtxRoom, etPassword, etConfirmPassword;
+    private EditText etShopName, etShopStreet, etCccd;
+    private AutoCompleteTextView spinnerBuilding, spinnerArea;
     private Button btnRegister;
     private TextView tvLoginLink;
     private LinearLayout llKtxInfo, llMerchantInfo;
     private MaterialButtonToggleGroup toggleRole;
     private int selectedAccountType = 0; // 0: SinhVien KTX, 1: External Merchant
     private ApiService apiService;
+    private List<Building> buildingList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +55,8 @@ public class RegisterActivity extends AppCompatActivity {
 
         initViews();
         underlineLoginLink();
+        loadBuildings();
+        setupAreaSpinner();
 
         btnRegister.setOnClickListener(v -> handleRegister());
 
@@ -61,7 +71,7 @@ public class RegisterActivity extends AppCompatActivity {
                     selectedAccountType = 1;
                     llKtxInfo.setVisibility(View.GONE);
                     llMerchantInfo.setVisibility(View.VISIBLE);
-                    etEmail.setHint("Email cá nhân");
+                    etEmail.setHint("Email");
                 }
             }
         });
@@ -74,10 +84,11 @@ public class RegisterActivity extends AppCompatActivity {
         etUsername = findViewById(R.id.etUsername);
         etEmail = findViewById(R.id.etEmail);
         etPhone = findViewById(R.id.etPhone);
-        etKtxBuilding = findViewById(R.id.etKtxBuilding);
+        spinnerBuilding = findViewById(R.id.spinnerBuilding);
         etKtxRoom = findViewById(R.id.etKtxRoom);
         etShopName = findViewById(R.id.etShopName);
-        etShopAddress = findViewById(R.id.etShopAddress);
+        etShopStreet = findViewById(R.id.etShopStreet);
+        spinnerArea = findViewById(R.id.spinnerArea);
         etCccd = findViewById(R.id.etCccd);
         etPassword = findViewById(R.id.etPassword);
         etConfirmPassword = findViewById(R.id.etConfirmPassword);
@@ -86,6 +97,33 @@ public class RegisterActivity extends AppCompatActivity {
         llKtxInfo = findViewById(R.id.llKtxInfo);
         llMerchantInfo = findViewById(R.id.llMerchantInfo);
         toggleRole = findViewById(R.id.toggleRole);
+    }
+
+    private void loadBuildings() {
+        apiService.getBuildings().enqueue(new Callback<List<Building>>() {
+            @Override
+            public void onResponse(Call<List<Building>> call, Response<List<Building>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    buildingList = response.body();
+                    ArrayAdapter<Building> adapter = new ArrayAdapter<>(RegisterActivity.this,
+                            android.R.layout.simple_list_item_1, buildingList);
+                    spinnerBuilding.setAdapter(adapter);
+                } else {
+                    Toast.makeText(RegisterActivity.this, "Không thể tải danh sách tòa nhà", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Building>> call, Throwable t) {
+                Toast.makeText(RegisterActivity.this, "Lỗi kết nối tải tòa nhà", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void setupAreaSpinner() {
+        String[] areas = {"Khu phố 8","Khu phố 12","Tân Quý","Tân Hòa","Khác"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, areas);
+        spinnerArea.setAdapter(adapter);
     }
 
     private void underlineLoginLink() {
@@ -110,11 +148,15 @@ public class RegisterActivity extends AppCompatActivity {
         if (!etPassword.getText().toString().trim().equals(etConfirmPassword.getText().toString().trim())) { etConfirmPassword.setError("Mật khẩu không khớp"); isValid = false; }
         
         if (selectedAccountType == 0) {
-            if (etKtxBuilding.getText().toString().trim().isEmpty()) { etKtxBuilding.setError("Vui lòng nhập tòa"); isValid = false; }
+            if (spinnerBuilding.getText().toString().isEmpty()) {
+                spinnerBuilding.setError("Vui lòng chọn tòa nhà");
+                isValid = false;
+            }
             if (etKtxRoom.getText().toString().trim().isEmpty()) { etKtxRoom.setError("Vui lòng nhập phòng"); isValid = false; }
         } else {
             if (etShopName.getText().toString().trim().isEmpty()) { etShopName.setError("Vui lòng nhập tên quán"); isValid = false; }
-            if (etShopAddress.getText().toString().trim().isEmpty()) { etShopAddress.setError("Vui lòng nhập địa chỉ"); isValid = false; }
+            if (etShopStreet.getText().toString().trim().isEmpty()) { etShopStreet.setError("Vui lòng nhập số nhà, tên đường"); isValid = false; }
+            if (spinnerArea.getText().toString().isEmpty()) { spinnerArea.setError("Vui lòng chọn Khu/Ấp"); isValid = false; }
             if (etCccd.getText().toString().trim().isEmpty()) { etCccd.setError("Vui lòng nhập CCCD"); isValid = false; }
         }
         return isValid;
@@ -130,7 +172,6 @@ public class RegisterActivity extends AppCompatActivity {
 
         Toast.makeText(this, "Đang kiểm tra thông tin...", Toast.LENGTH_SHORT).show();
 
-        // 1. Check trùng Username
         apiService.checkUsername(username).enqueue(new Callback<UsernameCheckResponse>() {
             @Override
             public void onResponse(Call<UsernameCheckResponse> call, Response<UsernameCheckResponse> response) {
@@ -180,7 +221,6 @@ public class RegisterActivity extends AppCompatActivity {
 
     private void sendOtpToEmail(String email) {
         Toast.makeText(this, "Đang gửi OTP về Gmail...", Toast.LENGTH_SHORT).show();
-        // Sửa lỗi: Truyền null cho username vì đây là bước Đăng ký (chưa có account)
         apiService.sendOtp(email, null).enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -208,17 +248,13 @@ public class RegisterActivity extends AppCompatActivity {
                 .setCancelable(false)
                 .setPositiveButton("Xác nhận", (dialog, which) -> {
                     String otp = etOtp.getText().toString().trim();
-                    if (otp.length() == 6) verifyAndRegister(email, otp);
-                    else {
-                        Toast.makeText(this, "Nhập đủ 6 số!", Toast.LENGTH_SHORT).show();
-                        showOtpDialog(email);
-                    }
+                    verifyOtp(email, otp);
                 })
-                .setNegativeButton("Hủy", (dialog, which) -> btnRegister.setEnabled(true))
+                .setNegativeButton("Hủy", (dialog, which) -> dialog.dismiss())
                 .show();
     }
 
-    private void verifyAndRegister(String email, String otp) {
+    private void verifyOtp(String email, String otp) {
         apiService.verifyOtp(email, otp).enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -239,26 +275,48 @@ public class RegisterActivity extends AppCompatActivity {
         u.setUsername(etUsername.getText().toString().trim());
         u.setEmail(etEmail.getText().toString().trim());
         u.setPhoneNumber(etPhone.getText().toString().trim());
-        u.setKtxBuilding(etKtxBuilding.getText().toString().trim());
-        u.setKtxRoom(etKtxRoom.getText().toString().trim());
-        u.setShopName(etShopName.getText().toString().trim());
-        u.setShopAddress(etShopAddress.getText().toString().trim());
-        u.setCccdNumber(etCccd.getText().toString().trim());
+
+        if (selectedAccountType == 0) {
+            String selectedBuildingName = spinnerBuilding.getText().toString();
+            Building selectedBuilding = null;
+            for (Building b : buildingList) {
+                if (b.getName().equals(selectedBuildingName)) {
+                    selectedBuilding = b;
+                    break;
+                }
+            }
+            if (selectedBuilding != null) {
+                u.setBuildingId(selectedBuilding.getId());
+                u.setKtxBuilding(selectedBuilding.getName());
+            }
+            u.setKtxRoom(etKtxRoom.getText().toString().trim());
+            u.setAccountType(0); // 0: SinhVien KTX
+        } else {
+            u.setShopName(etShopName.getText().toString().trim());
+            String address = etShopStreet.getText().toString().trim() + ", " + spinnerArea.getText().toString();
+            u.setShopAddress(address);
+            u.setCccdNumber(etCccd.getText().toString().trim());
+            u.setAccountType(1); // 1: External Merchant
+        }
+
         u.setPasswordHash(etPassword.getText().toString().trim());
-        u.setRoleId(1);
-        u.setAccountType(selectedAccountType);
 
         apiService.register(u).enqueue(new Callback<User>() {
             @Override
             public void onResponse(Call<User> call, Response<User> response) {
                 if (response.isSuccessful()) {
-                    Toast.makeText(RegisterActivity.this, "Đăng ký thành công!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(RegisterActivity.this, "Đăng ký thành công!", Toast.LENGTH_LONG).show();
+                    startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
                     finish();
                 } else {
-                    Toast.makeText(RegisterActivity.this, "Lỗi khi lưu tài khoản!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(RegisterActivity.this, "Đăng ký thất bại!", Toast.LENGTH_SHORT).show();
+                    btnRegister.setEnabled(true);
                 }
             }
-            @Override public void onFailure(Call<User> call, Throwable t) { }
+            @Override public void onFailure(Call<User> call, Throwable t) { 
+                btnRegister.setEnabled(true);
+                Toast.makeText(RegisterActivity.this, "Lỗi kết nối Server!", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 }
