@@ -1,4 +1,4 @@
-@model IEnumerable<LangFood.Shared.DTOs.ProductDTO>
+@model LangFood.Shared.ViewModels.ProductManagementViewModel
 @{
     ViewData["Title"] = "Quản lý Món ăn";
 }
@@ -20,7 +20,7 @@
         <button class="nav-link active fw-bold px-4 py-2 position-relative" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab" style="border-radius: 10px 10px 0 0;">
             Món ăn chờ duyệt
             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7rem;">
-                @Model.Count()
+                @Model.PendingProducts.Count
             </span>
         </button>
     </li>
@@ -47,9 +47,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if (Model != null && Model.Any())
+                        @if (Model.PendingProducts != null && Model.PendingProducts.Any())
                         {
-                            foreach (var item in Model)
+                            foreach (var item in Model.PendingProducts)
                             {
                                 <tr>
                                     <td class="ps-4">
@@ -59,17 +59,17 @@
                                     </td>
                                     <td>
                                         <div class="fw-bold text-dark">@item.Name</div>
-                                        <div class="small text-muted">@item.CategoryName</div>
+                                        <div class="small text-muted">@item.Category?.Name</div>
                                     </td>
                                     <td class="fw-bold text-danger">@item.Price.ToString("N0")₫</td>
                                     <td>
-                                        <span class="badge bg-light text-dark border"><i class="fas fa-store me-1 text-secondary"></i> @item.SellerName</span>
+                                        <span class="badge bg-light text-dark border"><i class="fas fa-store me-1 text-secondary"></i> @(item.Shop?.Name ?? "N/A")</span>
                                     </td>
                                     <td class="text-end pe-4">
                                         <div class="d-flex justify-content-end gap-2">
                                             <button class="btn btn-sm btn-light rounded-circle p-2 text-primary shadow-sm" title="Chi tiết"><i class="fas fa-eye"></i></button>
                                             <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-sm btn-light rounded-circle p-2 text-success shadow-sm" title="Phê duyệt"><i class="fas fa-check"></i></a>
-                                            <button class="btn btn-sm btn-light rounded-circle p-2 text-danger shadow-sm btn-reject-product" title="Từ chối"><i class="fas fa-times"></i></button>
+                                            <button class="btn btn-sm btn-light rounded-circle p-2 text-danger shadow-sm btn-reject-product" data-id="@item.Id" title="Từ chối"><i class="fas fa-times"></i></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -95,26 +95,29 @@
                 <div class="col-md-4">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                        <input type="text" class="form-control border-start-0" placeholder="Tìm tên món ăn...">
+                        <input type="text" id="searchProductName" class="form-control border-start-0" placeholder="Tìm tên món ăn...">
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <select class="form-select form-select-sm">
+                    <select id="filterShop" class="form-select form-select-sm">
                         <option value="">-- Tất cả Quán ăn --</option>
-                        <option>Cơm Tấm Bà Ba</option>
-                        <option>Trà Sữa KOI</option>
+                        @foreach (var shop in Model.Shops)
+                        {
+                            <option value="@shop.Name">@shop.Name</option>
+                        }
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <select class="form-select form-select-sm">
+                    <select id="filterCategory" class="form-select form-select-sm">
                         <option value="">-- Tất cả Danh mục --</option>
-                        <option>Cơm</option>
-                        <option>Nước uống</option>
-                        <option>Ăn vặt</option>
+                        @foreach (var cat in Model.Categories)
+                        {
+                            <option value="@cat.Name">@cat.Name</option>
+                        }
                     </select>
                 </div>
                 <div class="col-md-2 text-end">
-                    <button class="btn btn-sm btn-secondary w-100 fw-bold"><i class="fas fa-filter me-1"></i> Lọc</button>
+                    <button id="btnFilter" class="btn btn-sm btn-secondary w-100 fw-bold"><i class="fas fa-filter me-1"></i> Lọc</button>
                 </div>
             </div>
 
@@ -129,38 +132,34 @@
                             <th class="text-end pe-4">Thao tác</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <!-- Mock Data -->
-                        <tr>
-                            <td class="ps-4">
-                                <img src="https://via.placeholder.com/100x100.png?text=Com+Tam" class="product-thumb rounded shadow-sm" />
-                            </td>
-                            <td>
-                                <div class="fw-bold text-dark">Cơm Tấm Sườn Bì Chả</div>
-                                <div class="small text-muted">Cơm</div>
-                            </td>
-                            <td class="fw-bold text-danger">35,000₫</td>
-                            <td><span class="badge bg-light text-dark border">Cơm Tấm Bà Ba</span></td>
-                            <td class="text-end pe-4">
-                                <button class="btn btn-sm btn-light rounded-circle p-2 text-primary shadow-sm mx-1"><i class="fas fa-eye"></i></button>
-                                <button class="btn btn-sm btn-light rounded-circle p-2 text-danger shadow-sm mx-1" title="Khóa món"><i class="fas fa-lock"></i></button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="ps-4">
-                                <img src="https://via.placeholder.com/100x100.png?text=Milk+Tea" class="product-thumb rounded shadow-sm" />
-                            </td>
-                            <td>
-                                <div class="fw-bold text-dark">Trà Sữa Trân Châu</div>
-                                <div class="small text-muted">Nước uống</div>
-                            </td>
-                            <td class="fw-bold text-danger">25,000₫</td>
-                            <td><span class="badge bg-light text-dark border">Trà Sữa KOI</span></td>
-                            <td class="text-end pe-4">
-                                <button class="btn btn-sm btn-light rounded-circle p-2 text-primary shadow-sm mx-1"><i class="fas fa-eye"></i></button>
-                                <button class="btn btn-sm btn-light rounded-circle p-2 text-danger shadow-sm mx-1" title="Khóa món"><i class="fas fa-lock"></i></button>
-                            </td>
-                        </tr>
+                    <tbody id="activeProductBody">
+                        @if (Model.ActiveProducts != null && Model.ActiveProducts.Any())
+                        {
+                            foreach (var item in Model.ActiveProducts)
+                            {
+                                <tr class="product-row" data-shop="@item.Shop?.Name" data-category="@item.Category?.Name">
+                                    <td class="ps-4">
+                                        <img src="http://localhost:5289/@item.ImageUrl" class="product-thumb rounded shadow-sm view-image" data-img="http://localhost:5289/@item.ImageUrl" />
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark product-name">@item.Name</div>
+                                        <div class="small text-muted">@item.Category?.Name</div>
+                                    </td>
+                                    <td class="fw-bold text-danger">@item.Price.ToString("N0")₫</td>
+                                    <td><span class="badge bg-light text-dark border">@(item.Shop?.Name ?? "N/A")</span></td>
+                                    <td class="text-end pe-4">
+                                        <button class="btn btn-sm btn-light rounded-circle p-2 text-primary shadow-sm mx-1"><i class="fas fa-eye"></i></button>
+                                        <button class="btn btn-sm btn-light rounded-circle p-2 text-danger shadow-sm mx-1" title="Khóa món"><i class="fas fa-lock"></i></button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted italic">Chưa có món ăn nào đang hoạt động.</td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
@@ -188,27 +187,30 @@
                 <h5 class="modal-title fw-bold"><i class="fas fa-ban me-2"></i>Từ chối món ăn</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4">
-                <div class="mb-3">
-                    <label class="form-label fw-bold small text-muted">LÝ DO TỪ CHỐI</label>
-                    <select class="form-select border-0 bg-light py-2">
-                        <option value="">-- Chọn lý do --</option>
-                        <option>Ảnh món ăn không đạt chuẩn (mờ, copy mạng)</option>
-                        <option>Giá bán không hợp lý</option>
-                        <option>Mô tả món ăn không rõ ràng/phản cảm</option>
-                        <option>Món ăn bị cấm kinh doanh</option>
-                        <option>Khác...</option>
-                    </select>
+            <form asp-action="Reject" method="post">
+                <input type="hidden" name="id" id="rejectProductId" />
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Lý do từ chối</label>
+                        <select name="reason" class="form-select border-0 bg-light py-2" required>
+                            <option value="">-- Chọn lý do --</option>
+                            <option>Ảnh món ăn không đạt chuẩn (mờ, copy mạng)</option>
+                            <option>Giá bán không hợp lý</option>
+                            <option>Mô tả món ăn không rõ ràng/phản cảm</option>
+                            <option>Món ăn bị cấm kinh doanh</option>
+                            <option>Khác...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Ghi chú chi tiết</label>
+                        <textarea class="form-control border-0 bg-light" rows="3" placeholder="Nhập lời nhắn gửi đến chủ quán..."></textarea>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold small text-muted">GHI CHÚ CHI TIẾT</label>
-                    <textarea class="form-control border-0 bg-light" rows="3" placeholder="Nhập lời nhắn gửi đến chủ quán..."></textarea>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary px-4 fw-bold" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger px-4 fw-bold">Xác nhận từ chối</button>
                 </div>
-            </div>
-            <div class="modal-footer bg-light border-0">
-                <button type="button" class="btn btn-secondary px-4 fw-bold" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-danger px-4 fw-bold">Xác nhận từ chối</button>
-            </div>
+            </form>
         </div>
     </div>
 </div>
@@ -225,8 +227,37 @@
 
             // Mở modal từ chối
             $('.btn-reject-product').click(function() {
+                var id = $(this).data('id');
+                $('#rejectProductId').val(id);
                 new bootstrap.Modal('#rejectProductModal').show();
             });
+
+            // Lọc sản phẩm ở frontend
+            function performFilter() {
+                var nameVal = $("#searchProductName").val().toLowerCase();
+                var shopVal = $("#filterShop").val();
+                var catVal = $("#filterCategory").val();
+
+                $(".product-row").each(function() {
+                    var row = $(this);
+                    var name = row.find(".product-name").text().toLowerCase();
+                    var shop = row.data("shop");
+                    var cat = row.data("category");
+
+                    var matchName = name.indexOf(nameVal) > -1;
+                    var matchShop = shopVal === "" || shop === shopVal;
+                    var matchCat = catVal === "" || cat === catVal;
+
+                    if (matchName && matchShop && matchCat) {
+                        row.show();
+                    } else {
+                        row.hide();
+                    }
+                });
+            }
+
+            $("#btnFilter").click(performFilter);
+            $("#searchProductName").on("keyup", performFilter);
         });
     </script>
 }

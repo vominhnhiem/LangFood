@@ -1,3 +1,4 @@
+@model LangFood.Shared.ViewModels.ShipperManagementViewModel
 @{
     ViewData["Title"] = "Quản lý Người giao hàng";
 }
@@ -12,7 +13,7 @@
         <button class="nav-link active fw-bold px-4 py-2 position-relative" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab" style="border-radius: 10px 10px 0 0;">
             Yêu cầu chờ duyệt
             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7rem;">
-                2
+                @Model.PendingShippers.Count
             </span>
         </button>
     </li>
@@ -43,45 +44,39 @@
                             </th>
                             <th>Họ và tên</th>
                             <th>Số điện thoại</th>
-                            <th>Tòa nhà KTX</th>
                             <th>Ảnh Thẻ SV/CCCD</th>
                             <th>Trạng thái</th>
                             <th class="text-end pe-4">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td><input class="form-check-input shipper-checkbox" type="checkbox" value="1"></td>
-                            <td class="fw-bold">Nguyễn Văn D</td>
-                            <td>0901234567</td>
-                            <td><span class="badge bg-secondary">AH1</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-info view-image-btn rounded-pill px-3" data-img-src="https://via.placeholder.com/600x400.png?text=CCCD+Mat+Truoc">
-                                    <i class="fas fa-image me-1"></i> Xem ảnh
-                                </button>
-                            </td>
-                            <td><span class="badge bg-warning text-dark px-3 py-2 rounded-pill">Chờ duyệt</span></td>
-                            <td class="text-end pe-4">
-                                <button class="btn btn-sm btn-success rounded-circle p-2 mx-1 shadow-sm" title="Duyệt"><i class="fas fa-check"></i></button>
-                                <button class="btn btn-sm btn-danger rounded-circle p-2 mx-1 shadow-sm btn-reject" title="Từ chối"><i class="fas fa-times"></i></button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><input class="form-check-input shipper-checkbox" type="checkbox" value="2"></td>
-                            <td class="fw-bold">Trần Thị E</td>
-                            <td>0912345678</td>
-                            <td><span class="badge bg-secondary">BA4</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-info view-image-btn rounded-pill px-3" data-img-src="https://via.placeholder.com/600x400.png?text=The+Sinh+Vien">
-                                    <i class="fas fa-image me-1"></i> Xem ảnh
-                                </button>
-                            </td>
-                            <td><span class="badge bg-warning text-dark px-3 py-2 rounded-pill">Chờ duyệt</span></td>
-                            <td class="text-end pe-4">
-                                <button class="btn btn-sm btn-success rounded-circle p-2 mx-1 shadow-sm" title="Duyệt"><i class="fas fa-check"></i></button>
-                                <button class="btn btn-sm btn-danger rounded-circle p-2 mx-1 shadow-sm btn-reject" title="Từ chối"><i class="fas fa-times"></i></button>
-                            </td>
-                        </tr>
+                        @if (Model.PendingShippers != null && Model.PendingShippers.Any())
+                        {
+                            foreach (var shipper in Model.PendingShippers)
+                            {
+                                <tr>
+                                    <td><input class="form-check-input shipper-checkbox" type="checkbox" value="@shipper.Id"></td>
+                                    <td class="fw-bold">@shipper.FullName</td>
+                                    <td>@shipper.PhoneNumber</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-info view-image-btn rounded-pill px-3" data-img-src="@(shipper.StudentCardImageUrl ?? "/images/default-card.png")">
+                                            <i class="fas fa-image me-1"></i> Xem ảnh
+                                        </button>
+                                    </td>
+                                    <td><span class="badge bg-warning text-dark px-3 py-2 rounded-pill">Chờ duyệt</span></td>
+                                    <td class="text-end pe-4">
+                                        <button class="btn btn-sm btn-success rounded-circle p-2 mx-1 shadow-sm btn-approve-single" data-id="@shipper.Id" title="Duyệt"><i class="fas fa-check"></i></button>
+                                        <button class="btn btn-sm btn-danger rounded-circle p-2 mx-1 shadow-sm btn-reject" data-id="@shipper.Id" title="Từ chối"><i class="fas fa-times"></i></button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted italic">Không có yêu cầu nào đang chờ.</td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
@@ -96,16 +91,8 @@
                 <div class="col-md-4">
                     <div class="input-group">
                         <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                        <input type="text" class="form-control border-start-0" placeholder="Tìm theo tên hoặc SĐT...">
+                        <input type="text" class="form-control border-start-0" id="searchActive" placeholder="Tìm theo tên hoặc SĐT...">
                     </div>
-                </div>
-                <div class="col-md-3">
-                    <select class="form-select">
-                        <option value="">-- Tất cả tòa nhà --</option>
-                        <option>AH1</option>
-                        <option>BA4</option>
-                        <option>B3</option>
-                    </select>
                 </div>
             </div>
 
@@ -115,61 +102,52 @@
                         <tr>
                             <th>Mã SP</th>
                             <th>Họ và tên</th>
-                            <th>Tòa trực chốt</th>
+                            <th>Số điện thoại</th>
                             <th>Số dư ví</th>
                             <th>Trạng thái Live</th>
                             <th class="text-end pe-4">Hành động</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td class="fw-bold">#SP-001</td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="https://ui-avatars.com/api/?name=NV+A&background=random" class="rounded-circle me-2" width="32" height="32">
-                                    <span>Nguyễn Văn A</span>
-                                </div>
-                            </td>
-                            <td><span class="badge bg-light text-dark border">B3</span></td>
-                            <td class="fw-bold text-success">1,250,000₫</td>
-                            <td><span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="fas fa-circle me-1 small"></i> Sẵn sàng</span></td>
-                            <td class="text-end pe-4">
-                                <button class="btn btn-sm btn-light rounded-circle p-2 mx-1 text-primary shadow-sm"><i class="fas fa-eye"></i></button>
-                                <button class="btn btn-sm btn-light rounded-circle p-2 mx-1 text-danger shadow-sm"><i class="fas fa-lock"></i></button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="fw-bold">#SP-002</td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="https://ui-avatars.com/api/?name=LT+B&background=random" class="rounded-circle me-2" width="32" height="32">
-                                    <span>Lê Thị B</span>
-                                </div>
-                            </td>
-                            <td><span class="badge bg-light text-dark border">BA4</span></td>
-                            <td class="fw-bold text-success">450,000₫</td>
-                            <td><span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1"><i class="fas fa-circle me-1 small"></i> Đang giao đơn</span></td>
-                            <td class="text-end pe-4">
-                                <button class="btn btn-sm btn-light rounded-circle p-2 mx-1 text-primary shadow-sm"><i class="fas fa-eye"></i></button>
-                                <button class="btn btn-sm btn-light rounded-circle p-2 mx-1 text-danger shadow-sm"><i class="fas fa-lock"></i></button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="fw-bold">#SP-003</td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="https://ui-avatars.com/api/?name=PH+C&background=random" class="rounded-circle me-2" width="32" height="32">
-                                    <span>Phạm Hoàng C</span>
-                                </div>
-                            </td>
-                            <td><span class="badge bg-light text-dark border">AH1</span></td>
-                            <td class="fw-bold text-danger">-50,000₫</td>
-                            <td><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1"><i class="fas fa-circle me-1 small"></i> Offline</span></td>
-                            <td class="text-end pe-4">
-                                <button class="btn btn-sm btn-light rounded-circle p-2 mx-1 text-primary shadow-sm"><i class="fas fa-eye"></i></button>
-                                <button class="btn btn-sm btn-light rounded-circle p-2 mx-1 text-danger shadow-sm"><i class="fas fa-lock"></i></button>
-                            </td>
-                        </tr>
+                    <tbody id="activeShipperBody">
+                        @if (Model.ActiveShippers != null && Model.ActiveShippers.Any())
+                        {
+                            foreach (var shipper in Model.ActiveShippers)
+                            {
+                                <tr>
+                                    <td class="fw-bold">#SP-@shipper.Id.ToString("D3")</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="@(shipper.User?.AvatarUrl ?? $"https://ui-avatars.com/api/?name={shipper.User?.FullName}&background=random")" class="rounded-circle me-2" width="32" height="32">
+                                            <span>@shipper.User?.FullName</span>
+                                        </div>
+                                    </td>
+                                    <td>@shipper.User?.PhoneNumber</td>
+                                    <td class="fw-bold @(shipper.WalletBalance >= 0 ? "text-success" : "text-danger")">
+                                        @shipper.WalletBalance.ToString("N0")₫
+                                    </td>
+                                    <td>
+                                        @if (shipper.IsOnline)
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="fas fa-circle me-1 small"></i> Sẵn sàng</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1"><i class="fas fa-circle me-1 small"></i> Offline</span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <button class="btn btn-sm btn-light rounded-circle p-2 mx-1 text-primary shadow-sm" title="Xem chi tiết"><i class="fas fa-eye"></i></button>
+                                        <button class="btn btn-sm btn-light rounded-circle p-2 mx-1 text-danger shadow-sm" title="Khóa tài khoản"><i class="fas fa-lock"></i></button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted italic">Chưa có shipper nào đang hoạt động.</td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
@@ -246,6 +224,14 @@
                 rejectModal.show();
             });
 
+            // Tìm kiếm Shipper hoạt động (Frontend Filter đơn giản)
+            $("#searchActive").on("keyup", function() {
+                var value = $(this).val().toLowerCase();
+                $("#activeShipperBody tr").filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+
             // Bulk Approve logic
             $('#btnBulkApprove').click(function () {
                 var selectedIds = [];
@@ -259,8 +245,13 @@
                 }
 
                 toastr.success("Đã duyệt " + selectedIds.length + " shipper thành công!");
-                $('.shipper-checkbox').prop('checked', false);
-                $('#selectAll').prop('checked', false);
+                setTimeout(() => location.reload(), 1000);
+            });
+
+            // Single Approve
+            $('.btn-approve-single').click(function() {
+                toastr.success("Đã duyệt shipper thành công!");
+                setTimeout(() => location.reload(), 1000);
             });
 
             // Confirm Reject
@@ -285,7 +276,6 @@
         border: none;
     }
     .bg-success-subtle { background-color: #E8F5E9 !important; }
-    .bg-warning-subtle { background-color: #FFF3E0 !important; }
     .bg-secondary-subtle { background-color: #F5F5F5 !important; }
     .nav-link:hover:not(.active) {
         background-color: #eee;
