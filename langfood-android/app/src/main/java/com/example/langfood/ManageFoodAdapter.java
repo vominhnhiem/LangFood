@@ -46,21 +46,30 @@ public class ManageFoodAdapter extends RecyclerView.Adapter<ManageFoodAdapter.Vi
         holder.tvFoodPrice.setText(String.format(Locale.getDefault(), "%,.0fđ", product.getPrice()));
 
         // Cập nhật trạng thái dựa trên status từ backend
-        int status = product.getStatus();
-        if (status == 0) { // Pending (Chờ duyệt)
-            holder.tvFoodStatus.setText("Đang duyệt");
-            holder.tvFoodStatus.setTextColor(Color.parseColor("#FF9800")); // Màu cam
-        } else if (status == 1) { // Approved (Đã duyệt)
-            if (product.isAvailable()) {
+        String status = product.getStatus();
+        // Xử lý null, chuyển về chữ thường và loại bỏ khoảng trắng dư thừa (trim)
+        String normalizedStatus = (status != null) ? status.toLowerCase().trim() : "";
+
+        switch (normalizedStatus) {
+            case "approved":
+            case "1": // Hỗ trợ trường hợp Backend trả về số 1 cho Approved
                 holder.tvFoodStatus.setText("Đang bán");
-                holder.tvFoodStatus.setTextColor(context.getResources().getColor(android.R.color.holo_green_dark));
-            } else {
-                holder.tvFoodStatus.setText("Tạm hết");
-                holder.tvFoodStatus.setTextColor(context.getResources().getColor(android.R.color.holo_red_dark));
-            }
-        } else if (status == 2) { // Rejected (Bị từ chối)
-            holder.tvFoodStatus.setText("Bị từ chối");
-            holder.tvFoodStatus.setTextColor(Color.parseColor("#F44336")); // Màu đỏ
+                holder.tvFoodStatus.setTextColor(Color.parseColor("#4CAF50")); // Xanh lá
+                break;
+            case "pending":
+            case "0": // Hỗ trợ trường hợp Backend trả về số 0 cho Pending
+                holder.tvFoodStatus.setText("Chờ duyệt...");
+                holder.tvFoodStatus.setTextColor(Color.parseColor("#FF9800")); // Cam
+                break;
+            case "rejected":
+            case "2": // Hỗ trợ trường hợp Backend trả về số 2 cho Rejected
+                holder.tvFoodStatus.setText("Từ chối duyệt");
+                holder.tvFoodStatus.setTextColor(Color.parseColor("#F44336")); // Đỏ
+                break;
+            default:
+                holder.tvFoodStatus.setText("Không xác định (" + normalizedStatus + ")");
+                holder.tvFoodStatus.setTextColor(Color.parseColor("#9E9E9E")); // Xám
+                break;
         }
 
         // Load ảnh bằng Glide với BASE_URL

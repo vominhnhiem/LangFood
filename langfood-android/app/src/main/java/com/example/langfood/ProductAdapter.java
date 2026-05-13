@@ -79,6 +79,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
             intent.putExtra("PRODUCT_PRICE", product.getPrice());
             intent.putExtra("PRODUCT_DESC", product.getDescription());
             intent.putExtra("PRODUCT_IMAGE", product.getImageUrl());
+            intent.putExtra("SHOP_ID", product.getShopId()); // Thêm dòng này để truyền ShopId
             intent.putExtra("SELLER_ID", product.getSellerId());
             intent.putExtra("SELLER_NAME", product.getSellerName());
             v.getContext().startActivity(intent);

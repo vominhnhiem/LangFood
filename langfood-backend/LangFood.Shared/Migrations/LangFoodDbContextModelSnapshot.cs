@@ -398,9 +398,6 @@ namespace LangFoodBackend.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("AccountType")
-                        .HasColumnType("int");
-
                     b.Property<string>("AvatarUrl")
                         .HasColumnType("nvarchar(max)");
 

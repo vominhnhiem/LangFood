@@ -1,43 +1,232 @@
-@model IEnumerable<LangFood.Shared.DTOs.RoleRequestDTO>
-
+@model LangFood.Shared.ViewModels.ShopManagementViewModel
 @{
-    ViewData["Title"] = "Duyệt yêu cầu";
+    ViewData["Title"] = "Quản lý Cửa hàng";
 }
 
-<div class="container mt-4">
-    <h2 class="mb-4">Danh sách yêu cầu chờ duyệt</h2>
-
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success">@TempData["Success"]</div>
-    }
-
-    <table class="table table-bordered shadow-sm">
-        <thead class="table-dark">
-            <tr>
-                <th>Người gửi</th>
-                <th>Loại yêu cầu</th>
-                <th>Tên quán (nếu có)</th>
-                <th>Minh chứng</th>
-                <th>Thao tác</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
-                <tr>
-                    <td>@item.FullName</td>
-                    <td>@(item.RequestType == 1 ? "Seller" : "Shipper")</td>
-                    <td>@item.ShopName</td>
-                    <td>
-                        <a href="http://localhost:5222@item.ImageProof" target="_blank">Xem ảnh</a>
-                    </td>
-                    <td>
-                        <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-primary btn-sm">Duyệt</a>
-                        <button class="btn btn-danger btn-sm">Từ chối</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800 fw-bold">Quản lý Cửa hàng</h1>
 </div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success border-0 shadow-sm rounded-3 mb-4">
+        <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+    </div>
+}
+
+<!-- Tabs Control -->
+<ul class="nav nav-tabs border-bottom-0 mb-3" id="shopTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-bold px-4 py-2 position-relative" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab" style="border-radius: 10px 10px 0 0;">
+            Yêu cầu chờ duyệt
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7rem;">
+                @Model.PendingRequests.Count
+            </span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold px-4 py-2" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab" style="border-radius: 10px 10px 0 0;">
+            Cửa hàng hoạt động
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="shopTabsContent">
+    <!-- TAB 1: CHỜ DUYỆT -->
+    <div class="tab-pane fade show active" id="pending" role="tabpanel" aria-labelledby="pending-tab">
+        <div class="admin-card shadow-sm border-0" style="border-radius: 0 0 12px 12px;">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Người gửi</th>
+                            <th>Tên quán dự kiến</th>
+                            <th>Minh chứng</th>
+                            <th class="text-end pe-4">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.PendingRequests != null && Model.PendingRequests.Any())
+                        {
+                            foreach (var item in Model.PendingRequests)
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold text-dark">@item.User?.FullName</div>
+                                        <div class="small text-muted">@item.User?.PhoneNumber</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-primary">@item.ShopName</div>
+                                        <div class="small text-muted">@item.ShopAddress</div>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info text-white rounded-pill px-3 btn-view-proof" data-img="http://localhost:5289/@item.ImageProof">
+                                            <i class="fas fa-image me-1"></i> Xem ảnh
+                                        </button>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-sm btn-success rounded-circle p-2 shadow-sm" title="Phê duyệt">
+                                                <i class="fas fa-check"></i>
+                                            </a>
+                                            <button class="btn btn-sm btn-danger rounded-circle p-2 shadow-sm btn-reject-request" data-id="@item.Id" title="Từ chối">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted italic">Hiện không có yêu cầu mở quán nào chờ duyệt.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: CỬA HÀNG HOẠT ĐỘNG -->
+    <div class="tab-pane fade" id="active" role="tabpanel" aria-labelledby="active-tab">
+        <div class="admin-card shadow-sm border-0" style="border-radius: 0 0 12px 12px;">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">ID</th>
+                            <th>Tên quán</th>
+                            <th>Chủ sở hữu</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end pe-4">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.ActiveShops != null && Model.ActiveShops.Any())
+                        {
+                            foreach (var shop in Model.ActiveShops)
+                            {
+                                <tr>
+                                    <td class="ps-4 text-muted">#@shop.Id</td>
+                                    <td>
+                                        <div class="fw-bold text-dark">@shop.Name</div>
+                                        <div class="small text-muted">@shop.Address</div>
+                                    </td>
+                                    <td>
+                                        <div class="text-dark">@shop.User?.FullName</div>
+                                        <div class="small text-muted">@shop.User?.PhoneNumber</div>
+                                    </td>
+                                    <td>
+                                        @if (shop.IsActive)
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3">Đang mở</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3">Tạm nghỉ</span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <a asp-action="ToggleStatus" asp-route-id="@shop.Id" class="btn btn-sm @(shop.IsActive ? "btn-light text-danger" : "btn-danger text-white") rounded-circle p-2 shadow-sm" title="@(shop.IsActive ? "Khóa quán" : "Mở khóa quán")">
+                                            <i class="fas @(shop.IsActive ? "fa-lock" : "fa-lock-open")"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted italic">Chưa có cửa hàng nào được kích hoạt.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Xem ảnh minh chứng -->
+<div class="modal fade" id="proofModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-gray-800">Ảnh minh chứng cửa hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <img id="proofImg" src="" class="img-fluid rounded shadow-sm border" style="max-height: 70vh;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Từ chối -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header bg-danger text-white" style="border-radius: 16px 16px 0 0;">
+                <h5 class="modal-title fw-bold"><i class="fas fa-ban me-2"></i>Từ chối yêu cầu</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="Reject" method="post">
+                <input type="hidden" name="id" id="rejectRequestId" />
+                <div class="modal-body p-4">
+                    <p class="text-muted">Bạn có chắc chắn muốn từ chối yêu cầu mở quán này không? Hành động này không thể hoàn tác.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Lý do (không bắt buộc)</label>
+                        <textarea class="form-control border-0 bg-light" name="reason" rows="3" placeholder="Nhập lý do để chủ quán biết..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary px-4 fw-bold" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger px-4 fw-bold">Xác nhận từ chối</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Xem ảnh minh chứng
+            $('.btn-view-proof').click(function() {
+                var src = $(this).data('img');
+                $('#proofImg').attr('src', src);
+                new bootstrap.Modal('#proofModal').show();
+            });
+
+            // Mở modal từ chối
+            $('.btn-reject-request').click(function() {
+                var id = $(this).data('id');
+                $('#rejectRequestId').val(id);
+                new bootstrap.Modal('#rejectModal').show();
+            });
+        });
+    </script>
+}
+
+<style>
+    .nav-tabs .nav-link {
+        color: #6c757d;
+        border: none;
+        background: #f8f9fa;
+        margin-right: 5px;
+    }
+    .nav-tabs .nav-link.active {
+        color: #fff;
+        background-color: var(--accent-color) !important;
+        border: none;
+    }
+    .nav-link:hover:not(.active) {
+        background-color: #eee;
+    }
+    .btn-info {
+        background-color: #0dcaf0;
+        border-color: #0dcaf0;
+    }
+</style>

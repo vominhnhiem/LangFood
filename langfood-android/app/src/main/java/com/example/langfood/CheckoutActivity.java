@@ -131,7 +131,14 @@ public class CheckoutActivity extends AppCompatActivity {
         Order order = new Order();
         order.setBuyerId(userId);
         order.setBuyerName(fullName);
-        order.setShopId(cartGroup.shopId);
+        
+        // FIX: Lấy shopId an toàn. Nếu shopId của nhóm bị 0, lấy từ món ăn đầu tiên.
+        int finalShopId = cartGroup.shopId;
+        if (finalShopId == 0 && cartGroup.items != null && !cartGroup.items.isEmpty()) {
+            finalShopId = cartGroup.items.get(0).getProduct().getShopId();
+        }
+        order.setShopId(finalShopId);
+        
         order.setStatus("Pending");
 
         // FIX LỖI 500: Chỉ gửi BuildingId nếu > 0
@@ -157,6 +164,15 @@ public class CheckoutActivity extends AppCompatActivity {
             orderItems.add(orderItem);
         }
         order.setOrderItems(orderItems);
+
+        // DEBUG: Log Request Body ra Console để kiểm tra ShopId
+        String jsonRequest = new com.google.gson.Gson().toJson(order);
+        android.util.Log.d("DEBUG_CHECKOUT", "Request Body: " + jsonRequest);
+        
+        if (finalShopId <= 0) {
+            Toast.makeText(this, "Lỗi: Không tìm thấy ID cửa hàng!", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         btnPlaceOrder.setEnabled(false);
         btnPlaceOrder.setText("Đang xử lý...");

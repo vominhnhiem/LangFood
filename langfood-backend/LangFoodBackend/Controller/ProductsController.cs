@@ -38,6 +38,8 @@ namespace LangFoodBackend.Controller
                     p.ImageUrl,
                     p.IsAvailable,
                     p.Status,
+                    // Đảm bảo StatusText luôn có giá trị cho App
+                    StatusText = p.Status == 1 ? "Approved" : (p.Status == 0 ? "Pending" : "Rejected"),
                     p.ShopId,
                     p.CategoryId,
                     SellerName = (p.Shop != null && p.Shop.User != null) ? p.Shop.User.FullName : (p.Shop != null ? p.Shop.Name : "Quán ăn Lang Food")
@@ -74,17 +76,31 @@ namespace LangFoodBackend.Controller
 
         // 3. LẤY MÓN THEO SHOP ID (Dùng cho Quản lý món ăn của Seller)
         [HttpGet("shop/{shopId}")]
-        public async Task<ActionResult<IEnumerable<Product>>> GetProductsByShop(int shopId)
+        public async Task<ActionResult<IEnumerable<object>>> GetProductsByShop(int shopId)
         {
+            // Trả về tất cả các món để chủ quán theo dõi trạng thái duyệt
             return await _context.Products
                 .Where(p => p.ShopId == shopId)
                 .OrderByDescending(p => p.Id)
+                .Select(p => new {
+                    p.Id,
+                    p.Name,
+                    p.Price,
+                    p.Description,
+                    p.ImageUrl,
+                    p.IsAvailable,
+                    p.Status,
+                    p.ShopId,
+                    p.CategoryId,
+                    // Củng cố logic StatusText cho dữ liệu cũ
+                    StatusText = p.Status == 1 ? "Approved" : (p.Status == 0 ? "Pending" : "Rejected")
+                })
                 .ToListAsync();
         }
 
         // 3b. LẤY MÓN THEO SELLER ID (Dành cho bản Android cũ hoặc tìm nhanh)
         [HttpGet("seller/{sellerId}")]
-        public async Task<ActionResult<IEnumerable<Product>>> GetProductsBySeller(string sellerId)
+        public async Task<ActionResult<IEnumerable<object>>> GetProductsBySeller(string sellerId)
         {
             var shop = await _context.Shops.FirstOrDefaultAsync(s => s.UserId == sellerId);
             if (shop == null) return NotFound(new { message = "Không tìm thấy Shop!" });
@@ -92,6 +108,19 @@ namespace LangFoodBackend.Controller
             return await _context.Products
                 .Where(p => p.ShopId == shop.Id)
                 .OrderByDescending(p => p.Id)
+                .Select(p => new {
+                    p.Id,
+                    p.Name,
+                    p.Price,
+                    p.Description,
+                    p.ImageUrl,
+                    p.IsAvailable,
+                    p.Status,
+                    p.ShopId,
+                    p.CategoryId,
+                    // Củng cố logic StatusText cho dữ liệu cũ
+                    StatusText = p.Status == 1 ? "Approved" : (p.Status == 0 ? "Pending" : "Rejected")
+                })
                 .ToListAsync();
         }
 
@@ -145,13 +174,27 @@ namespace LangFoodBackend.Controller
 
         // 5. CẬP NHẬT MÓN ĂN
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutProduct(int id, Product product)
+        public async Task<IActionResult> PutProduct(int id, Product updatedProduct)
         {
-            if (id != product.Id) return BadRequest();
+            if (id != updatedProduct.Id) return BadRequest(new { message = "ID không khớp!" });
 
-            // Khi sửa món, đưa về trạng thái chờ duyệt (Status = 0)
-            product.Status = 0;
-            _context.Entry(product).State = EntityState.Modified;
+            var existingProduct = await _context.Products.FindAsync(id);
+            if (existingProduct == null) return NotFound(new { message = "Không tìm thấy món ăn!" });
+
+            // Cập nhật thông tin món ăn
+            existingProduct.Name = updatedProduct.Name;
+            existingProduct.Price = updatedProduct.Price;
+            existingProduct.Description = updatedProduct.Description;
+            existingProduct.CategoryId = updatedProduct.CategoryId;
+            
+            if (!string.IsNullOrEmpty(updatedProduct.ImageUrl))
+            {
+                existingProduct.ImageUrl = updatedProduct.ImageUrl;
+            }
+
+            // Reset trạng thái về Chờ duyệt (Status = 0) khi có bất kỳ thay đổi nào
+            existingProduct.Status = 0;
+            existingProduct.IsAvailable = true;
 
             try
             {
@@ -163,7 +206,7 @@ namespace LangFoodBackend.Controller
                 else throw;
             }
 
-            return Ok(new { message = "Cập nhật thành công!" });
+            return Ok(new { success = true, message = "Cập nhật thành công! Món ăn đã được gửi lại để Admin phê duyệt." });
         }
 
         // 6. XÓA MÓN ĂN

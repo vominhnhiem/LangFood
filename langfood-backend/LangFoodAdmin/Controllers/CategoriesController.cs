@@ -1,22 +1,26 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using LangFood.Shared.DTOs;
+using Microsoft.AspNetCore.Mvc;
+using LangFood.Shared.Models;
+using Microsoft.EntityFrameworkCore;
+using System.IO;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace LangFoodAdmin.Controllers
 {
     public class CategoriesController : Controller
     {
-        private readonly HttpClient _httpClient;
+        private readonly LangFoodDbContext _context;
 
-        public CategoriesController(IHttpClientFactory factory)
+        public CategoriesController(LangFoodDbContext context)
         {
-            _httpClient = factory.CreateClient("BackendApi");
+            _context = context;
         }
 
         // 1. Danh sách danh mục
         public async Task<IActionResult> Index()
         {
-            var list = await _httpClient.GetFromJsonAsync<List<CategoryDTO>>("api/Categories");
-            return View(list ?? new List<CategoryDTO>());
+            var list = await _context.Categories.Where(c => !c.IsDeleted).OrderBy(c => c.Name).ToListAsync();
+            return View(list);
         }
 
         [HttpGet]
@@ -24,47 +28,96 @@ namespace LangFoodAdmin.Controllers
         {
             return View();
         }
-        // 2. Giao diện thêm mới
-        [HttpPost]
-        public async Task<IActionResult> Create(string name, IFormFile imageFile)
-        {
-            using var content = new MultipartFormDataContent();
-            content.Add(new StringContent(name), "name");
 
+        [HttpPost]
+        public async Task<IActionResult> Create(Category category, IFormFile imageFile)
+        {
             if (imageFile != null)
             {
-                var fileStream = imageFile.OpenReadStream();
-                var fileContent = new StreamContent(fileStream);
-                fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(imageFile.ContentType);
-                content.Add(fileContent, "image", imageFile.FileName);
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
+                
+                // Lưu vào Backend để App và Admin cùng thấy (vì Admin đang link tới cổng Backend)
+                var backendPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "LangFoodBackend", "wwwroot", "images", "categories");
+                if (!Directory.Exists(backendPath)) Directory.CreateDirectory(backendPath);
+                
+                var filePath = Path.Combine(backendPath, fileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await imageFile.CopyToAsync(stream);
+                }
+                category.ImageUrl = "images/categories/" + fileName;
             }
 
-            // Gọi đến API upload mới tạo ở Bước 1
-            var response = await _httpClient.PostAsync("api/Categories/upload", content);
-
-            if (response.IsSuccessStatusCode) return RedirectToAction(nameof(Index));
-            return View();
+            _context.Categories.Add(category);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
         // 3. Giao diện chỉnh sửa
         public async Task<IActionResult> Edit(int id)
         {
-            var category = await _httpClient.GetFromJsonAsync<CategoryDTO>($"api/Categories/{id}");
+            var category = await _context.Categories.FindAsync(id);
+            if (category == null) return NotFound();
             return View(category);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Edit(CategoryDTO category)
+        public async Task<IActionResult> Edit(int id, Category category, IFormFile? imageFile)
         {
-            await _httpClient.PutAsJsonAsync($"api/Categories/{category.Id}", category);
-            return RedirectToAction(nameof(Index));
+            if (id != category.Id) return NotFound();
+
+            var existingCategory = await _context.Categories.FindAsync(id);
+            if (existingCategory == null) return NotFound();
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    existingCategory.Name = category.Name;
+
+                    if (imageFile != null)
+                    {
+                        // Lưu ảnh mới vào Backend
+                        var fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
+                        var backendPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "LangFoodBackend", "wwwroot", "images", "categories");
+                        if (!Directory.Exists(backendPath)) Directory.CreateDirectory(backendPath);
+                        
+                        var filePath = Path.Combine(backendPath, fileName);
+                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await imageFile.CopyToAsync(stream);
+                        }
+                        existingCategory.ImageUrl = "images/categories/" + fileName;
+                    }
+
+                    await _context.SaveChangesAsync();
+                    TempData["Success"] = "Cập nhật danh mục thành công!";
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!CategoryExists(category.Id)) return NotFound();
+                    else throw;
+                }
+            }
+            return View(category);
         }
 
         // 4. Xóa
         public async Task<IActionResult> Delete(int id)
         {
-            await _httpClient.DeleteAsync($"api/Categories/{id}");
+            var category = await _context.Categories.FindAsync(id);
+            if (category != null)
+            {
+                category.IsDeleted = true;
+                await _context.SaveChangesAsync();
+            }
             return RedirectToAction(nameof(Index));
+        }
+
+        private bool CategoryExists(int id)
+        {
+            return _context.Categories.Any(e => e.Id == id);
         }
     }
 }

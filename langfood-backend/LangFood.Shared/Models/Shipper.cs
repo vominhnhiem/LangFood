@@ -15,7 +15,12 @@ namespace LangFood.Shared.Models
 
         public bool IsOnline { get; set; } = false;
 
+
         public bool IsApproved { get; set; } = false;
+
+        // Expose wallet balance for views that reference shipper.WalletBalance
+        [NotMapped]
+        public decimal WalletBalance => User?.Wallet?.Balance ?? 0m;
 
         [JsonIgnore]
         [ForeignKey("UserId")]

@@ -69,6 +69,7 @@ public class FoodDetailActivity extends AppCompatActivity {
         double price = getIntent().getDoubleExtra("PRODUCT_PRICE", 0);
         String desc = getIntent().getStringExtra("PRODUCT_DESC");
         String imagePath = getIntent().getStringExtra("PRODUCT_IMAGE");
+        int shopId = getIntent().getIntExtra("SHOP_ID", 0);
         String sellerId = getIntent().getStringExtra("SELLER_ID");
         String sellerName = getIntent().getStringExtra("SELLER_NAME");
 
@@ -78,6 +79,7 @@ public class FoodDetailActivity extends AppCompatActivity {
         currentProduct.setPrice(price);
         currentProduct.setDescription(desc);
         currentProduct.setImageUrl(imagePath);
+        currentProduct.setShopId(shopId);
         currentProduct.setSellerId(sellerId);
         currentProduct.setSellerName(sellerName);
 
@@ -98,7 +100,7 @@ public class FoodDetailActivity extends AppCompatActivity {
             loadSellerInfo(sellerId);
         }
 
-        String imageUrl = BASE_URL + imagePath;
+        String imageUrl = ApiClient.BASE_URL + imagePath;
         Glide.with(this)
                 .load(imageUrl)
                 .placeholder(R.drawable.lang_food_avt)
@@ -117,7 +119,7 @@ public class FoodDetailActivity extends AppCompatActivity {
                     
                     String avatarUrl = user.getAvatarUrl();
                     if (avatarUrl != null && !avatarUrl.isEmpty()) {
-                        String fullAvatarUrl = avatarUrl.startsWith("http") ? avatarUrl : BASE_URL + avatarUrl;
+                        String fullAvatarUrl = avatarUrl.startsWith("http") ? avatarUrl : ApiClient.BASE_URL + avatarUrl;
                         Glide.with(FoodDetailActivity.this)
                                 .load(fullAvatarUrl)
                                 .placeholder(R.drawable.anhavt)

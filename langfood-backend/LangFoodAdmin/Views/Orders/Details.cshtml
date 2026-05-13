@@ -1,0 +1,182 @@
+@model LangFood.Shared.Models.Order
+@{
+    ViewData["Title"] = "Chi tiết đơn hàng #" + Model.Id;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800 fw-bold">Chi tiết đơn hàng #@Model.Id</h1>
+    <div>
+        <a asp-action="Index" class="btn btn-light border px-4 fw-bold text-secondary shadow-sm">
+            <i class="fas fa-arrow-left me-2"></i>Quay lại danh sách
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Cột trái: Thông tin chung & Món ăn -->
+    <div class="col-lg-8">
+        <!-- Trạng thái & Tổng quan -->
+        <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
+            <div class="card-body p-4">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="text-uppercase small fw-bold text-muted mb-1">Trạng thái</div>
+                        <h4 class="fw-bold">
+                            @if (Model.Status == "COMPLETED")
+                            {
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-4">Đã hoàn thành</span>
+                            }
+                            else if (Model.Status == "SHIPPING")
+                            {
+                                <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-4">Đang giao</span>
+                            }
+                            else if (Model.Status == "PENDING_PAYMENT")
+                            {
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-4">Chờ thanh toán</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-4">@Model.Status</span>
+                            }
+                        </h4>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <div class="text-uppercase small fw-bold text-muted mb-1">Thời gian đặt</div>
+                        <div class="fs-5 fw-bold">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danh sách món ăn -->
+        <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
+            <div class="card-header bg-white border-0 py-3 px-4">
+                <h5 class="fw-bold mb-0 text-dark">Danh sách món ăn</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Sản phẩm</th>
+                            <th class="text-center">Số lượng</th>
+                            <th class="text-end">Đơn giá</th>
+                            <th class="text-end pe-4">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.OrderItems)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold">@item.Product?.Name</div>
+                                    <div class="small text-muted">ID: #@item.ProductId</div>
+                                </td>
+                                <td class="text-center">@item.Quantity</td>
+                                <td class="text-end">@item.UnitPrice.ToString("N0")đ</td>
+                                <td class="text-end pe-4 fw-bold">@((item.UnitPrice * item.Quantity).ToString("N0"))đ</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <td colspan="3" class="text-end ps-4 py-3">Tạm tính:</td>
+                            <td class="text-end pe-4 fw-bold">@((Model.TotalAmount - Model.ShippingFee).ToString("N0"))đ</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="text-end ps-4 py-3">Phí giao hàng:</td>
+                            <td class="text-end pe-4 fw-bold">@Model.ShippingFee.ToString("N0")đ</td>
+                        </tr>
+                        <tr class="fs-5">
+                            <td colspan="3" class="text-end ps-4 py-3 fw-bold text-primary text-uppercase">Tổng cộng:</td>
+                            <td class="text-end pe-4 fw-bold text-primary">@Model.TotalAmount.ToString("N0")đ</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cột phải: Thông tin khách hàng & Cửa hàng -->
+    <div class="col-lg-4">
+        <!-- Thông tin khách hàng -->
+        <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
+            <div class="card-header bg-white border-0 py-3 px-4">
+                <h5 class="fw-bold mb-0 text-dark">Khách hàng</h5>
+            </div>
+            <div class="card-body px-4 pb-4 pt-0">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 45px; height: 45px;">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">@Model.BuyerName</div>
+                        <div class="small text-muted">Mã KH: @Model.BuyerId</div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="small text-muted text-uppercase fw-bold mb-1">Địa chỉ giao hàng</div>
+                    <div class="fw-bold"><i class="fas fa-building me-2 text-muted"></i>@Model.DeliveryBuilding</div>
+                    <div class="fw-bold"><i class="fas fa-door-open me-2 text-muted"></i>Phòng: @Model.DeliveryRoom</div>
+                </div>
+                <div>
+                    <div class="small text-muted text-uppercase fw-bold mb-1">Phương thức thanh toán</div>
+                    <div class="fw-bold">
+                        <i class="fas @(Model.PaymentMethod == 1 ? "fa-wallet text-success" : "fa-money-bill-wave text-info") me-2"></i>
+                        @(Model.PaymentMethod == 1 ? "Ví / Chuyển khoản" : "Tiền mặt")
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thông tin Cửa hàng -->
+        <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
+            <div class="card-header bg-white border-0 py-3 px-4">
+                <h5 class="fw-bold mb-0 text-dark">Cửa hàng</h5>
+            </div>
+            <div class="card-body px-4 pb-4 pt-0">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-circle bg-warning text-white d-flex align-items-center justify-content-center me-3" style="width: 45px; height: 45px;">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">@Model.Shop?.Name</div>
+                        <div class="small text-muted">Mã Shop: #@Model.ShopId</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="small text-muted text-uppercase fw-bold mb-1">Địa chỉ quán</div>
+                    <div class="small fw-bold text-dark">@Model.Shop?.Address</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hành động Admin -->
+        @if (Model.Status != "COMPLETED")
+        {
+            <div class="card shadow-sm border-0" style="border-radius: 12px; background: #fffcf5; border: 1px dashed #ffeeba !important;">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-warning mb-3"><i class="fas fa-tools me-2"></i>Thao tác Admin</h6>
+                    <form asp-action="CompleteOrder" method="post">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button type="submit" class="btn btn-warning w-100 fw-bold py-2 shadow-sm text-white" style="background-color: #F24E1E; border:none;">
+                            <i class="fas fa-check-circle me-2"></i>Xác nhận Hoàn thành
+                        </button>
+                    </form>
+                    <p class="small text-muted mt-2 mb-0 italic text-center">
+                        * Thao tác này sẽ tự động cộng tiền cho Shop và Shipper.
+                    </p>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .bg-success-subtle { background-color: #e6f4ea; }
+    .bg-info-subtle { background-color: #e7f3ff; }
+    .bg-warning-subtle { background-color: #fff8e1; }
+    .bg-secondary-subtle { background-color: #f8f9fa; }
+    .text-success { color: #1e7e34 !important; }
+    .text-info { color: #004085 !important; }
+    .text-warning { color: #856404 !important; }
+</style>

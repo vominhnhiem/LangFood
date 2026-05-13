@@ -1,28 +1,87 @@
-﻿@model LangFood.Shared.DTOs.CategoryDTO
+@model LangFood.Shared.Models.Category
+@{
+    ViewData["Title"] = "Thêm danh mục mới";
+}
 
-<div class="container mt-4">
-    <h2>Thêm danh mục mới</h2>
-    <hr />
-    <div class="row">
-        <div class="col-md-4">
-            <!-- QUAN TRỌNG: Phải có enctype để gửi file -->
+<div class="container py-5">
+    <div class="card shadow-sm border-0 mx-auto" style="border-radius: 16px; max-width: 800px;">
+        <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+            <h3 class="fw-bold text-dark mb-0">
+                <i class="fas fa-plus-circle me-2 text-success"></i>Thêm danh mục mới
+            </h3>
+            <p class="text-muted small mt-1">Khởi tạo một nhóm món ăn mới cho hệ thống Làng Food.</p>
+        </div>
+        
+        <div class="card-body p-4">
             <form asp-action="Create" method="post" enctype="multipart/form-data">
-                <div class="form-group mb-3">
-                    <label class="control-label">Tên danh mục</label>
-                    <input name="name" class="form-control" required />
-                </div>
-                
-                <div class="form-group mb-3">
-                    <label class="control-label">Chọn ảnh từ máy tính</label>
-                    <!-- Đổi thành input type="file" -->
-                    <input type="file" name="imageFile" class="form-control" accept="image/*" />
-                </div>
+                <div class="row g-4">
+                    <!-- Preview Ảnh -->
+                    <div class="col-md-4 text-center border-end d-flex flex-column align-items-center justify-content-center">
+                        <label class="fw-bold small text-muted text-uppercase mb-3 d-block">Xem trước ảnh</label>
+                        <div class="position-relative">
+                            <img id="previewImg" src="http://localhost:5289/images/categories/default.png" 
+                                 class="shadow-sm border rounded-3 mb-3" 
+                                 style="width: 180px; height: 180px; object-fit: cover;">
+                            <div class="badge bg-dark position-absolute bottom-0 start-50 translate-middle-x mb-4 shadow">Preview</div>
+                        </div>
+                    </div>
 
-                <div class="form-group">
-                    <button type="submit" class="btn btn-primary">Lưu lại</button>
-                    <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+                    <!-- Form nhập liệu -->
+                    <div class="col-md-8 px-md-4">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark"><i class="fas fa-tag me-1 text-muted"></i> Tên danh mục</label>
+                            <input asp-for="Name" class="form-control form-control-lg border-0 bg-light" placeholder="Nhập tên danh mục..." required />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark"><i class="fas fa-image me-1 text-muted"></i> Tải lên hình ảnh</label>
+                            <div class="input-group">
+                                <input type="file" name="imageFile" id="imageFile" class="form-control border-0 bg-light" accept="image/*" required>
+                            </div>
+                            <div class="form-text mt-2 small text-muted">
+                                <i class="fas fa-info-circle me-1"></i> Định dạng hỗ trợ: JPG, PNG, WebP. Ảnh sẽ được hiển thị trên App.
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 pt-3">
+                            <button type="submit" class="btn btn-lg text-white px-4 fw-bold shadow-sm" style="background-color: #F24E1E;">
+                                <i class="fas fa-save me-2"></i>Lưu danh mục
+                            </button>
+                            <a asp-action="Index" class="btn btn-lg btn-light border px-4 fw-bold text-secondary shadow-sm">
+                                <i class="fas fa-arrow-left me-2"></i>Quay lại
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        // Hiển thị preview ảnh ngay khi chọn file
+        document.getElementById('imageFile').onchange = function (evt) {
+            var tgt = evt.target || window.event.srcElement,
+                files = tgt.files;
+
+            if (FileReader && files && files.length) {
+                var fr = new FileReader();
+                fr.onload = function () {
+                    document.getElementById('previewImg').src = fr.result;
+                }
+                fr.readAsDataURL(files[0]);
+            }
+        }
+    </script>
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+
+<style>
+    .form-control:focus {
+        background-color: #fff !important;
+        box-shadow: 0 0 0 0.25rem rgba(242, 78, 30, 0.15);
+        border: 1px solid #F24E1E !important;
+    }
+</style>

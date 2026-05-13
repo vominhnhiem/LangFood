@@ -25,6 +25,16 @@ namespace LangFoodBackend.Controller
         {
             if (order == null) return BadRequest(new { message = "Dữ liệu trống!" });
 
+            // KIỂM TRA SỰ TỒN TẠI CỦA CỬA HÀNG (Tránh lỗi Foreign Key)
+            var shopExists = await _context.Shops.AnyAsync(s => s.Id == order.ShopId);
+            if (!shopExists)
+            {
+                return BadRequest(new { 
+                    success = false, 
+                    message = "Cửa hàng không tồn tại hoặc đã ngừng hoạt động!" 
+                });
+            }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -59,10 +69,24 @@ namespace LangFoodBackend.Controller
 
                 return Ok(order);
             }
+            catch (DbUpdateException ex)
+            {
+                await transaction.RollbackAsync();
+                var innerError = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                return BadRequest(new { 
+                    success = false, 
+                    message = "Lỗi lưu Database (Database Error)", 
+                    details = innerError 
+                });
+            }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                return StatusCode(500, new { message = "Lỗi đặt hàng: " + ex.Message });
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Lỗi hệ thống (System Error)", 
+                    details = ex.Message 
+                });
             }
         }
 

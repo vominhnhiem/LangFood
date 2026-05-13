@@ -22,7 +22,7 @@ public class Product implements Serializable {
     @SerializedName(value = "isAvailable", alternate = {"IsAvailable"})
     private boolean isAvailable;
 
-    @SerializedName(value = "shopId", alternate = {"ShopId"})
+    @SerializedName(value = "shopId", alternate = {"ShopId", "ShopID", "shop_id", "Shop_Id", "Shop"})
     private int shopId;
 
     @SerializedName(value = "shopName", alternate = {"ShopName", "SellerName"})
@@ -38,7 +38,7 @@ public class Product implements Serializable {
     private String categoryName;
 
     @SerializedName(value = "status", alternate = {"Status"})
-    private int status;
+    private String status;
 
     public Product() {}
 
@@ -78,6 +78,6 @@ public class Product implements Serializable {
     public String getCategoryName() { return categoryName; }
     public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
 
-    public int getStatus() { return status; }
-    public void setStatus(int status) { this.status = status; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }

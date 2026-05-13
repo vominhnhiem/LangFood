@@ -26,6 +26,9 @@ public class Order implements Serializable {
     @SerializedName(value = "status", alternate = {"Status"})
     private String status;
 
+    @SerializedName(value = "shopName", alternate = {"ShopName"})
+    private String shopName;
+
     @SerializedName(value = "totalAmount", alternate = {"TotalAmount"})
     private double totalAmount;
 
@@ -72,6 +75,9 @@ public class Order implements Serializable {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getShopName() { return shopName; }
+    public void setShopName(String shopName) { this.shopName = shopName; }
 
     public double getTotalAmount() { return totalAmount; }
     public void setTotalAmount(double totalAmount) { this.totalAmount = totalAmount; }

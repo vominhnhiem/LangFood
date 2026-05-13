@@ -72,5 +72,52 @@ namespace LangFoodAdmin.Controllers
             }
             return RedirectToAction(nameof(Index));
         }
+
+        // API lấy chi tiết món ăn (AJAX)
+        [HttpGet]
+        public async Task<IActionResult> GetDetails(int id)
+        {
+            var product = await _context.Products
+                .Include(p => p.Shop)
+                .Include(p => p.Category)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (product == null) 
+                return Json(new { success = false, message = "Không tìm thấy món ăn" });
+
+            return Json(new
+            {
+                success = true,
+                data = new
+                {
+                    id = product.Id,
+                    name = product.Name,
+                    price = product.Price,
+                    description = product.Description ?? "Không có mô tả cho món ăn này.",
+                    imageUrl = product.ImageUrl,
+                    shopName = product.Shop?.Name ?? "N/A",
+                    categoryName = product.Category?.Name ?? "N/A"
+                }
+            });
+        }
+
+        // Action Khóa/Mở khóa món ăn (AJAX)
+        [HttpPost]
+        public async Task<IActionResult> ToggleStatus(int id)
+        {
+            var product = await _context.Products.FindAsync(id);
+            if (product == null) 
+                return Json(new { success = false, message = "Không tìm thấy món ăn" });
+
+            // Đảo ngược trạng thái hiển thị
+            product.IsAvailable = !product.IsAvailable;
+            await _context.SaveChangesAsync();
+
+            return Json(new { 
+                success = true, 
+                message = product.IsAvailable ? "Đã mở khóa món ăn!" : "Đã ẩn món ăn thành công!", 
+                isAvailable = product.IsAvailable 
+            });
+        }
     }
 }

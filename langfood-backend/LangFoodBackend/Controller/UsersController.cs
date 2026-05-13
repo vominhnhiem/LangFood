@@ -129,10 +129,13 @@ namespace LangFoodBackend.Controller
                 UpdatedAt = DateTime.Now
             };
 
-            if (user.AccountType == 1) // Ngoại khu
+            // --- PHÂN LOẠI ĐĂNG KÝ VÀ PHÂN QUYỀN (BẢO MẬT) ---
+            // Nếu có ShopName -> Đăng ký làm chủ quán (Merchant/Seller)
+            if (!string.IsNullOrEmpty(user.ShopName)) 
             {
                 user.IsApproved = false;
-                user.RoleId = 1;
+                user.RoleId = 2; // Gán RoleId = 2 cho Chủ quán (Merchant)
+                
                 _context.Users.Add(user);
                 _context.Wallets.Add(wallet); // Lưu ví
 
@@ -148,9 +151,11 @@ namespace LangFoodBackend.Controller
                 await _context.SaveChangesAsync();
                 return Ok(user);
             }
-            else // Sinh viên
+            else // Sinh viên (Student)
             {
                 user.IsApproved = true;
+                user.RoleId = 1; // BẮT BUỘC gán RoleId = 1 cho Sinh viên, tránh mặc định là 0 (Admin)
+                
                 _context.Users.Add(user);
                 _context.Wallets.Add(wallet); // Lưu ví
                 await _context.SaveChangesAsync();

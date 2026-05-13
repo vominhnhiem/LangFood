@@ -26,7 +26,6 @@ namespace LangFood.Shared.Models
         public string? AvatarUrl { get; set; }
 
         public bool IsApproved { get; set; } = false;
-        public int AccountType { get; set; } = 0; // 0: Student, 1: Merchant
 
         [StringLength(20)]
         public string? CccdNumber { get; set; }
