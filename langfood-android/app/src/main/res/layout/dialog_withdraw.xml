@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Số tiền muốn rút"
+        android:textColor="#333333"
+        android:textSize="14sp" />
+
+    <EditText
+        android:id="@+id/etAmount"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="Ví dụ: 100000"
+        android:inputType="number"
+        android:padding="12dp"
+        android:background="@android:drawable/editbox_background" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Thông tin nhận tiền (Ngân hàng, STK...)"
+        android:textColor="#333333"
+        android:textSize="14sp" />
+
+    <EditText
+        android:id="@+id/etNote"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="VD: Vietcombank - 123456789"
+        android:inputType="text"
+        android:padding="12dp"
+        android:background="@android:drawable/editbox_background" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="* Yêu cầu rút tiền sẽ được gửi tới Admin để phê duyệt."
+        android:textColor="#D32F2F"
+        android:textSize="12sp"
+        android:fontStyle="italic" />
+
+</LinearLayout>

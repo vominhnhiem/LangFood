@@ -12,37 +12,38 @@ namespace LangFood.Shared.Models
         public DbSet<Product> Products { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
-        // ĐÃ XÓA UserReports ở đây
         public DbSet<CartItem> CartItems { get; set; }
         public DbSet<RoleRequest> RoleRequests { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Shop> Shops { get; set; }
         public DbSet<Shipper> Shippers { get; set; }
         public DbSet<Building> Buildings { get; set; }
-
+        public DbSet<Wallet> Wallets { get; set; }
+        public DbSet<Transaction> Transactions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
+            // 1. Cấu hình kiểu dữ liệu decimal (Tránh sai số tiền tệ)
+            modelBuilder.Entity<Wallet>().Property(w => w.Balance).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Transaction>().Property(t => t.Amount).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Product>().Property(p => p.Price).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Order>().Property(o => o.TotalAmount).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Order>().Property(o => o.ShippingFee).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<OrderItem>().Property(oi => oi.UnitPrice).HasColumnType("decimal(18,2)");
+
+            // 2. Query Filters (Xử lý xóa mềm)
             modelBuilder.Entity<Category>().HasQueryFilter(c => !c.IsDeleted);
             modelBuilder.Entity<Product>().HasQueryFilter(p => !p.IsDeleted);
 
-            base.OnModelCreating(modelBuilder);
-
-            // 1. Chặn xóa dây chuyền
+            // 3. Chặn xóa dây chuyền mặc định (No Action)
             foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
             {
                 relationship.DeleteBehavior = DeleteBehavior.NoAction;
             }
 
-            // 2. Cấu hình decimal
-            modelBuilder.Entity<Product>().Property(p => p.Price).HasColumnType("decimal(18,2)");
-            modelBuilder.Entity<Order>().Property(o => o.TotalAmount).HasColumnType("decimal(18,2)");
-            modelBuilder.Entity<Order>().Property(o => o.ShippingFee).HasColumnType("decimal(18,2)");
-            modelBuilder.Entity<OrderItem>().Property(oi => oi.UnitPrice).HasColumnType("decimal(18,2)");
-            modelBuilder.Entity<Shipper>().Property(s => s.WalletBalance).HasColumnType("decimal(18,2)");
-            modelBuilder.Entity<Shop>().Property(s => s.WalletBalance).HasColumnType("decimal(18,2)");
-
-            // 3. Cấu hình quan hệ Order
+            // 4. Cấu hình quan hệ Order
             modelBuilder.Entity<Order>()
                 .HasOne(o => o.Buyer)
                 .WithMany(u => u.Orders)
@@ -61,13 +62,7 @@ namespace LangFood.Shared.Models
                 .HasForeignKey(o => o.ShipperId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Order>()
-                .HasOne(o => o.Building)
-                .WithMany()
-                .HasForeignKey(o => o.BuildingId)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            // 4. Cấu hình quan hệ 1-1
+            // 5. Cấu hình quan hệ 1-1 (Shop, Shipper)
             modelBuilder.Entity<Shop>()
                 .HasOne(s => s.User)
                 .WithOne(u => u.Shop)
@@ -79,6 +74,28 @@ namespace LangFood.Shared.Models
                 .WithOne(u => u.Shipper)
                 .HasForeignKey<Shipper>(s => s.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // 6. CẤU HÌNH VÍ (WALLET) - Quan hệ 1-1 với User
+            modelBuilder.Entity<Wallet>()
+                .HasOne(w => w.User)
+                .WithOne(u => u.Wallet)
+                .HasForeignKey<Wallet>(w => w.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // 7. Cấu hình quan hệ Wallet -> Transaction
+            modelBuilder.Entity<Transaction>()
+                .HasOne<Wallet>()
+                .WithMany()
+                .HasForeignKey(t => t.WalletId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // 8. Cấu hình quan hệ Transaction -> Order (Để đối soát)
+            modelBuilder.Entity<Transaction>()
+                .HasOne<Order>()
+                .WithMany()
+                .HasForeignKey(t => t.OrderId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 }

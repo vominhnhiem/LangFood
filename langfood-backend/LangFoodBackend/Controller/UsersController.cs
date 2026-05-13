@@ -93,6 +93,7 @@ namespace LangFoodBackend.Controller
         public async Task<ActionResult<User>> Login([FromBody] User loginRequest)
         {
             var user = await _context.Users
+                .Include(u => u.Wallet) // THÊM: Lấy luôn thông tin ví khi đăng nhập
                 .FirstOrDefaultAsync(u => u.Username == loginRequest.Username && u.PasswordHash == loginRequest.PasswordHash);
 
             if (user == null)
@@ -120,11 +121,20 @@ namespace LangFoodBackend.Controller
             user.Id = Guid.NewGuid().ToString();
             _cache.Remove(user.Email + "_verified");
 
+            // --- TỰ ĐỘNG TẠO VÍ CHO USER MỚI ---
+            var wallet = new Wallet
+            {
+                UserId = user.Id,
+                Balance = 0,
+                UpdatedAt = DateTime.Now
+            };
+
             if (user.AccountType == 1) // Ngoại khu
             {
                 user.IsApproved = false;
                 user.RoleId = 1;
                 _context.Users.Add(user);
+                _context.Wallets.Add(wallet); // Lưu ví
 
                 var roleRequest = new RoleRequest
                 {
@@ -142,6 +152,7 @@ namespace LangFoodBackend.Controller
             {
                 user.IsApproved = true;
                 _context.Users.Add(user);
+                _context.Wallets.Add(wallet); // Lưu ví
                 await _context.SaveChangesAsync();
                 return Ok(user);
             }
@@ -198,7 +209,10 @@ namespace LangFoodBackend.Controller
         [HttpGet("{id}")]
         public async Task<ActionResult<User>> GetUserById(string id)
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _context.Users
+                .Include(u => u.Wallet) // Lấy kèm ví
+                .FirstOrDefaultAsync(u => u.Id == id);
+
             if (user == null) return NotFound();
             return Ok(user);
         }
@@ -213,7 +227,6 @@ namespace LangFoodBackend.Controller
             user.FullName = updatedUser.FullName;
             user.PhoneNumber = updatedUser.PhoneNumber;
 
-            // SỬA LỖI TẠI ĐÂY: Thay KtxBuilding bằng BuildingId
             user.BuildingId = updatedUser.BuildingId;
             user.KtxRoom = updatedUser.KtxRoom;
 

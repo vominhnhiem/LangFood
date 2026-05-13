@@ -8,7 +8,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Nhập thông tin nhận hàng tại KTX"
+        android:text="Thông tin nhận hàng KTX"
         android:textColor="#212121"
         android:textSize="16sp"
         android:textStyle="bold"
@@ -17,14 +17,14 @@
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Tòa (Ví dụ: A1, B2)"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        android:hint="Chọn tòa nhà"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/editBuilding"
+        <AutoCompleteTextView
+            android:id="@+id/spinnerBuilding"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textCapCharacters" />
+            android:inputType="none" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
@@ -38,7 +38,7 @@
             android:id="@+id/editRoom"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="number" />
+            android:inputType="textCapCharacters" />
     </com.google.android.material.textfield.TextInputLayout>
 
 </LinearLayout>

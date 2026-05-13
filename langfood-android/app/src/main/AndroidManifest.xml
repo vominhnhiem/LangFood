@@ -76,6 +76,12 @@
         <activity
             android:name=".OnboardingActivity"
             android:exported="false" />
+        <activity
+            android:name=".WalletActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ShopRevenueActivity"
+            android:exported="false" />
 
         <activity
             android:name=".LoginActivity"

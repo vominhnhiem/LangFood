@@ -65,7 +65,7 @@
                 app:cardCornerRadius="16dp"
                 app:cardElevation="8dp"
                 app:strokeWidth="0dp"
-                android:layout_marginBottom="24dp">
+                android:layout_marginBottom="16dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -130,6 +130,60 @@
                             android:textColor="#333333"
                             android:textSize="16sp" />
                     </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Wallet Card (Chỉ hiện cho Shop/Shipper) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardWallet"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="8dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="24dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="20dp"
+                    android:gravity="center_vertical">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="SỐ DƯ VÍ LÀNG FOOD"
+                            android:textSize="11sp"
+                            android:textColor="#757575"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.05"/>
+                        <TextView
+                            android:id="@+id/tvWalletBalance"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0đ"
+                            android:textSize="22sp"
+                            android:textColor="#333333"
+                            android:textStyle="bold"
+                            android:layout_marginTop="4dp"/>
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnWalletDetail"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Quản lý >"
+                        android:textColor="#FF5722"
+                        android:textStyle="bold"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

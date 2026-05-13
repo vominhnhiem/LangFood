@@ -55,6 +55,10 @@ public class User {
     @SerializedName(value = "cccdNumber", alternate = {"CccdNumber"})
     private String cccdNumber;
 
+    // --- THÊM TRƯỜNG VÍ ---
+    @SerializedName(value = "wallet", alternate = {"Wallet"})
+    private Wallet wallet;
+
     public User() {}
 
     public String getId() { return id; }
@@ -107,4 +111,7 @@ public class User {
 
     public String getCccdNumber() { return cccdNumber; }
     public void setCccdNumber(String cccdNumber) { this.cccdNumber = cccdNumber; }
+
+    public Wallet getWallet() { return wallet; }
+    public void setWallet(Wallet wallet) { this.wallet = wallet; }
 }

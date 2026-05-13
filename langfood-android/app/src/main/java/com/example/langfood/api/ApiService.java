@@ -4,11 +4,14 @@ import com.example.langfood.models.Building;
 import com.example.langfood.models.CartItem;
 import com.example.langfood.models.Category;
 import com.example.langfood.models.Product;
+import com.example.langfood.models.Transaction;
 import com.example.langfood.models.User;
 import com.example.langfood.models.Order;
 import com.example.langfood.models.Shop;
 import com.example.langfood.models.Shipper;
 import com.example.langfood.models.UsernameCheckResponse;
+import com.example.langfood.models.Wallet;
+import com.example.langfood.models.ShopStats;
 
 import java.util.List;
 
@@ -81,6 +84,22 @@ public interface ApiService {
     @GET("api/Users/check-phone")
     Call<UsernameCheckResponse> checkPhone(@Query("phone") String phone);
 
+    // --- WALLET API ---
+    @GET("api/Wallet/user/{userId}")
+    Call<Wallet> getWallet(@Path("userId") String userId);
+
+    @PUT("api/Wallet/update-qr/{userId}")
+    Call<Void> updateQrCode(@Path("userId") String userId, @Body String qrUrl);
+
+    @GET("api/Wallet/transactions/{userId}")
+    Call<List<Transaction>> getTransactions(@Path("userId") String userId);
+
+    @POST("api/Wallet/deposit")
+    Call<ResponseBody> deposit(@Query("userId") String userId, @Query("amount") double amount);
+
+    @POST("api/Wallet/withdraw")
+    Call<ResponseBody> withdraw(@Query("userId") String userId, @Query("amount") double amount, @Query("note") String note);
+
     // --- SHOP & SHIPPER INFO ---
     @GET("api/Shops/user/{userId}")
     Call<Shop> getShopByUserId(@Path("userId") String userId);
@@ -112,6 +131,9 @@ public interface ApiService {
 
     @PUT("api/Orders/complete/{id}")
     Call<Void> completeOrder(@Path("id") int id);
+
+    @GET("api/Orders/shop-stats/{shopId}")
+    Call<ShopStats> getShopStats(@Path("shopId") int shopId);
 
     // --- CART API ---
     @GET("api/Cart/{userId}")

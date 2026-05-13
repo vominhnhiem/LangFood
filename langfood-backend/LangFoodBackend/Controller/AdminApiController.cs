@@ -125,7 +125,6 @@ namespace LangFoodBackend.Controller
                         UserId = user.Id,
                         IsApproved = true,
                         IsOnline = false,
-                        WalletBalance = 0
                     };
                     _context.Shippers.Add(newShipper);
                 }
@@ -133,6 +132,49 @@ namespace LangFoodBackend.Controller
 
             await _context.SaveChangesAsync();
             return Ok(new { message = "Đã duyệt nâng cấp quyền thành công!" });
+        }
+        // ==========================================
+        // 3. PHẦN DUYỆT NẠP TIỀN (WALLETS)
+        // ==========================================
+
+        [HttpGet("pending-deposits")]
+        public async Task<IActionResult> GetPendingDeposits()
+        {
+            var deposits = await _context.Transactions
+                .Where(t => t.Type == "DEPOSIT" && t.Status == 0) // Lấy các giao dịch nạp đang chờ
+                .Join(_context.Wallets, t => t.WalletId, w => w.Id, (t, w) => new { t, w })
+                .Join(_context.Users, joined => joined.w.UserId, u => u.Id, (joined, u) => new
+                {
+                    Id = joined.t.Id,
+                    FullName = u.FullName,
+                    UserId = u.Id,
+                    Amount = joined.t.Amount,
+                    Description = joined.t.Description,
+                    CreatedAt = joined.t.CreatedAt
+                })
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync();
+
+            return Ok(deposits);
+        }
+
+        [HttpPost("approve-deposit/{id}")]
+        public async Task<IActionResult> ApproveDeposit(int id)
+        {
+            var transaction = await _context.Transactions.FindAsync(id);
+            if (transaction == null || transaction.Status != 0)
+                return NotFound(new { message = "Giao dịch không tồn tại hoặc đã được xử lý." });
+
+            var wallet = await _context.Wallets.FindAsync(transaction.WalletId);
+            if (wallet == null) return NotFound(new { message = "Không tìm thấy ví." });
+
+            // Cập nhật logic: cộng tiền và đổi trạng thái
+            transaction.Status = 1; // Thành công
+            wallet.Balance += transaction.Amount;
+            wallet.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Đã duyệt và cộng tiền thành công!" });
         }
     }
 }

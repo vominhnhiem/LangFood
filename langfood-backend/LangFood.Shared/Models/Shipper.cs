@@ -12,7 +12,6 @@ namespace LangFood.Shared.Models
 
         public string UserId { get; set; } = string.Empty;
 
-        public decimal WalletBalance { get; set; } = 0;
 
         public bool IsOnline { get; set; } = false;
 

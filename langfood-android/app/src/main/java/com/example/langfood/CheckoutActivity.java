@@ -4,6 +4,8 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -15,8 +17,10 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.bumptech.glide.Glide;
 import com.example.langfood.api.ApiClient;
 import com.example.langfood.api.ApiService;
+import com.example.langfood.models.Building;
 import com.example.langfood.models.CartItem;
 import com.example.langfood.models.Order;
 import com.example.langfood.models.OrderItem;
@@ -26,6 +30,7 @@ import java.util.Locale;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import org.json.JSONObject;
 
 public class CheckoutActivity extends AppCompatActivity {
 
@@ -38,8 +43,11 @@ public class CheckoutActivity extends AppCompatActivity {
     private CheckoutAdapter adapter;
     private CartAdapter.CartGroup cartGroup;
     private String selectedPaymentMethod = "Tiền mặt";
-    private String selectedBuilding = "";
+
+    private int selectedBuildingId = 0;
+    private String selectedBuildingName = "";
     private String selectedRoom = "";
+
     private ApiService apiService;
     private String userId;
     private String fullName;
@@ -53,7 +61,10 @@ public class CheckoutActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
         userId = prefs.getString("USER_ID", "");
         fullName = prefs.getString("FULL_NAME", "Người dùng");
-        selectedBuilding = prefs.getString("BUILDING", "");
+
+        // Load lại thông tin cũ
+        selectedBuildingId = prefs.getInt("BUILDING_ID", 0);
+        selectedBuildingName = prefs.getString("BUILDING_NAME", "");
         selectedRoom = prefs.getString("ROOM", "");
 
         cartGroup = (CartAdapter.CartGroup) getIntent().getSerializableExtra("CART_GROUP");
@@ -63,7 +74,6 @@ public class CheckoutActivity extends AppCompatActivity {
 
         btnClose.setOnClickListener(v -> finish());
         btnPlaceOrder.setOnClickListener(v -> placeOrder());
-
         layoutSelectPayment.setOnClickListener(v -> showPaymentSelectionDialog());
         layoutEditAddress.setOnClickListener(v -> showEditAddressDialog());
     }
@@ -83,27 +93,16 @@ public class CheckoutActivity extends AppCompatActivity {
     private void setupData() {
         if (cartGroup != null) {
             tvStoreName.setText(cartGroup.shopName);
-            
-            List<CartItem> items = cartGroup.items;
-            adapter = new CheckoutAdapter(items);
+            adapter = new CheckoutAdapter(cartGroup.items);
             rvOrderItems.setLayoutManager(new LinearLayoutManager(this));
             rvOrderItems.setAdapter(adapter);
 
             double total = calculateTotal();
             tvTotalAmount.setText(String.format(Locale.getDefault(), "%,.0fđ", total));
-            
-            btnPlaceOrder.setEnabled(true);
-            btnPlaceOrder.setBackgroundTintList(getResources().getColorStateList(R.color.teal_700));
-            btnPlaceOrder.setTextColor(getResources().getColor(android.R.color.white));
-        }
-        
-        TextView tvUserName = findViewById(R.id.tvUserName);
-        if (tvUserName != null) {
-            tvUserName.setText(fullName);
         }
 
-        if (!selectedBuilding.isEmpty() && !selectedRoom.isEmpty()) {
-            tvDormitoryDetails.setText("Tòa " + selectedBuilding + " - Phòng " + selectedRoom);
+        if (!selectedBuildingName.isEmpty() && !selectedRoom.isEmpty()) {
+            tvDormitoryDetails.setText("Tòa " + selectedBuildingName + " - Phòng " + selectedRoom);
         }
     }
 
@@ -118,9 +117,14 @@ public class CheckoutActivity extends AppCompatActivity {
     }
 
     private void placeOrder() {
-        if (selectedBuilding.isEmpty() || selectedRoom.isEmpty()) {
-            Toast.makeText(this, "Vui lòng cập nhật tòa và phòng!", Toast.LENGTH_SHORT).show();
+        if (selectedBuildingName.isEmpty() || selectedRoom.isEmpty()) {
+            Toast.makeText(this, "Vui lòng cập nhật địa chỉ!", Toast.LENGTH_SHORT).show();
             showEditAddressDialog();
+            return;
+        }
+
+        if (userId.isEmpty()) {
+            Toast.makeText(this, "Lỗi: Bạn chưa đăng nhập!", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -129,12 +133,20 @@ public class CheckoutActivity extends AppCompatActivity {
         order.setBuyerName(fullName);
         order.setShopId(cartGroup.shopId);
         order.setStatus("Pending");
-        order.setDeliveryBuilding(selectedBuilding);
+
+        // FIX LỖI 500: Chỉ gửi BuildingId nếu > 0
+        if (selectedBuildingId > 0) {
+            order.setBuildingId(selectedBuildingId);
+        }
+        order.setDeliveryBuilding(selectedBuildingName);
         order.setDeliveryRoom(selectedRoom);
-        
+
+        // 0: Tiền mặt, 1: Chuyển khoản (Ví)
+        order.setPaymentMethod(selectedPaymentMethod.contains("Chuyển khoản") ? 1 : 0);
+
         double total = calculateTotal();
         order.setTotalAmount(total);
-        order.setShippingFee(15000); // Phí ship cố định
+        order.setShippingFee(15000);
 
         List<OrderItem> orderItems = new ArrayList<>();
         for (CartItem cartItem : cartGroup.items) {
@@ -153,18 +165,30 @@ public class CheckoutActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<Order> call, Response<Order> response) {
                 if (response.isSuccessful()) {
-                    Toast.makeText(CheckoutActivity.this, "Đặt hàng thành công!", Toast.LENGTH_LONG).show();
-                    
-                    // Xóa các món đã đặt khỏi giỏ hàng
+                    Order createdOrder = response.body();
+                    // Xóa giỏ hàng sau khi đặt thành công
                     for (CartItem item : cartGroup.items) {
                         CartManager.getInstance().removeItem(item.getProduct().getId());
                     }
-                    
-                    finish();
+
+                    if (order.getPaymentMethod() == 1) {
+                        showOrderQrDialog(createdOrder);
+                    } else {
+                        Toast.makeText(CheckoutActivity.this, "Đặt hàng thành công!", Toast.LENGTH_LONG).show();
+                        finish();
+                    }
                 } else {
                     btnPlaceOrder.setEnabled(true);
                     btnPlaceOrder.setText("Đặt đơn");
-                    Toast.makeText(CheckoutActivity.this, "Lỗi đặt hàng: " + response.code(), Toast.LENGTH_SHORT).show();
+                    try {
+                        // Đọc thông báo lỗi từ Backend để debug
+                        String errorBody = response.errorBody().string();
+                        JSONObject jsonObject = new JSONObject(errorBody);
+                        String message = jsonObject.optString("message", "Lỗi không xác định");
+                        Toast.makeText(CheckoutActivity.this, "Lỗi Server: " + message, Toast.LENGTH_LONG).show();
+                    } catch (Exception e) {
+                        Toast.makeText(CheckoutActivity.this, "Lỗi hệ thống: " + response.code(), Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
 
@@ -177,9 +201,33 @@ public class CheckoutActivity extends AppCompatActivity {
         });
     }
 
+    private void showOrderQrDialog(Order order) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Thanh toán đơn hàng #" + order.getId());
+        builder.setCancelable(false);
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_deposit, null);
+        EditText etAmount = view.findViewById(R.id.etAmount);
+        ImageView ivQrCode = view.findViewById(R.id.ivQrCode);
+        LinearLayout llSteps = view.findViewById(R.id.llSteps);
+
+        double totalAmount = order.getTotalAmount() + order.getShippingFee();
+        etAmount.setText(String.format(Locale.getDefault(), "%,.0f", totalAmount));
+        etAmount.setEnabled(false);
+        llSteps.setVisibility(View.VISIBLE);
+
+        String qrUrl = "https://img.vietqr.io/image/MB-0372076779-compact.jpg?amount=" + (int)totalAmount
+                + "&addInfo=THANHTOAN_DH_" + order.getId()
+                + "&accountName=VO%20MINH%20NHIEM";
+
+        Glide.with(this).load(qrUrl).into(ivQrCode);
+        builder.setView(view);
+        builder.setPositiveButton("Tôi đã chuyển khoản", (dialog, which) -> finish());
+        builder.setNegativeButton("Thanh toán sau", (dialog, which) -> finish());
+        builder.show();
+    }
+
     private void showPaymentSelectionDialog() {
         String[] methods = {"Tiền mặt", "Chuyển khoản (Zalopay/Ngân hàng)"};
-        
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Chọn phương thức thanh toán");
         builder.setItems(methods, (dialog, which) -> {
@@ -191,35 +239,46 @@ public class CheckoutActivity extends AppCompatActivity {
 
     private void showEditAddressDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Thông tin phòng");
-
+        builder.setTitle("Thông tin địa chỉ");
         View viewInflated = LayoutInflater.from(this).inflate(R.layout.dialog_edit_address, null);
-        final EditText inputBuilding = viewInflated.findViewById(R.id.editBuilding);
+        final AutoCompleteTextView inputBuilding = viewInflated.findViewById(R.id.spinnerBuilding);
         final EditText inputRoom = viewInflated.findViewById(R.id.editRoom);
-        
-        inputBuilding.setText(selectedBuilding);
+
+        inputBuilding.setText(selectedBuildingName);
         inputRoom.setText(selectedRoom);
 
-        builder.setView(viewInflated);
+        apiService.getBuildings().enqueue(new Callback<List<Building>>() {
+            @Override
+            public void onResponse(Call<List<Building>> call, Response<List<Building>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Building> buildings = response.body();
+                    ArrayAdapter<Building> adapter = new ArrayAdapter<>(CheckoutActivity.this,
+                            android.R.layout.simple_dropdown_item_1line, buildings);
+                    inputBuilding.setAdapter(adapter);
 
+                    inputBuilding.setOnItemClickListener((parent, view, position, id) -> {
+                        Building selected = (Building) parent.getItemAtPosition(position);
+                        selectedBuildingId = selected.getId();
+                        selectedBuildingName = selected.getName();
+                    });
+                }
+            }
+            @Override public void onFailure(Call<List<Building>> call, Throwable t) {}
+        });
+
+        builder.setView(viewInflated);
         builder.setPositiveButton("Lưu", (dialog, which) -> {
-            selectedBuilding = inputBuilding.getText().toString().trim();
             selectedRoom = inputRoom.getText().toString().trim();
-            
-            if (!selectedBuilding.isEmpty() && !selectedRoom.isEmpty()) {
-                tvDormitoryDetails.setText("Tòa " + selectedBuilding + " - Phòng " + selectedRoom);
-                
-                // Lưu vào preferences luôn để lần sau không phải nhập lại
+            if (!selectedBuildingName.isEmpty() && !selectedRoom.isEmpty()) {
+                tvDormitoryDetails.setText("Tòa " + selectedBuildingName + " - Phòng " + selectedRoom);
                 SharedPreferences.Editor editor = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE).edit();
-                editor.putString("BUILDING", selectedBuilding);
+                editor.putInt("BUILDING_ID", selectedBuildingId);
+                editor.putString("BUILDING_NAME", selectedBuildingName);
                 editor.putString("ROOM", selectedRoom);
                 editor.apply();
-            } else {
-                tvDormitoryDetails.setText("Chưa cập nhật tòa và phòng");
             }
         });
-        builder.setNegativeButton("Hủy", (dialog, which) -> dialog.cancel());
-
+        builder.setNegativeButton("Hủy", null);
         builder.show();
     }
 }
