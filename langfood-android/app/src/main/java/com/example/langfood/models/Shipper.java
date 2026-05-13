@@ -13,9 +13,6 @@ public class Shipper implements Serializable {
     @SerializedName(value = "activeBuildingId", alternate = {"ActiveBuildingId"})
     private Integer activeBuildingId;
 
-    @SerializedName(value = "walletBalance", alternate = {"WalletBalance"})
-    private double walletBalance;
-
     @SerializedName(value = "isOnline", alternate = {"IsOnline"})
     private boolean isOnline;
 
@@ -32,9 +29,6 @@ public class Shipper implements Serializable {
 
     public Integer getActiveBuildingId() { return activeBuildingId; }
     public void setActiveBuildingId(Integer activeBuildingId) { this.activeBuildingId = activeBuildingId; }
-
-    public double getWalletBalance() { return walletBalance; }
-    public void setWalletBalance(double walletBalance) { this.walletBalance = walletBalance; }
 
     public boolean isOnline() { return isOnline; }
     public void setOnline(boolean online) { isOnline = online; }

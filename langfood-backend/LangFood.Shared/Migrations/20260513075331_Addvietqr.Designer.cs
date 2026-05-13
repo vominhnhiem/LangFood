@@ -4,6 +4,7 @@ using LangFood.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LangFoodBackend.Migrations
 {
     [DbContext(typeof(LangFoodDbContext))]
-    partial class LangFoodDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260513075331_Addvietqr")]
+    partial class Addvietqr
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -293,6 +296,9 @@ namespace LangFoodBackend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<decimal>("WalletBalance")
+                        .HasColumnType("decimal(18,2)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("UserId")
@@ -335,6 +341,9 @@ namespace LangFoodBackend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<decimal>("WalletBalance")
+                        .HasColumnType("decimal(18,2)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("UserId")
@@ -364,9 +373,6 @@ namespace LangFoodBackend.Migrations
                     b.Property<int?>("OrderId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("OrderId1")
-                        .HasColumnType("int");
-
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -377,18 +383,11 @@ namespace LangFoodBackend.Migrations
                     b.Property<int>("WalletId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("WalletId1")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("OrderId");
 
-                    b.HasIndex("OrderId1");
-
                     b.HasIndex("WalletId");
-
-                    b.HasIndex("WalletId1");
 
                     b.ToTable("Transactions");
                 });
@@ -614,23 +613,11 @@ namespace LangFoodBackend.Migrations
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("LangFood.Shared.Models.Order", "Order")
-                        .WithMany("Transactions")
-                        .HasForeignKey("OrderId1");
-
                     b.HasOne("LangFood.Shared.Models.Wallet", null)
                         .WithMany()
                         .HasForeignKey("WalletId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
-
-                    b.HasOne("LangFood.Shared.Models.Wallet", "Wallet")
-                        .WithMany()
-                        .HasForeignKey("WalletId1");
-
-                    b.Navigation("Order");
-
-                    b.Navigation("Wallet");
                 });
 
             modelBuilder.Entity("LangFood.Shared.Models.User", b =>
@@ -662,8 +649,6 @@ namespace LangFoodBackend.Migrations
             modelBuilder.Entity("LangFood.Shared.Models.Order", b =>
                 {
                     b.Navigation("OrderItems");
-
-                    b.Navigation("Transactions");
                 });
 
             modelBuilder.Entity("LangFood.Shared.Models.Shipper", b =>

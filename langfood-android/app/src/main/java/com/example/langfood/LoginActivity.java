@@ -85,7 +85,7 @@ public class LoginActivity extends AppCompatActivity {
         if (tvAppTitle != null) {
             tvAppTitle.setOnLongClickListener(v -> {
                 etUsername.setText("sell");
-                etPassword.setText("123");
+                etPassword.setText("nhiem2512005");
                 btnLogin.performClick(); 
                 return true;
             });
@@ -108,7 +108,6 @@ public class LoginActivity extends AppCompatActivity {
                     }
                     saveUserToLocal(userResponse);
                     
-                    // Fetch additional info based on role
                     if (userResponse.getRoleId() == 2) { // Seller
                         fetchShopInfo(userResponse.getId());
                     } else if (userResponse.getRoleId() == 3) { // Shipper
@@ -117,15 +116,12 @@ public class LoginActivity extends AppCompatActivity {
                         onLoginSuccess();
                     }
                 } else {
-                    String errorMsg = "Sai tài khoản hoặc mật khẩu!";
-                    Log.e("LOGIN_ERROR", "Code: " + response.code());
-                    Toast.makeText(LoginActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(LoginActivity.this, "Sai tài khoản hoặc mật khẩu!", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Call<User> call, Throwable t) {
-                Log.e("LOGIN_FAILURE", t.getMessage());
                 Toast.makeText(LoginActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
@@ -181,6 +177,14 @@ public class LoginActivity extends AppCompatActivity {
         editor.putString("FULL_NAME", user.getFullName());
         editor.putString("PHONE", user.getPhoneNumber());
         editor.putInt("ROLE_ID", user.getRoleId());
+        
+        // LƯU SỐ DƯ VÍ VÀO PREFS ĐỂ DÙNG NHANH
+        if (user.getWallet() != null) {
+            editor.putFloat("WALLET_BALANCE", (float) user.getWallet().getBalance());
+        } else {
+            editor.putFloat("WALLET_BALANCE", 0.0f);
+        }
+
         editor.apply();
     }
 }

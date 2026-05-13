@@ -1,0 +1,49 @@
+﻿@model IEnumerable<LangFoodAdmin.Controllers.DepositViewModel>
+
+@{
+    ViewData["Title"] = "Duyệt Nạp Tiền";
+}
+
+<div class="container-fluid">
+    <h1 class="mt-4">Yêu Cầu Nạp Tiền Đang Chờ</h1>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <table class="table table-bordered table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Ngày gửi</th>
+                        <th>Người nạp</th>
+                        <th>Số tiền</th>
+                        <th>Nội dung (Mã NAPTIEN)</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td><strong>@item.UserFullName</strong></td>
+                            <td class="text-success">@item.Amount.ToString("N0") đ</td>
+                            <td><span class="badge bg-info text-dark">@item.Description</span></td>
+                            <td>
+                                <form asp-action="Approve" asp-route-id="@item.TransactionId" method="post" onsubmit="return confirm('Bạn đã chắc chắn nhận được tiền từ ngân hàng?')">
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-check"></i> Duyệt ngay
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center">Không có yêu cầu nào đang chờ xử lý.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

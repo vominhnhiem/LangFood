@@ -10,14 +10,15 @@
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
         android:orientation="vertical"
-        android:padding="30dp">
+        android:padding="24dp">
 
         <androidx.cardview.widget.CardView
             android:layout_width="100dp"
             android:layout_height="100dp"
             android:layout_marginTop="20dp"
             app:cardCornerRadius="20dp"
-            app:cardElevation="0dp">
+            app:cardElevation="4dp">
+
             <ImageView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -28,90 +29,114 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="16dp"
             android:text="Tham gia Làng Food"
-            android:textColor="#FF5722"
-            android:textSize="24sp"
+            android:textColor="#F24E1E"
+            android:textSize="26sp"
             android:textStyle="bold" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="24dp"
             android:orientation="vertical">
 
-            <!-- Lựa chọn Vai trò (Sinh viên KTX / Người bán ngoại khu) -->
             <com.google.android.material.button.MaterialButtonToggleGroup
                 android:id="@+id/toggleRole"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:singleSelection="true"
-                app:checkedButton="@id/btnRoleStudent">
+                android:layout_marginBottom="20dp"
+                app:checkedButton="@id/btnRoleStudent"
+                app:selectionRequired="true"
+                app:singleSelection="true">
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnRoleStudent"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     android:layout_width="0dp"
                     android:layout_height="55dp"
                     android:layout_weight="1"
                     android:text="Sinh viên KTX"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    app:strokeColor="#F24E1E"
-                    android:textColor="#F24E1E"/>
+                    android:textColor="#F24E1E"
+                    app:strokeColor="#F24E1E" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnRoleMerchant"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     android:layout_width="0dp"
                     android:layout_height="55dp"
                     android:layout_weight="1"
-                    android:text="Người bán ngoại khu"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    app:strokeColor="#F24E1E"
-                    android:textColor="#F24E1E"/>
+                    android:text="Người bán"
+                    android:textColor="#F24E1E"
+                    app:strokeColor="#F24E1E" />
             </com.google.android.material.button.MaterialButtonToggleGroup>
 
-            <EditText
-                android:id="@+id/etFullName"
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
-                android:layout_height="55dp"
-                android:background="@android:drawable/editbox_background"
+                android:layout_height="wrap_content"
                 android:hint="Họ và tên"
-                android:paddingLeft="15dp"
-                android:textSize="15sp"
-                android:inputType="textPersonName" />
+                app:boxStrokeColor="#F24E1E"
+                app:hintTextColor="#F24E1E"
+                app:startIconDrawable="@android:drawable/ic_menu_myplaces">
 
-            <EditText
-                android:id="@+id/etUsername"
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etFullName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPersonName" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
-                android:layout_height="55dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:background="@android:drawable/editbox_background"
                 android:hint="Tên đăng nhập"
-                android:paddingLeft="15dp"
-                android:textSize="15sp"
-                android:inputType="text" />
+                app:boxStrokeColor="#F24E1E"
+                app:hintTextColor="#F24E1E"
+                app:startIconDrawable="@android:drawable/ic_menu_edit">
 
-            <EditText
-                android:id="@+id/etEmail"
-                android:layout_width="match_parent"
-                android:layout_height="55dp"
-                android:layout_marginTop="12dp"
-                android:background="@android:drawable/editbox_background"
-                android:hint="Email (vnu.edu.vn)"
-                android:paddingLeft="15dp"
-                android:textSize="15sp"
-                android:inputType="textEmailAddress" />
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etUsername"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-            <EditText
-                android:id="@+id/etPhone"
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
-                android:layout_height="55dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:background="@android:drawable/editbox_background"
+                android:hint="Email"
+                app:boxStrokeColor="#F24E1E"
+                app:hintTextColor="#F24E1E"
+                app:startIconDrawable="@android:drawable/ic_dialog_email">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textEmailAddress" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
                 android:hint="Số điện thoại"
-                android:paddingLeft="15dp"
-                android:textSize="15sp"
-                android:inputType="phone" />
+                app:boxStrokeColor="#F24E1E"
+                app:hintTextColor="#F24E1E"
+                app:startIconDrawable="@android:drawable/ic_menu_call">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etPhone"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="phone" />
+            </com.google.android.material.textfield.TextInputLayout>
 
             <LinearLayout
                 android:id="@+id/llKtxInfo"
@@ -120,34 +145,44 @@
                 android:layout_marginTop="12dp"
                 android:orientation="horizontal">
 
-                <EditText
-                    android:id="@+id/etKtxBuilding"
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                     android:layout_width="0dp"
-                    android:layout_height="55dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1.5"
-                    android:background="@android:drawable/editbox_background"
-                    android:hint="Tòa"
-                    android:paddingLeft="15dp"
-                    android:textSize="15sp"
-                    android:inputType="text" />
+                    android:hint="Tòa nhà"
+                    app:boxStrokeColor="#F24E1E"
+                    app:hintTextColor="#F24E1E">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/spinnerBuilding"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none"
+                        android:singleLine="true" />
+                </com.google.android.material.textfield.TextInputLayout>
 
                 <View
-                    android:layout_width="10dp"
+                    android:layout_width="12dp"
                     android:layout_height="match_parent" />
 
-                <EditText
-                    android:id="@+id/etKtxRoom"
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="0dp"
-                    android:layout_height="55dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@android:drawable/editbox_background"
                     android:hint="Phòng"
-                    android:paddingLeft="15dp"
-                    android:textSize="15sp"
-                    android:inputType="text" />
+                    app:boxStrokeColor="#F24E1E"
+                    app:hintTextColor="#F24E1E">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etKtxRoom"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text" />
+                </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
 
-            <!-- THÔNG TIN CHO NGƯỜI BÁN NGOẠI KHU (MẶC ĐỊNH ẨN) -->
             <LinearLayout
                 android:id="@+id/llMerchantInfo"
                 android:layout_width="match_parent"
@@ -156,86 +191,147 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
-                <EditText
-                    android:id="@+id/etShopName"
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
-                    android:layout_height="55dp"
-                    android:background="@android:drawable/editbox_background"
+                    android:layout_height="wrap_content"
                     android:hint="Tên quán ăn"
-                    android:paddingLeft="15dp"
-                    android:textSize="15sp"
-                    android:inputType="text" />
+                    app:boxStrokeColor="#F24E1E"
+                    app:hintTextColor="#F24E1E">
 
-                <EditText
-                    android:id="@+id/etShopAddress"
-                    android:layout_width="match_parent"
-                    android:layout_height="55dp"
-                    android:layout_marginTop="12dp"
-                    android:background="@android:drawable/editbox_background"
-                    android:hint="Địa chỉ quán ăn"
-                    android:paddingLeft="15dp"
-                    android:textSize="15sp"
-                    android:inputType="textPostalAddress" />
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etShopName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text" />
+                </com.google.android.material.textfield.TextInputLayout>
 
-                <EditText
-                    android:id="@+id/etCccd"
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="55dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:background="@android:drawable/editbox_background"
-                    android:hint="Số CCCD / CMND"
-                    android:paddingLeft="15dp"
-                    android:textSize="15sp"
-                    android:inputType="number" />
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1.6"
+                        android:hint="Số nhà, tên đường"
+                        app:boxStrokeColor="#F24E1E"
+                        app:hintTextColor="#F24E1E">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etShopStreet"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textPostalAddress" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <View
+                        android:layout_width="12dp"
+                        android:layout_height="match_parent" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="Khu"
+                        app:boxStrokeColor="#F24E1E"
+                        app:hintTextColor="#F24E1E">
+
+                        <AutoCompleteTextView
+                            android:id="@+id/spinnerArea"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none"
+                            android:singleLine="true" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:hint="Số CCCD"
+                    app:boxStrokeColor="#F24E1E"
+                    app:hintTextColor="#F24E1E">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etCccd"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="number" />
+                </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
 
-            <EditText
-                android:id="@+id/etPassword"
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
-                android:layout_height="55dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:background="@android:drawable/editbox_background"
                 android:hint="Mật khẩu"
-                android:inputType="textPassword"
-                android:paddingLeft="15dp"
-                android:textSize="15sp" />
+                app:boxStrokeColor="#F24E1E"
+                app:hintTextColor="#F24E1E"
+                app:passwordToggleEnabled="true"
+                app:startIconDrawable="@android:drawable/ic_lock_idle_lock">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etPassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPassword" />
+            </com.google.android.material.textfield.TextInputLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="5dp"
-                android:layout_marginTop="2dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="4dp"
                 android:text="* Mật khẩu phải có ít nhất 8 ký tự"
                 android:textColor="#757575"
                 android:textSize="12sp" />
 
-            <EditText
-                android:id="@+id/etConfirmPassword"
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
-                android:layout_height="55dp"
-                android:layout_marginTop="10dp"
-                android:background="@android:drawable/editbox_background"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:hint="Xác nhận mật khẩu"
-                android:inputType="textPassword"
-                android:paddingLeft="15dp"
-                android:textSize="15sp" />
+                app:boxStrokeColor="#F24E1E"
+                app:hintTextColor="#F24E1E"
+                app:passwordToggleEnabled="true"
+                app:startIconDrawable="@android:drawable/ic_lock_lock">
 
-            <Button
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etConfirmPassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPassword" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRegister"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
-                android:layout_marginTop="25dp"
-                android:backgroundTint="#FF5722"
+                android:layout_marginTop="32dp"
                 android:text="ĐĂNG KÝ NGAY"
                 android:textColor="@color/white"
-                android:textStyle="bold" />
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:backgroundTint="#F24E1E"
+                app:cornerRadius="12dp" />
 
             <TextView
                 android:id="@+id/tvLoginLink"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="24dp"
+                android:padding="8dp"
                 android:text="Đã có tài khoản? Đăng nhập"
                 android:textColor="#757575" />
 

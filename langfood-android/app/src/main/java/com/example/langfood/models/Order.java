@@ -20,6 +20,9 @@ public class Order implements Serializable {
     @SerializedName(value = "shipperId", alternate = {"ShipperId"})
     private Integer shipperId;
 
+    @SerializedName(value = "buildingId", alternate = {"BuildingId"})
+    private Integer buildingId;
+
     @SerializedName(value = "status", alternate = {"Status"})
     private String status;
 
@@ -41,6 +44,9 @@ public class Order implements Serializable {
     @SerializedName(value = "deliveredAt", alternate = {"DeliveredAt"})
     private String deliveredAt;
 
+    @SerializedName(value = "paymentMethod", alternate = {"PaymentMethod"})
+    private int paymentMethod; // 0: Cash, 1: Wallet, 2: QR Transfer
+
     @SerializedName(value = "orderItems", alternate = {"Items", "items", "OrderItems"})
     private List<OrderItem> orderItems;
 
@@ -60,6 +66,9 @@ public class Order implements Serializable {
 
     public Integer getShipperId() { return shipperId; }
     public void setShipperId(Integer shipperId) { this.shipperId = shipperId; }
+
+    public Integer getBuildingId() { return buildingId; }
+    public void setBuildingId(Integer buildingId) { this.buildingId = buildingId; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
@@ -81,6 +90,9 @@ public class Order implements Serializable {
 
     public String getDeliveredAt() { return deliveredAt; }
     public void setDeliveredAt(String deliveredAt) { this.deliveredAt = deliveredAt; }
+
+    public int getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(int paymentMethod) { this.paymentMethod = paymentMethod; }
 
     public List<OrderItem> getOrderItems() { return orderItems; }
     public void setOrderItems(List<OrderItem> orderItems) { this.orderItems = orderItems; }

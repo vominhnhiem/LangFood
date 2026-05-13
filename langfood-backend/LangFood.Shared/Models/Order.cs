@@ -12,8 +12,6 @@ namespace LangFood.Shared.Models
         public string? BuyerName { get; set; }
         public int ShopId { get; set; }
         public int? BuildingId { get; set; }
-
-        // CHỈ DÙNG 1 SHIPPER DUY NHẤT
         public int? ShipperId { get; set; }
 
         public string Status { get; set; } = "Pending";
@@ -22,9 +20,13 @@ namespace LangFood.Shared.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? DeliveredAt { get; set; }
 
-        // THÔNG TIN GIAO HÀNG CHI TIẾT
         public string? DeliveryBuilding { get; set; }
         public string? DeliveryRoom { get; set; }
+
+        // 0: Cash (Tiền mặt), 1: Wallet (Ví/QR)
+        public int PaymentMethod { get; set; }
+
+        // --- Navigation Properties ---
 
         [JsonIgnore]
         [ForeignKey("BuyerId")]
@@ -42,6 +44,11 @@ namespace LangFood.Shared.Models
         [ForeignKey("BuildingId")]
         public virtual Building? Building { get; set; }
 
+        // Danh sách món ăn trong đơn
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+
+        // Danh sách lịch sử tiền tệ liên quan đến đơn này
+        [JsonIgnore]
+        public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
     }
 }

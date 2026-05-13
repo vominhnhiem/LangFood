@@ -10,12 +10,17 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.bumptech.glide.Glide;
 import com.example.langfood.api.ApiClient;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 import de.hdodenhof.circleimageview.CircleImageView;
+import java.util.Locale;
 
 public class ProfileActivity extends AppCompatActivity {
 
-    private TextView tvUserName, tvUserRole, tvPhone, tvEmail;
+    private TextView tvUserName, tvUserRole, tvPhone, tvEmail, tvWalletBalance;
     private TextView btnEditProfile, btnChangePassword, btnAddFood, btnManageFood, btnRegisterPartner, btnLogout, btnShipperManage, btnManageOrder;
+    private MaterialButton btnWalletDetail;
+    private MaterialCardView cardWallet;
     private View dividerAddFood, dividerManageFood, dividerShipperManage, dividerManageOrder;
     private CircleImageView ivAvatar;
 
@@ -40,6 +45,10 @@ public class ProfileActivity extends AppCompatActivity {
         tvPhone = findViewById(R.id.tvPhone);
         tvEmail = findViewById(R.id.tvEmail);
         ivAvatar = findViewById(R.id.ivAvatar);
+        
+        cardWallet = findViewById(R.id.cardWallet);
+        tvWalletBalance = findViewById(R.id.tvWalletBalance);
+        btnWalletDetail = findViewById(R.id.btnWalletDetail);
 
         btnEditProfile = findViewById(R.id.btnEditProfile);
         btnChangePassword = findViewById(R.id.btnChangePassword);
@@ -62,7 +71,7 @@ public class ProfileActivity extends AppCompatActivity {
         String username = prefs.getString("USERNAME", "");
         String phone = prefs.getString("PHONE", "Chưa có SĐT");
         String avatarUrl = prefs.getString("AVATAR_URL", "");
-        int roleId = prefs.getInt("ROLE_ID", 1); // 1: Buyer, 2: Seller, 3: Shipper, 0: Admin (giả định)
+        int roleId = prefs.getInt("ROLE_ID", 1); // 1: Buyer, 2: Seller, 3: Shipper
 
         tvUserName.setText(fullName);
         tvPhone.setText("SĐT: " + phone);
@@ -78,7 +87,16 @@ public class ProfileActivity extends AppCompatActivity {
                     .into(ivAvatar);
         }
 
-        // Kiểm tra quyền hiển thị
+        // Hiển thị Wallet Card cho Shop và Shipper
+        if (roleId == 2 || roleId == 3) {
+            cardWallet.setVisibility(View.VISIBLE);
+            float balance = prefs.getFloat("WALLET_BALANCE", 0.0f);
+            tvWalletBalance.setText(String.format(Locale.getDefault(), "%,.0fđ", (double) balance));
+        } else {
+            cardWallet.setVisibility(View.GONE);
+        }
+
+        // Kiểm tra quyền hiển thị các nút chức năng
         if (roleId == 2) { // Seller
             tvUserRole.setText("Sinh viên - Seller");
             btnManageFood.setVisibility(View.VISIBLE);
@@ -102,19 +120,23 @@ public class ProfileActivity extends AppCompatActivity {
             btnShipperManage.setVisibility(View.GONE);
             btnManageOrder.setVisibility(View.GONE);
             
-            // Nếu User chưa được duyệt, check pending
             boolean isPending = prefs.getBoolean("IS_PENDING", false);
             if (isPending && btnRegisterPartner != null) {
                 btnRegisterPartner.setText("⏳  Hồ sơ đang được xem xét");
-                btnRegisterPartner.setTextColor(0xFF888888); // Màu xám
+                btnRegisterPartner.setTextColor(0xFF888888);
             } else if (btnRegisterPartner != null) {
-                btnRegisterPartner.setText("🛵  Đăng ký làm Shipper nội khu");
+                btnRegisterPartner.setText("🤝  Hợp tác với Làng Food");
                 btnRegisterPartner.setTextColor(0xFF333333);
             }
         }
     }
 
     private void setupClickListeners() {
+        btnWalletDetail.setOnClickListener(v -> {
+            // Chuyển sang màn hình quản lý ví
+            startActivity(new Intent(ProfileActivity.this, WalletActivity.class));
+        });
+
         btnManageFood.setOnClickListener(v -> {
             startActivity(new Intent(ProfileActivity.this, ManageFoodActivity.class));
         });
@@ -165,6 +187,6 @@ public class ProfileActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        loadUserInfo(); // Load lại thông tin mỗi khi quay lại
+        loadUserInfo();
     }
 }
