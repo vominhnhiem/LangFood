@@ -7,6 +7,7 @@ import android.text.TextUtils;
 import android.text.style.UnderlineSpan;
 import android.util.Patterns;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
@@ -49,6 +50,10 @@ public class RegisterActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Ép màn hình co lại và đẩy nội dung lên khi bàn phím hiện
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        
         setContentView(R.layout.activity_register);
 
         apiService = ApiClient.getClient().create(ApiService.class);
@@ -287,7 +292,6 @@ public class RegisterActivity extends AppCompatActivity {
             }
             if (selectedBuilding != null) {
                 u.setBuildingId(selectedBuilding.getId());
-                u.setKtxBuilding(selectedBuilding.getName());
             }
             u.setKtxRoom(etKtxRoom.getText().toString().trim());
             u.setAccountType(0); // 0: SinhVien KTX

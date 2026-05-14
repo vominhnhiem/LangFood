@@ -58,12 +58,15 @@ namespace LangFoodAdmin.Controllers
                     wallet.UpdatedAt = DateTime.Now;
 
                     // B. QUAN TRỌNG: Nếu giao dịch này liên quan đến một Đơn hàng (Thanh toán QR)
+                    // Trong file TransactionsController.cs, hàm Approve:
                     if (trans.OrderId.HasValue)
                     {
                         var order = await _context.Orders.FindAsync(trans.OrderId.Value);
                         if (order != null && order.Status == "PendingPayment")
                         {
-                            order.Status = "Confirmed"; // Duyệt đơn luôn để Shop thấy đơn
+                            // Đổi từ "Confirmed" sang "Paid" 
+                            // Để báo cho hệ thống biết: Tiền đã vào túi Admin, giờ đợi Shop gật đầu.
+                            order.Status = "Paid";
                         }
                     }
 

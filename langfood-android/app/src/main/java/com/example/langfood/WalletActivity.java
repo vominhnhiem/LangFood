@@ -180,7 +180,7 @@ public class WalletActivity extends AppCompatActivity {
     }
 
     private void handleDeposit(double amount) {
-        apiService.deposit(userId, amount).enqueue(new Callback<ResponseBody>() {
+        apiService.deposit(userId, amount, null).enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 if (response.isSuccessful()) {

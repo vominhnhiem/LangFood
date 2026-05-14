@@ -5,7 +5,8 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.Log;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -15,12 +16,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.bumptech.glide.Glide;
 import com.example.langfood.api.ApiClient;
 import com.example.langfood.api.ApiService;
+import com.example.langfood.models.Building;
 import com.example.langfood.models.User;
 import de.hdodenhof.circleimageview.CircleImageView;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
@@ -32,13 +35,17 @@ public class EditProfileActivity extends AppCompatActivity {
 
     private static final int PICK_IMAGE_REQUEST = 1;
     private CircleImageView ivEditAvatar;
-    private EditText etFullName, etPhone, etBuilding, etRoom;
+    private EditText etFullName, etPhone, etRoom;
+    private AutoCompleteTextView spinnerBuilding;
     private Button btnSave;
     private ImageView btnBack;
     private ApiService apiService;
     private String userId;
     private User currentUser;
     private Uri imageUri;
+
+    private List<Building> buildingList = new ArrayList<>();
+    private Integer selectedBuildingId = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +57,7 @@ public class EditProfileActivity extends AppCompatActivity {
         userId = prefs.getString("USER_ID", "");
 
         initViews();
+        loadBuildings();
         loadUserDetails();
 
         btnBack.setOnClickListener(v -> finish());
@@ -61,10 +69,62 @@ public class EditProfileActivity extends AppCompatActivity {
         ivEditAvatar = findViewById(R.id.ivEditAvatar);
         etFullName = findViewById(R.id.etEditFullName);
         etPhone = findViewById(R.id.etEditPhone);
-        etBuilding = findViewById(R.id.etEditBuilding);
+        spinnerBuilding = findViewById(R.id.spinnerBuilding);
         etRoom = findViewById(R.id.etEditRoom);
         btnSave = findViewById(R.id.btnSaveProfile);
         btnBack = findViewById(R.id.btnBack);
+    }
+
+    private void loadBuildings() {
+        apiService.getBuildings().enqueue(new Callback<List<Building>>() {
+            @Override
+            public void onResponse(Call<List<Building>> call, Response<List<Building>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    buildingList = response.body();
+                    List<String> buildingNames = new ArrayList<>();
+                    for (Building b : buildingList) {
+                        buildingNames.add(b.getName());
+                    }
+
+                    ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                            EditProfileActivity.this,
+                            android.R.layout.simple_dropdown_item_1line,
+                            buildingNames
+                    );
+                    spinnerBuilding.setAdapter(adapter);
+
+                    spinnerBuilding.setOnItemClickListener((parent, view, position, id) -> {
+                        String selectedName = (String) parent.getItemAtPosition(position);
+                        for (Building b : buildingList) {
+                            if (b.getName().equals(selectedName)) {
+                                selectedBuildingId = b.getId();
+                                break;
+                            }
+                        }
+                    });
+
+                    // Nếu load xong list mà đã có data user thì hiển thị tên building
+                    if (currentUser != null && currentUser.getBuildingId() != null) {
+                        setBuildingSelection(currentUser.getBuildingId());
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Building>> call, Throwable t) {
+                Toast.makeText(EditProfileActivity.this, "Không thể tải danh sách tòa nhà", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void setBuildingSelection(int buildingId) {
+        for (Building b : buildingList) {
+            if (b.getId() == buildingId) {
+                spinnerBuilding.setText(b.getName(), false);
+                selectedBuildingId = b.getId();
+                break;
+            }
+        }
     }
 
     private void loadUserDetails() {
@@ -75,8 +135,11 @@ public class EditProfileActivity extends AppCompatActivity {
                     currentUser = response.body();
                     etFullName.setText(currentUser.getFullName());
                     etPhone.setText(currentUser.getPhoneNumber());
-                    etBuilding.setText(currentUser.getKtxBuilding());
                     etRoom.setText(currentUser.getKtxRoom());
+
+                    if (currentUser.getBuildingId() != null && !buildingList.isEmpty()) {
+                        setBuildingSelection(currentUser.getBuildingId());
+                    }
 
                     updateAvatarUI(currentUser.getAvatarUrl());
                 } else {
@@ -133,13 +196,11 @@ public class EditProfileActivity extends AppCompatActivity {
             RequestBody requestFile = RequestBody.create(MediaType.parse(getContentResolver().getType(imageUri)), file);
             MultipartBody.Part body = MultipartBody.Part.createFormData("image", file.getName(), requestFile);
 
-            // Sửa lại ApiService để nhận về URL mới nếu cần, hoặc load lại User
             apiService.uploadAvatar(userId, body).enqueue(new Callback<Void>() {
                 @Override
                 public void onResponse(Call<Void> call, Response<Void> response) {
                     if (response.isSuccessful()) {
                         Toast.makeText(EditProfileActivity.this, "Đã cập nhật ảnh đại diện", Toast.LENGTH_SHORT).show();
-                        // Load lại thông tin user để lấy AvatarUrl mới nhất từ server
                         loadUserDetails();
                     }
                 }
@@ -157,7 +218,6 @@ public class EditProfileActivity extends AppCompatActivity {
     private void saveChanges() {
         String fullName = etFullName.getText().toString().trim();
         String phone = etPhone.getText().toString().trim();
-        String building = etBuilding.getText().toString().trim();
         String room = etRoom.getText().toString().trim();
 
         if (fullName.isEmpty()) {
@@ -167,7 +227,7 @@ public class EditProfileActivity extends AppCompatActivity {
 
         currentUser.setFullName(fullName);
         currentUser.setPhoneNumber(phone);
-        currentUser.setKtxBuilding(building);
+        currentUser.setBuildingId(selectedBuildingId);
         currentUser.setKtxRoom(room);
 
         apiService.updateUser(userId, currentUser).enqueue(new Callback<User>() {
@@ -176,7 +236,7 @@ public class EditProfileActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     updateLocalPrefs(response.body());
                     Toast.makeText(EditProfileActivity.this, "Đã lưu thay đổi", Toast.LENGTH_SHORT).show();
-                    finish(); // Nhảy về màn hình Profile
+                    finish();
                 } else {
                     Toast.makeText(EditProfileActivity.this, "Lưu thất bại: " + response.message(), Toast.LENGTH_SHORT).show();
                 }
@@ -194,9 +254,9 @@ public class EditProfileActivity extends AppCompatActivity {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString("FULL_NAME", user.getFullName());
         editor.putString("PHONE", user.getPhoneNumber());
-        editor.putString("BUILDING", user.getKtxBuilding());
+        editor.putInt("BUILDING_ID", user.getBuildingId() != null ? user.getBuildingId() : -1);
         editor.putString("ROOM", user.getKtxRoom());
-        editor.putString("AVATAR_URL", user.getAvatarUrl()); // Lưu link ảnh mới
+        editor.putString("AVATAR_URL", user.getAvatarUrl());
         editor.apply();
     }
 }

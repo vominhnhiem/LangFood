@@ -9,7 +9,6 @@ import android.provider.MediaStore;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.RadioGroup;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -78,8 +77,11 @@ public class OnboardingActivity extends AppCompatActivity {
         }
 
         SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
-        int userId = prefs.getInt("USER_ID", -1);
-        if (userId == -1) return;
+        String userId = prefs.getString("USER_ID", "");
+        if (userId.isEmpty()) {
+            Toast.makeText(this, "Lỗi: Không tìm thấy ID người dùng. Vui lòng đăng nhập lại.", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         try {
             // Chuẩn bị Multipart
@@ -96,10 +98,12 @@ public class OnboardingActivity extends AppCompatActivity {
 
             RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), tempFile);
             MultipartBody.Part imagePart = MultipartBody.Part.createFormData("imageProof", tempFile.getName(), requestFile);
-            RequestBody userIdPart = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(userId));
+            
+            RequestBody userIdPart = RequestBody.create(MediaType.parse("text/plain"), userId);
+            RequestBody mssvPart = RequestBody.create(MediaType.parse("text/plain"), studentId);
 
             ApiService apiService = ApiClient.getClient().create(ApiService.class);
-            Call<ResponseBody> call = apiService.applyShipper(userIdPart, imagePart);
+            Call<ResponseBody> call = apiService.applyShipper(userIdPart, mssvPart, imagePart);
             
             call.enqueue(new Callback<ResponseBody>() {
                 @Override
@@ -110,13 +114,13 @@ public class OnboardingActivity extends AppCompatActivity {
                         prefs.edit().putBoolean("IS_PENDING", true).apply();
                         finish();
                     } else {
-                        Toast.makeText(OnboardingActivity.this, "Lỗi: Bạn đã có hồ sơ đang chờ duyệt.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(OnboardingActivity.this, "Lỗi: " + response.message(), Toast.LENGTH_SHORT).show();
                     }
                 }
 
                 @Override
                 public void onFailure(Call<ResponseBody> call, Throwable t) {
-                    Toast.makeText(OnboardingActivity.this, "Lỗi kết nối", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(OnboardingActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
 

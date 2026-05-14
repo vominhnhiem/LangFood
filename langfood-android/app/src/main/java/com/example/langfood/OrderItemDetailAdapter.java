@@ -9,13 +9,15 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.langfood.models.OrderItem;
+import com.example.langfood.models.Product;
 import java.util.List;
 import java.util.Locale;
 
 public class OrderItemDetailAdapter extends RecyclerView.Adapter<OrderItemDetailAdapter.ViewHolder> {
 
     private List<OrderItem> orderItems;
-    private static final String BASE_URL = "http://192.168.100.192:5289/";
+    // Cập nhật IP đồng bộ với ApiClient
+    private static final String BASE_URL = "http://192.168.61.39:5289/";
 
     public OrderItemDetailAdapter(List<OrderItem> orderItems) {
         this.orderItems = orderItems;
@@ -32,9 +34,17 @@ public class OrderItemDetailAdapter extends RecyclerView.Adapter<OrderItemDetail
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         OrderItem item = orderItems.get(position);
         
-        // Lấy tên và ảnh từ object Product lồng bên trong
-        String name = (item.getProduct() != null) ? item.getProduct().getName() : "Sản phẩm #" + item.getProductId();
-        String imageUrl = (item.getProduct() != null) ? item.getProduct().getImageUrl() : null;
+        // Backend đã trả về full Product, lấy Name và ImageUrl từ đó
+        String name = "Món ăn";
+        String imageUrl = null;
+        
+        Product product = item.getProduct();
+        if (product != null) {
+            name = product.getName();
+            imageUrl = product.getImageUrl();
+        } else if (item.getProductName() != null) {
+            name = item.getProductName();
+        }
 
         holder.tvProductName.setText(name);
         holder.tvProductPrice.setText(String.format(Locale.getDefault(), "%,.0fđ", item.getUnitPrice()));

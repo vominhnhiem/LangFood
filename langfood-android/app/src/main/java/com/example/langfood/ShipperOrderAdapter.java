@@ -39,9 +39,23 @@ public class ShipperOrderAdapter extends RecyclerView.Adapter<ShipperOrderAdapte
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Order order = orderList.get(position);
+        
+        // Hiển thị tên Shop để shipper biết chỗ lấy hàng
+        holder.tvShopName.setText("Từ: " + (order.getShopName() != null ? order.getShopName() : "Cửa hàng"));
+        
+        // Hiển thị thời gian đặt
         holder.tvOrderTime.setText(order.getCreatedAt());
-        holder.tvOrderAddress.setText("📍 Giao tới: " + (order.getDeliveryBuilding() != null ? order.getDeliveryBuilding() : "Ký túc xá"));
-        holder.tvTotalAmount.setText(String.format(Locale.getDefault(), "Tổng: %,.0fđ", order.getTotalAmount()));
+        
+        // Hiển thị địa chỉ giao hàng đầy đủ
+        String address = "📍 Tới: " + order.getDeliveryBuilding();
+        if (order.getDeliveryRoom() != null && !order.getDeliveryRoom().isEmpty()) {
+            address += " - Phòng " + order.getDeliveryRoom();
+        }
+        holder.tvOrderAddress.setText(address);
+
+        // Hiển thị tiền phí ship (Shipper nhận) và tổng tiền (nếu thu hộ)
+        holder.tvShippingFee.setText(String.format(Locale.getDefault(), "Phí ship: %,.0fđ", order.getShippingFee()));
+        holder.tvTotalAmount.setText(String.format(Locale.getDefault(), "Tổng thu: %,.0fđ", order.getTotalAmount()));
 
         holder.btnAcceptOrder.setOnClickListener(v -> listener.onAcceptClick(order));
         holder.itemView.setOnClickListener(v -> listener.onItemClick(order));
@@ -58,14 +72,16 @@ public class ShipperOrderAdapter extends RecyclerView.Adapter<ShipperOrderAdapte
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvOrderTime, tvOrderAddress, tvTotalAmount;
+        TextView tvOrderTime, tvOrderAddress, tvTotalAmount, tvShopName, tvShippingFee;
         Button btnAcceptOrder;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
+            tvShopName = itemView.findViewById(R.id.tvShopName); // Cần đảm bảo layout có ID này
             tvOrderTime = itemView.findViewById(R.id.tvOrderTime);
             tvOrderAddress = itemView.findViewById(R.id.tvOrderAddress);
             tvTotalAmount = itemView.findViewById(R.id.tvTotalAmount);
+            tvShippingFee = itemView.findViewById(R.id.tvShippingFee); // Cần đảm bảo layout có ID này
             btnAcceptOrder = itemView.findViewById(R.id.btnAcceptOrder);
         }
     }

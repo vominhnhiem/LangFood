@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -29,13 +28,7 @@ public class ProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
-        // 1. Ánh xạ
         initViews();
-
-        // 2. Load thông tin và kiểm tra quyền Seller
-        loadUserInfo();
-
-        // 3. Xử lý click
         setupClickListeners();
     }
 
@@ -71,7 +64,10 @@ public class ProfileActivity extends AppCompatActivity {
         String username = prefs.getString("USERNAME", "");
         String phone = prefs.getString("PHONE", "Chưa có SĐT");
         String avatarUrl = prefs.getString("AVATAR_URL", "");
-        int roleId = prefs.getInt("ROLE_ID", 1); // 1: Buyer, 2: Seller, 3: Shipper
+        int roleId = prefs.getInt("ROLE_ID", 1);
+        int shopId = prefs.getInt("SHOP_ID", -1);
+        int shipperId = prefs.getInt("SHIPPER_ID", -1);
+        boolean isPending = prefs.getBoolean("IS_PENDING", false);
 
         tvUserName.setText(fullName);
         tvPhone.setText("SĐT: " + phone);
@@ -87,8 +83,8 @@ public class ProfileActivity extends AppCompatActivity {
                     .into(ivAvatar);
         }
 
-        // Hiển thị Wallet Card cho Shop và Shipper
-        if (roleId == 2 || roleId == 3) {
+        // 1. Hiển thị Wallet Card nếu là Shop hoặc Shipper
+        if (shopId != -1 || shipperId != -1) {
             cardWallet.setVisibility(View.VISIBLE);
             float balance = prefs.getFloat("WALLET_BALANCE", 0.0f);
             tvWalletBalance.setText(String.format(Locale.getDefault(), "%,.0fđ", (double) balance));
@@ -96,84 +92,65 @@ public class ProfileActivity extends AppCompatActivity {
             cardWallet.setVisibility(View.GONE);
         }
 
-        // Kiểm tra quyền hiển thị các nút chức năng
-        if (roleId == 2) { // Seller
-            tvUserRole.setText("Sinh viên - Seller");
+        // 2. Thiết lập hiển thị Menu dựa trên ShopId và ShipperId
+        // Hiển thị menu Seller nếu có Shop
+        if (shopId != -1) {
             btnManageFood.setVisibility(View.VISIBLE);
             if (dividerManageFood != null) dividerManageFood.setVisibility(View.VISIBLE);
-            
             btnManageOrder.setVisibility(View.VISIBLE);
             if (dividerManageOrder != null) dividerManageOrder.setVisibility(View.VISIBLE);
+        } else {
+            btnManageFood.setVisibility(View.GONE);
+            if (dividerManageFood != null) dividerManageFood.setVisibility(View.GONE);
+            btnManageOrder.setVisibility(View.GONE);
+            if (dividerManageOrder != null) dividerManageOrder.setVisibility(View.GONE);
+        }
 
-            btnAddFood.setVisibility(View.GONE);
-            btnRegisterPartner.setVisibility(View.GONE);
-        } else if (roleId == 3) { // Shipper
-            tvUserRole.setText("Shipper");
+        // Hiển thị menu Shipper nếu có ShipperId
+        if (shipperId != -1) {
             btnShipperManage.setVisibility(View.VISIBLE);
             if (dividerShipperManage != null) dividerShipperManage.setVisibility(View.VISIBLE);
-            btnRegisterPartner.setVisibility(View.GONE);
-            btnManageOrder.setVisibility(View.GONE);
+            tvUserRole.setText(shopId != -1 ? "Seller & Shipper" : "Shipper");
         } else {
-            tvUserRole.setText("Sinh viên - Buyer");
-            btnAddFood.setVisibility(View.GONE);
-            btnManageFood.setVisibility(View.GONE);
             btnShipperManage.setVisibility(View.GONE);
-            btnManageOrder.setVisibility(View.GONE);
-            
-            boolean isPending = prefs.getBoolean("IS_PENDING", false);
-            if (isPending && btnRegisterPartner != null) {
-                btnRegisterPartner.setText("⏳  Hồ sơ đang được xem xét");
-                btnRegisterPartner.setTextColor(0xFF888888);
-            } else if (btnRegisterPartner != null) {
-                btnRegisterPartner.setText("🤝  Hợp tác với Làng Food");
-                btnRegisterPartner.setTextColor(0xFF333333);
+            if (dividerShipperManage != null) dividerShipperManage.setVisibility(View.GONE);
+            tvUserRole.setText(shopId != -1 ? "Sinh viên - Seller" : "Sinh viên - Buyer");
+        }
+
+        // 3. Xử lý nút Đăng ký (Register Partner)
+        // Nếu đã là cả Seller và Shipper thì ẩn nút đăng ký
+        if (shopId != -1 && shipperId != -1) {
+            btnRegisterPartner.setVisibility(View.GONE);
+        } else {
+            btnRegisterPartner.setVisibility(View.VISIBLE);
+            if (isPending) {
+                btnRegisterPartner.setText("⏳  Hồ sơ Shipper đang chờ duyệt");
+                btnRegisterPartner.setEnabled(false);
+                btnRegisterPartner.setAlpha(0.6f);
+            } else {
+                btnRegisterPartner.setText("🤝  Đăng ký làm Shipper");
+                btnRegisterPartner.setEnabled(true);
+                btnRegisterPartner.setAlpha(1.0f);
             }
         }
+        
+        // Luôn ẩn nút thêm món ăn (đã gộp vào Manage Food)
+        if (btnAddFood != null) btnAddFood.setVisibility(View.GONE);
+        if (dividerAddFood != null) dividerAddFood.setVisibility(View.GONE);
     }
 
     private void setupClickListeners() {
-        btnWalletDetail.setOnClickListener(v -> {
-            // Chuyển sang màn hình quản lý ví
-            startActivity(new Intent(ProfileActivity.this, WalletActivity.class));
+        btnWalletDetail.setOnClickListener(v -> startActivity(new Intent(ProfileActivity.this, WalletActivity.class)));
+        btnManageFood.setOnClickListener(v -> startActivity(new Intent(ProfileActivity.this, ManageFoodActivity.class)));
+        btnManageOrder.setOnClickListener(v -> startActivity(new Intent(ProfileActivity.this, ManageOrderSellerActivity.class)));
+        btnEditProfile.setOnClickListener(v -> startActivity(new Intent(ProfileActivity.this, EditProfileActivity.class)));
+        btnChangePassword.setOnClickListener(v -> startActivity(new Intent(ProfileActivity.this, ChangePasswordActivity.class)));
+
+        btnRegisterPartner.setOnClickListener(v -> {
+            startActivity(new Intent(ProfileActivity.this, OnboardingActivity.class));
         });
 
-        btnManageFood.setOnClickListener(v -> {
-            startActivity(new Intent(ProfileActivity.this, ManageFoodActivity.class));
-        });
-
-        btnManageOrder.setOnClickListener(v -> {
-            startActivity(new Intent(ProfileActivity.this, ManageOrderSellerActivity.class));
-        });
-
-        btnAddFood.setOnClickListener(v -> {
-            startActivity(new Intent(ProfileActivity.this, AddFoodActivity.class));
-        });
-
-        btnEditProfile.setOnClickListener(v -> {
-            startActivity(new Intent(ProfileActivity.this, EditProfileActivity.class));
-        });
-
-        btnChangePassword.setOnClickListener(v -> {
-            startActivity(new Intent(ProfileActivity.this, ChangePasswordActivity.class));
-        });
-
-        if (btnRegisterPartner != null) {
-            btnRegisterPartner.setOnClickListener(v -> {
-                SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
-                boolean isPending = prefs.getBoolean("IS_PENDING", false);
-                if (isPending) {
-                    Toast.makeText(this, "Hồ sơ của bạn đang được xem xét, vui lòng chờ!", Toast.LENGTH_LONG).show();
-                } else {
-                    startActivity(new Intent(ProfileActivity.this, OnboardingActivity.class));
-                }
-            });
-        }
-
-        if (btnShipperManage != null) {
-            btnShipperManage.setOnClickListener(v -> {
-                startActivity(new Intent(ProfileActivity.this, ShipperManageActivity.class));
-            });
-        }
+        btnShipperManage.setOnClickListener(v -> startActivity(new Intent(ProfileActivity.this, ShipperManageActivity.class)));
 
         btnLogout.setOnClickListener(v -> {
             SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);

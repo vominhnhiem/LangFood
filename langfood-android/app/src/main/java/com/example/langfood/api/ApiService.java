@@ -95,7 +95,7 @@ public interface ApiService {
     Call<List<Transaction>> getTransactions(@Path("userId") String userId);
 
     @POST("api/Wallet/deposit")
-    Call<ResponseBody> deposit(@Query("userId") String userId, @Query("amount") double amount);
+    Call<ResponseBody> deposit(@Query("userId") String userId, @Query("amount") double amount, @Query("orderId") Integer orderId);
 
     @POST("api/Wallet/withdraw")
     Call<ResponseBody> withdraw(@Query("userId") String userId, @Query("amount") double amount, @Query("note") String note);
@@ -120,11 +120,11 @@ public interface ApiService {
     @GET("api/Orders/available")
     Call<List<Order>> getAvailableOrders();
 
-    @GET("api/Orders")
-    Call<List<Order>> getAllOrders();
+    @PUT("api/Orders/admin-approve/{id}")
+    Call<Void> adminApproveOrder(@Path("id") int id);
 
-    @PUT("api/Orders/confirm/{id}")
-    Call<Void> confirmOrder(@Path("id") int id);
+    @PUT("api/Orders/shop-accept/{id}")
+    Call<Void> shopAcceptOrder(@Path("id") int id);
 
     @PUT("api/Orders/accept/{id}")
     Call<Void> acceptOrder(@Path("id") int id, @Query("shipperId") int shipperId);
@@ -161,6 +161,7 @@ public interface ApiService {
     @POST("api/Users/apply-shipper")
     Call<ResponseBody> applyShipper(
             @Part("userId") RequestBody userId,
+            @Part("mssv") RequestBody mssv,
             @Part MultipartBody.Part imageProof
     );
 

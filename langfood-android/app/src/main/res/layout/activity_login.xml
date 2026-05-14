@@ -7,7 +7,8 @@
     android:background="@color/white"
     android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:padding="30dp">
+    android:padding="30dp"
+    android:fitsSystemWindows="true">
 
     <androidx.cardview.widget.CardView
         android:layout_width="120dp"
@@ -16,10 +17,13 @@
         app:cardCornerRadius="20dp"
         app:cardElevation="0dp">
         <ImageView
+            android:id="@+id/ivLogo"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:scaleType="centerCrop"
-            android:src="@drawable/lang_food_avt" />
+            android:src="@drawable/lang_food_avt"
+            android:clickable="true"
+            android:focusable="true" />
     </androidx.cardview.widget.CardView>
 
     <TextView
@@ -30,14 +34,19 @@
         android:text="Làng Food"
         android:textColor="#FF5722"
         android:textSize="28sp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        android:clickable="true"
+        android:focusable="true" />
 
     <TextView
+        android:id="@+id/tvSlogan"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Ship đồ ngon - Giá sinh viên"
         android:textColor="#757575"
-        android:textSize="14sp" />
+        android:textSize="14sp"
+        android:clickable="true"
+        android:focusable="true" />
 
     <LinearLayout
         android:layout_width="match_parent"

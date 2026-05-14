@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -41,9 +42,33 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
 
         apiService = ApiClient.getClient().create(ApiService.class);
 
+        // Nhấn bình thường: Thoát app
         btnBack.setOnClickListener(v -> finish());
 
+        // NHẤN GIỮ NÚT BACK: ĐĂNG XUẤT
+        btnBack.setOnLongClickListener(v -> {
+            showLogoutDialog();
+            return true;
+        });
+
         loadAvailableOrders();
+    }
+
+    private void showLogoutDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Đăng xuất")
+                .setMessage("Bạn có muốn đăng xuất khỏi tài khoản Shipper không?")
+                .setPositiveButton("Đăng xuất", (dialog, which) -> {
+                    SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
+                    prefs.edit().clear().commit(); // Xóa sạch dữ liệu
+                    
+                    Intent intent = new Intent(ShipperManageActivity.this, LoginActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
     }
 
     private void initViews() {
@@ -91,13 +116,10 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
                     Toast.makeText(ShipperManageActivity.this, "Nhận đơn thành công!", Toast.LENGTH_SHORT).show();
-                    
-                    // Chuyển sang màn hình chi tiết để đi giao
                     Intent intent = new Intent(ShipperManageActivity.this, OrderDetailShipperActivity.class);
                     intent.putExtra("ORDER_DATA", new Gson().toJson(order));
                     startActivity(intent);
-                    
-                    loadAvailableOrders(); // Tải lại danh sách sau khi nhận đơn
+                    loadAvailableOrders();
                 } else {
                     Toast.makeText(ShipperManageActivity.this, "Lỗi khi nhận đơn hoặc đơn đã có người nhận", Toast.LENGTH_SHORT).show();
                 }
@@ -112,10 +134,9 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
 
     @Override
     public void onItemClick(Order order) {
-        // Xem chi tiết đơn hàng trước khi nhận
         Intent intent = new Intent(ShipperManageActivity.this, OrderDetailShipperActivity.class);
         intent.putExtra("ORDER_DATA", new Gson().toJson(order));
-        intent.putExtra("IS_PREVIEW", true); // Flag để ẩn nút hoàn thành
+        intent.putExtra("IS_PREVIEW", true);
         startActivity(intent);
     }
 

@@ -1,3 +1,4 @@
+razor
 @model LangFood.Shared.ViewModels.ShipperManagementViewModel
 @{
     ViewData["Title"] = "Quản lý Người giao hàng";
@@ -13,7 +14,7 @@
         <button class="nav-link active fw-bold px-4 py-2 position-relative" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab" style="border-radius: 10px 10px 0 0;">
             Yêu cầu chờ duyệt
             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7rem;">
-                @Model.PendingShippers.Count
+                @(Model.PendingShippers?.Count ?? 0)
             </span>
         </button>
     </li>
@@ -27,9 +28,9 @@
 <div class="tab-content" id="shipperTabsContent">
     <!-- TAB 1: CHỜ DUYỆT -->
     <div class="tab-pane fade show active" id="pending" role="tabpanel" aria-labelledby="pending-tab">
-        <div class="admin-card shadow-sm border-0" style="border-radius: 0 0 12px 12px;">
+        <div class="admin-card shadow-sm border-0 bg-white p-3" style="border-radius: 0 0 12px 12px;">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h6 class="m-0 font-weight-bold" style="color: var(--accent-color);">Danh sách Shipper chờ duyệt hồ sơ</h6>
+                <h6 class="m-0 font-weight-bold text-primary">Danh sách Shipper chờ duyệt hồ sơ</h6>
                 <button class="btn btn-primary btn-sm px-3 fw-bold shadow-sm" id="btnBulkApprove">
                     <i class="fas fa-check-double me-1"></i> Duyệt hàng loạt
                 </button>
@@ -44,6 +45,7 @@
                             </th>
                             <th>Họ và tên</th>
                             <th>Số điện thoại</th>
+                            <th>MSSV (Ghi chú)</th>
                             <th>Ảnh Thẻ SV/CCCD</th>
                             <th>Trạng thái</th>
                             <th class="text-end pe-4">Hành động</th>
@@ -52,21 +54,32 @@
                     <tbody>
                         @if (Model.PendingShippers != null && Model.PendingShippers.Any())
                         {
-                            foreach (var shipper in Model.PendingShippers)
+                            foreach (var item in Model.PendingShippers)
                             {
                                 <tr>
-                                    <td><input class="form-check-input shipper-checkbox" type="checkbox" value="@shipper.Id"></td>
-                                    <td class="fw-bold">@shipper.FullName</td>
-                                    <td>@shipper.PhoneNumber</td>
+                                    <td><input class="form-check-input shipper-checkbox" type="checkbox" value="@item.Id"></td>
+                                    @* SỬA: Lấy FullName và PhoneNumber từ item.User *@
+                                    <td class="fw-bold">@(item.User?.FullName ?? "N/A")</td>
+                                    <td>@(item.User?.PhoneNumber ?? "N/A")</td>
+                                    <td>@item.ShopName</td> @* Đây thường là nơi lưu MSSV gửi từ Android *@
                                     <td>
-                                        <button class="btn btn-sm btn-outline-info view-image-btn rounded-pill px-3" data-img-src="@(shipper.StudentCardImageUrl ?? "/images/default-card.png")">
+                                        @* SỬA: Dùng ImageProof thay vì StudentCardImageUrl *@
+                                        <button class="btn btn-sm btn-outline-info view-image-btn rounded-pill px-3" 
+                                                data-img-src="@(item.ImageProof ?? "/images/default-card.png")">
                                             <i class="fas fa-image me-1"></i> Xem ảnh
                                         </button>
                                     </td>
                                     <td><span class="badge bg-warning text-dark px-3 py-2 rounded-pill">Chờ duyệt</span></td>
                                     <td class="text-end pe-4">
-                                        <button class="btn btn-sm btn-success rounded-circle p-2 mx-1 shadow-sm btn-approve-single" data-id="@shipper.Id" title="Duyệt"><i class="fas fa-check"></i></button>
-                                        <button class="btn btn-sm btn-danger rounded-circle p-2 mx-1 shadow-sm btn-reject" data-id="@shipper.Id" title="Từ chối"><i class="fas fa-times"></i></button>
+                                        @* Nút Duyệt: Gọi trực tiếp Action Approve *@
+                                        <a asp-action="Approve" asp-route-id="@item.Id" 
+                                           class="btn btn-sm btn-success rounded-circle p-2 mx-1 shadow-sm" title="Duyệt">
+                                            <i class="fas fa-check"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-danger rounded-circle p-2 mx-1 shadow-sm btn-reject" 
+                                                data-id="@item.Id" title="Từ chối">
+                                            <i class="fas fa-times"></i>
+                                        </button>
                                     </td>
                                 </tr>
                             }
@@ -74,7 +87,7 @@
                         else
                         {
                             <tr>
-                                <td colspan="6" class="text-center py-4 text-muted italic">Không có yêu cầu nào đang chờ.</td>
+                                <td colspan="7" class="text-center py-4 text-muted italic">Không có yêu cầu nào đang chờ.</td>
                             </tr>
                         }
                     </tbody>
@@ -85,8 +98,7 @@
 
     <!-- TAB 2: ĐANG HOẠT ĐỘNG -->
     <div class="tab-pane fade" id="active" role="tabpanel" aria-labelledby="active-tab">
-        <div class="admin-card shadow-sm border-0" style="border-radius: 0 0 12px 12px;">
-            <!-- Bộ lọc & Tìm kiếm -->
+        <div class="admin-card shadow-sm border-0 bg-white p-3" style="border-radius: 0 0 12px 12px;">
             <div class="row g-3 mb-4">
                 <div class="col-md-4">
                     <div class="input-group">
@@ -103,7 +115,7 @@
                             <th>Mã SP</th>
                             <th>Họ và tên</th>
                             <th>Số điện thoại</th>
-                            <th>Số dư ví</th>
+                            <th>MSSV</th>
                             <th>Trạng thái Live</th>
                             <th class="text-end pe-4">Hành động</th>
                         </tr>
@@ -122,22 +134,22 @@
                                         </div>
                                     </td>
                                     <td>@shipper.User?.PhoneNumber</td>
-                                    <td class="fw-bold @(shipper.WalletBalance >= 0 ? "text-success" : "text-danger")">
-                                        @shipper.WalletBalance.ToString("N0")₫
-                                    </td>
+                                    <td>@shipper.Mssv</td>
                                     <td>
                                         @if (shipper.IsOnline)
                                         {
-                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="fas fa-circle me-1 small"></i> Sẵn sàng</span>
+                                            <span class="badge bg-success-subtle text-success border border-success px-2 py-1"><i class="fas fa-circle me-1 small"></i> Sẵn sàng</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1"><i class="fas fa-circle me-1 small"></i> Offline</span>
+                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary px-2 py-1"><i class="fas fa-circle me-1 small"></i> Offline</span>
                                         }
                                     </td>
                                     <td class="text-end pe-4">
                                         <button class="btn btn-sm btn-light rounded-circle p-2 mx-1 text-primary shadow-sm" title="Xem chi tiết"><i class="fas fa-eye"></i></button>
-                                        <button class="btn btn-sm btn-light rounded-circle p-2 mx-1 text-danger shadow-sm" title="Khóa tài khoản"><i class="fas fa-lock"></i></button>
+                                        <a asp-action="ToggleStatus" asp-route-id="@shipper.Id" class="btn btn-sm btn-light rounded-circle p-2 mx-1 text-danger shadow-sm" title="Khóa/Mở khóa">
+                                            <i class="fas @(shipper.IsApproved ? "fa-lock" : "fa-lock-open")"></i>
+                                        </a>
                                     </td>
                                 </tr>
                             }
@@ -178,26 +190,28 @@
                 <h5 class="modal-title fw-bold"><i class="fas fa-user-times me-2"></i>Từ chối duyệt Shipper</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4">
-                <div class="mb-3">
-                    <label class="form-label fw-bold small text-uppercase text-muted">Lý do từ chối</label>
-                    <select class="form-select border-0 bg-light py-2">
-                        <option value="">-- Chọn lý do --</option>
-                        <option value="invalid_img">Ảnh thẻ bị mờ, không rõ mặt</option>
-                        <option value="invalid_info">Thông tin cá nhân không khớp</option>
-                        <option value="invalid_building">Khu vực đăng ký không phù hợp</option>
-                        <option value="other">Lý do khác...</option>
-                    </select>
+            <form asp-action="Reject" method="post">
+                <input type="hidden" name="id" id="rejectId" />
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase text-muted">Lý do từ chối</label>
+                        <select class="form-select border-0 bg-light py-2" name="reason">
+                            <option value="">-- Chọn lý do --</option>
+                            <option value="invalid_img">Ảnh thẻ bị mờ, không rõ mặt</option>
+                            <option value="invalid_info">Thông tin cá nhân không khớp</option>
+                            <option value="other">Lý do khác...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase text-muted">Ghi chú thêm</label>
+                        <textarea class="form-control border-0 bg-light" rows="3" name="note" placeholder="Nhập lời nhắn gửi đến Shipper..."></textarea>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold small text-uppercase text-muted">Ghi chú thêm</label>
-                    <textarea class="form-control border-0 bg-light" rows="3" placeholder="Nhập lời nhắn gửi đến Shipper..."></textarea>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary px-4 fw-bold" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger px-4 fw-bold">Xác nhận từ chối</button>
                 </div>
-            </div>
-            <div class="modal-footer bg-light border-0">
-                <button type="button" class="btn btn-secondary px-4 fw-bold" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-danger px-4 fw-bold" id="btnConfirmReject">Xác nhận từ chối</button>
-            </div>
+            </form>
         </div>
     </div>
 </div>
@@ -205,12 +219,7 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
-            // Select All logic
-            $('#selectAll').change(function () {
-                $('.shipper-checkbox').prop('checked', $(this).prop('checked'));
-            });
-
-            // View Image logic
+            // Xem ảnh phóng to
             $('.view-image-btn').click(function () {
                 var imgSrc = $(this).data('img-src');
                 $('#modalImage').attr('src', imgSrc);
@@ -218,13 +227,15 @@
                 imageModal.show();
             });
 
-            // Open Reject Modal
+            // Mở modal từ chối
             $('.btn-reject').click(function() {
+                var id = $(this).data('id');
+                $('#rejectId').val(id);
                 var rejectModal = new bootstrap.Modal(document.getElementById('rejectModal'));
                 rejectModal.show();
             });
 
-            // Tìm kiếm Shipper hoạt động (Frontend Filter đơn giản)
+            // Tìm kiếm Shipper đang hoạt động
             $("#searchActive").on("keyup", function() {
                 var value = $(this).val().toLowerCase();
                 $("#activeShipperBody tr").filter(function() {
@@ -232,32 +243,9 @@
                 });
             });
 
-            // Bulk Approve logic
-            $('#btnBulkApprove').click(function () {
-                var selectedIds = [];
-                $('.shipper-checkbox:checked').each(function () {
-                    selectedIds.push($(this).val());
-                });
-
-                if (selectedIds.length === 0) {
-                    toastr.warning("Vui lòng chọn ít nhất 1 shipper để duyệt!");
-                    return;
-                }
-
-                toastr.success("Đã duyệt " + selectedIds.length + " shipper thành công!");
-                setTimeout(() => location.reload(), 1000);
-            });
-
-            // Single Approve
-            $('.btn-approve-single').click(function() {
-                toastr.success("Đã duyệt shipper thành công!");
-                setTimeout(() => location.reload(), 1000);
-            });
-
-            // Confirm Reject
-            $('#btnConfirmReject').click(function() {
-                toastr.error("Đã gửi thông báo từ chối đến Shipper.");
-                $('#rejectModal').modal('hide');
+            // Chọn tất cả checkbox
+            $('#selectAll').change(function () {
+                $('.shipper-checkbox').prop('checked', $(this).prop('checked'));
             });
         });
     </script>
@@ -272,12 +260,9 @@
     }
     .nav-tabs .nav-link.active {
         color: #fff;
-        background-color: var(--accent-color) !important;
+        background-color: #0d6efd !important;
         border: none;
     }
-    .bg-success-subtle { background-color: #E8F5E9 !important; }
-    .bg-secondary-subtle { background-color: #F5F5F5 !important; }
-    .nav-link:hover:not(.active) {
-        background-color: #eee;
-    }
+    .bg-success-subtle { background-color: #d1e7dd !important; }
+    .bg-secondary-subtle { background-color: #e2e3e5 !important; }
 </style>

@@ -84,7 +84,6 @@ namespace LangFoodBackend.Controller
             var request = await _context.RoleRequests.FindAsync(id);
             if (request == null) return NotFound(new { message = "Không tìm thấy yêu cầu." });
 
-            // SỬA TẠI ĐÂY: Dùng FirstOrDefaultAsync kèm Include để lấy thông tin Building
             var user = await _context.Users
                 .Include(u => u.Building)
                 .Include(u => u.Shop)
@@ -99,14 +98,12 @@ namespace LangFoodBackend.Controller
             if (request.RequestType == 1) // Seller
             {
                 user.RoleId = 2;
-                // Tạo Shop mới cho người bán
                 if (user.Shop == null)
                 {
                     var newShop = new Shop
                     {
                         UserId = user.Id,
                         Name = request.ShopName ?? (user.FullName + "'s Shop"),
-                        // SỬA TẠI ĐÂY: Thay user.KtxBuilding bằng tên tòa nhà từ bảng Building
                         Address = request.ShopAddress ?? user.Building?.Name ?? "KTX Khu B",
                         IsActive = true,
                         IsOpen = true
@@ -117,12 +114,16 @@ namespace LangFoodBackend.Controller
             else if (request.RequestType == 2) // Shipper
             {
                 user.RoleId = 3;
-                // Tạo hồ sơ Shipper mới
                 if (user.Shipper == null)
                 {
+                    // TRÍCH XUẤT MSSV: Android gửi lên chuỗi "MSSV: 123456"
+                    // Chúng ta xóa chữ "MSSV: " để lấy số thực tế
+                    string mssvOnly = request.ShopName?.Replace("MSSV: ", "") ?? "";
+
                     var newShipper = new Shipper
                     {
                         UserId = user.Id,
+                        Mssv = mssvOnly, // Gán MSSV vào hồ sơ mới
                         IsApproved = true,
                         IsOnline = false,
                     };
@@ -133,6 +134,7 @@ namespace LangFoodBackend.Controller
             await _context.SaveChangesAsync();
             return Ok(new { message = "Đã duyệt nâng cấp quyền thành công!" });
         }
+
         // ==========================================
         // 3. PHẦN DUYỆT NẠP TIỀN (WALLETS)
         // ==========================================
@@ -141,7 +143,7 @@ namespace LangFoodBackend.Controller
         public async Task<IActionResult> GetPendingDeposits()
         {
             var deposits = await _context.Transactions
-                .Where(t => t.Type == "DEPOSIT" && t.Status == 0) // Lấy các giao dịch nạp đang chờ
+                .Where(t => t.Type == "DEPOSIT" && t.Status == 0)
                 .Join(_context.Wallets, t => t.WalletId, w => w.Id, (t, w) => new { t, w })
                 .Join(_context.Users, joined => joined.w.UserId, u => u.Id, (joined, u) => new
                 {
@@ -168,8 +170,7 @@ namespace LangFoodBackend.Controller
             var wallet = await _context.Wallets.FindAsync(transaction.WalletId);
             if (wallet == null) return NotFound(new { message = "Không tìm thấy ví." });
 
-            // Cập nhật logic: cộng tiền và đổi trạng thái
-            transaction.Status = 1; // Thành công
+            transaction.Status = 1;
             wallet.Balance += transaction.Amount;
             wallet.UpdatedAt = DateTime.Now;
 
