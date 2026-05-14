@@ -82,17 +82,17 @@ namespace LangFood.Shared.Models
                 .HasForeignKey<Wallet>(w => w.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // 7. Cấu hình quan hệ Wallet -> Transaction
+            // 7. CẤU HÌNH QUAN HỆ WALLET -> TRANSACTION (CHỈ ĐỊNH RÕ NAVIGATION)
             modelBuilder.Entity<Transaction>()
-                .HasOne<Wallet>()
+                .HasOne(t => t.Wallet) // Map vào thuộc tính Wallet trong class Transaction
                 .WithMany()
                 .HasForeignKey(t => t.WalletId)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            // 8. Cấu hình quan hệ Transaction -> Order (Để đối soát)
+            // 8. CẤU HÌNH QUAN HỆ TRANSACTION -> ORDER (ĐỂ ĐỐI SOÁT)
             modelBuilder.Entity<Transaction>()
-                .HasOne<Order>()
-                .WithMany()
+                .HasOne(t => t.Order) // Map vào thuộc tính Order trong class Transaction
+                .WithMany(o => o.Transactions) // Map vào danh sách Transactions trong class Order
                 .HasForeignKey(t => t.OrderId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.NoAction);

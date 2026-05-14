@@ -1,6 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LangFood.Shared.Models;
+using System.Threading.Tasks;
+using System.Linq;
+using System;
+
 namespace LangFoodAdmin.Controllers
 {
     public class TransactionsController : Controller
@@ -12,7 +16,7 @@ namespace LangFoodAdmin.Controllers
             _context = context;
         }
 
-        // Hiển thị danh sách nạp tiền đang chờ
+        // 1. Hiển thị danh sách nạp tiền đang chờ duyệt
         public async Task<IActionResult> Index()
         {
             var pendingDeposits = await _context.Transactions
@@ -24,32 +28,59 @@ namespace LangFoodAdmin.Controllers
                     UserFullName = u.FullName,
                     Amount = j.t.Amount,
                     Description = j.t.Description,
-                    CreatedAt = j.t.CreatedAt
+                    CreatedAt = j.t.CreatedAt,
+                    OrderId = j.t.OrderId // Để biết đơn hàng nào đang được thanh toán
                 })
+                .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync();
 
             return View(pendingDeposits);
         }
 
+        // 2. Xử lý duyệt tiền
         [HttpPost]
         public async Task<IActionResult> Approve(int id)
         {
-            var trans = await _context.Transactions.FindAsync(id);
-            if (trans != null)
+            // Sử dụng Transaction để đảm bảo an toàn dữ liệu
+            using var dbTransaction = await _context.Database.BeginTransactionAsync();
+            try
             {
+                var trans = await _context.Transactions.FindAsync(id);
+                if (trans == null || trans.Status != 0)
+                    return RedirectToAction(nameof(Index));
+
                 var wallet = await _context.Wallets.FindAsync(trans.WalletId);
                 if (wallet != null)
                 {
-                    trans.Status = 1;
+                    // A. Cập nhật trạng thái giao dịch và cộng tiền vào ví
+                    trans.Status = 1; // Thành công
                     wallet.Balance += trans.Amount;
+                    wallet.UpdatedAt = DateTime.Now;
+
+                    // B. QUAN TRỌNG: Nếu giao dịch này liên quan đến một Đơn hàng (Thanh toán QR)
+                    if (trans.OrderId.HasValue)
+                    {
+                        var order = await _context.Orders.FindAsync(trans.OrderId.Value);
+                        if (order != null && order.Status == "PendingPayment")
+                        {
+                            order.Status = "Confirmed"; // Duyệt đơn luôn để Shop thấy đơn
+                        }
+                    }
+
                     await _context.SaveChangesAsync();
+                    await dbTransaction.CommitAsync();
                 }
             }
+            catch (Exception)
+            {
+                await dbTransaction.RollbackAsync();
+            }
+
             return RedirectToAction(nameof(Index));
         }
     }
 
-    // Class tạm để hiển thị dữ liệu ra View
+    // Class ViewModel để hiển thị dữ liệu ra trang Web
     public class DepositViewModel
     {
         public int TransactionId { get; set; }
@@ -57,5 +88,6 @@ namespace LangFoodAdmin.Controllers
         public decimal Amount { get; set; }
         public string Description { get; set; }
         public DateTime CreatedAt { get; set; }
+        public int? OrderId { get; set; }
     }
 }

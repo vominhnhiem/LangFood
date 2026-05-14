@@ -1,11 +1,11 @@
 ﻿@model IEnumerable<LangFoodAdmin.Controllers.DepositViewModel>
 
 @{
-    ViewData["Title"] = "Duyệt Nạp Tiền";
+    ViewData["Title"] = "Duyệt Nạp Tiền & Thanh Toán";
 }
 
 <div class="container-fluid">
-    <h1 class="mt-4">Yêu Cầu Nạp Tiền Đang Chờ</h1>
+    <h1 class="mt-4">Yêu Cầu Nạp Tiền & Thanh Toán QR</h1>
     
     <div class="card mb-4">
         <div class="card-body">
@@ -13,9 +13,10 @@
                 <thead class="table-dark">
                     <tr>
                         <th>Ngày gửi</th>
-                        <th>Người nạp</th>
+                        <th>Người nạp/Mua hàng</th>
                         <th>Số tiền</th>
-                        <th>Nội dung (Mã NAPTIEN)</th>
+                        <th>Loại giao dịch</th>
+                        <th>Nội dung / Mã đơn</th>
                         <th>Hành động</th>
                     </tr>
                 </thead>
@@ -25,12 +26,24 @@
                         <tr>
                             <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
                             <td><strong>@item.UserFullName</strong></td>
-                            <td class="text-success">@item.Amount.ToString("N0") đ</td>
-                            <td><span class="badge bg-info text-dark">@item.Description</span></td>
+                            <td class="text-success"><strong>@item.Amount.ToString("N0") đ</strong></td>
                             <td>
-                                <form asp-action="Approve" asp-route-id="@item.TransactionId" method="post" onsubmit="return confirm('Bạn đã chắc chắn nhận được tiền từ ngân hàng?')">
-                                    <button type="submit" class="btn btn-primary btn-sm">
-                                        <i class="fas fa-check"></i> Duyệt ngay
+                                @if (item.OrderId.HasValue)
+                                {
+                                    <span class="badge bg-warning text-dark">Thanh toán đơn hàng</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Nạp tiền ví</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="text-info">@item.Description</span>
+                            </td>
+                            <td>
+                                <form asp-action="Approve" asp-route-id="@item.TransactionId" method="post" onsubmit="return confirm('Xác nhận đã nhận đủ @item.Amount.ToString("N0") đ vào ngân hàng?')">
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="fas fa-check"></i> Duyệt & Xác nhận đơn
                                     </button>
                                 </form>
                             </td>
@@ -39,7 +52,7 @@
                     @if (!Model.Any())
                     {
                         <tr>
-                            <td colspan="5" class="text-center">Không có yêu cầu nào đang chờ xử lý.</td>
+                            <td colspan="6" class="text-center">Không có yêu cầu nào cần xử lý.</td>
                         </tr>
                     }
                 </tbody>

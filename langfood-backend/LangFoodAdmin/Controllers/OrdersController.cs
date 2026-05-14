@@ -45,84 +45,89 @@ namespace LangFoodAdmin.Controllers
                 .Include(o => o.Building)
                 .Include(o => o.Shop)
                 .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (order == null) return NotFound();
             return View(order);
         }
 
-        // 3. XỬ LÝ HOÀN THÀNH ĐƠN HÀNG VÀ CHUYỂN TIỀN (FIXED)
+        // 3. XỬ LÝ ADMIN XÁC NHẬN HOÀN THÀNH ĐƠN (Thanh toán cho Shipper)
         [HttpPost]
         public async Task<IActionResult> CompleteOrder(int id)
         {
-            // Load Order kèm theo Shop để tránh lỗi Null Reference (CS8602)
-            var order = await _context.Orders
-                .Include(o => o.Shop)
-                .FirstOrDefaultAsync(o => o.Id == id);
-
-            if (order == null || order.Status == "COMPLETED")
-                return BadRequest("Đơn hàng không tồn tại hoặc đã hoàn thành.");
-
-            // A. Cập nhật trạng thái đơn hàng
-            order.Status = "COMPLETED";
-            order.DeliveredAt = DateTime.Now;
-
-            // B. XỬ LÝ VÍ SHIPPER
-            if (order.ShipperId.HasValue)
+            // Sử dụng Transaction để đảm bảo an toàn dữ liệu tiền tệ
+            using var dbTransaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                var shipper = await _context.Shippers.FindAsync(order.ShipperId.Value);
-                if (shipper != null)
-                {
-                    var shipperWallet = await _context.Wallets.FirstOrDefaultAsync(w => w.UserId == shipper.UserId);
-                    if (shipperWallet != null)
-                    {
-                        // Shipper nhận 45k (bao gồm vốn + ship + thưởng)
-                        decimal totalReward = 45000; 
-                        shipperWallet.Balance += totalReward;
+                var order = await _context.Orders.FindAsync(id);
 
-                        _context.Transactions.Add(new Transaction
+                if (order == null) return NotFound();
+
+                // Chỉ cho phép hoàn thành các đơn đang giao (Shipping)
+                if (order.Status == "Completed")
+                    return BadRequest("Đơn hàng này đã được hoàn thành trước đó.");
+
+                // A. Cập nhật trạng thái đơn hàng
+                order.Status = "Completed";
+                order.DeliveredAt = DateTime.Now;
+
+                // B. XỬ LÝ VÍ SHIPPER (Trả 45k cho Shipper)
+                if (order.ShipperId.HasValue)
+                {
+                    var shipper = await _context.Shippers.FindAsync(order.ShipperId.Value);
+                    if (shipper != null)
+                    {
+                        var shipperWallet = await _context.Wallets.FirstOrDefaultAsync(w => w.UserId == shipper.UserId);
+                        if (shipperWallet != null)
                         {
-                            WalletId = shipperWallet.Id,
-                            Amount = totalReward,
-                            Type = "ORDER_REWARD",
-                            Description = $"Hoàn vốn & Thưởng đơn #{order.Id}",
-                            Status = 1,
-                            OrderId = order.Id,
-                            CreatedAt = DateTime.Now
-                        });
+                            // Theo logic: Shipper nhận 45k (25k vốn ký quỹ + 5k ship + 15k thưởng admin)
+                            decimal totalReward = 45000;
+                            shipperWallet.Balance += totalReward;
+                            shipperWallet.UpdatedAt = DateTime.Now;
+
+                            _context.Transactions.Add(new Transaction
+                            {
+                                WalletId = shipperWallet.Id,
+                                Amount = totalReward,
+                                Type = "RECEIVE",
+                                Description = $"Hoàn vốn + Ship + Thưởng đơn #{order.Id}",
+                                Status = 1, // Thành công
+                                OrderId = order.Id,
+                                CreatedAt = DateTime.Now
+                            });
+                        }
                     }
                 }
-            }
 
-            // C. XỬ LÝ VÍ SHOP
-            if (order.Shop != null)
+                // C. LƯU Ý VỀ VÍ SHOP: 
+                // Shop đã nhận 25k từ Shipper ngay lúc Shipper bấm "Nhận đơn" (Ký quỹ).
+                // Do đó ở bước hoàn thành này Admin không cần cộng thêm tiền cho Shop nữa.
+
+                await _context.SaveChangesAsync();
+                await dbTransaction.CommitAsync();
+
+                TempData["Success"] = $"Đơn hàng #{id} đã hoàn thành. Shipper đã nhận 45,000đ.";
+            }
+            catch (Exception ex)
             {
-                var shopWallet = await _context.Wallets.FirstOrDefaultAsync(w => w.UserId == order.Shop.UserId);
-                if (shopWallet != null)
-                {
-                    // FIX LỖI CS1061: Thay TotalPrice thành TotalAmount
-                    // Tiền Shop nhận = Tổng đơn - Phí ship (hoặc theo logic riêng của bạn)
-                    decimal foodPrice = order.TotalAmount - order.ShippingFee; 
-                    
-                    shopWallet.Balance += foodPrice;
-
-                    _context.Transactions.Add(new Transaction
-                    {
-                        WalletId = shopWallet.Id,
-                        Amount = foodPrice,
-                        Type = "RECEIVE",
-                        Description = $"Tiền bán món ăn đơn #{order.Id}",
-                        Status = 1,
-                        OrderId = order.Id,
-                        CreatedAt = DateTime.Now
-                    });
-                }
+                await dbTransaction.RollbackAsync();
+                TempData["Error"] = "Lỗi xử lý: " + ex.Message;
             }
 
-            // Lưu tất cả thay đổi vào Database
-            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
 
-            TempData["Success"] = "Xác nhận hoàn thành đơn hàng và cộng tiền thành công!";
+        // 4. Xóa đơn hàng (Nếu cần)
+        [HttpPost]
+        public async Task<IActionResult> DeleteOrder(int id)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order != null)
+            {
+                _context.Orders.Remove(order);
+                await _context.SaveChangesAsync();
+            }
             return RedirectToAction(nameof(Index));
         }
     }
