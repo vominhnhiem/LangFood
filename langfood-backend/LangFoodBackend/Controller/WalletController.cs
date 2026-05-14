@@ -30,29 +30,31 @@ namespace LangFoodBackend.Controllers
         }
 
         // 2. API Nạp tiền (Người dùng gửi yêu cầu thông báo đã chuyển khoản)
+        // File: Controllers/WalletController.cs (Backend)
+
         [HttpPost("deposit")]
-        public async Task<IActionResult> Deposit([FromQuery] string userId, [FromQuery] decimal amount)
+        public async Task<IActionResult> Deposit([FromQuery] string userId, [FromQuery] decimal amount, [FromQuery] int? orderId)
         {
             var wallet = await _context.Wallets.FirstOrDefaultAsync(w => w.UserId == userId);
             if (wallet == null) return NotFound("Không tìm thấy ví");
 
-            // LƯU Ý: KHÔNG cộng tiền vào wallet.Balance ở đây.
-            // Chỉ tạo bản ghi giao dịch ở trạng thái Pending (Status = 0)
             var transaction = new Transaction
             {
                 WalletId = wallet.Id,
                 Amount = amount,
                 Type = "DEPOSIT",
-                Description = "Yêu cầu nạp tiền qua VietQR",
-                Status = 0, // Đang chờ duyệt
+                // Tạo mô tả để Admin dễ nhận biết
+                Description = orderId.HasValue ? $"Thanh toán đơn hàng #{orderId} qua QR" : "Yêu cầu nạp tiền vào ví",
+                Status = 0, // 0 = Pending (Chờ duyệt) -> Để hiện lên danh sách của Admin
+                OrderId = orderId, // Lưu ID đơn hàng vào đây
                 CreatedAt = DateTime.Now
             };
 
             _context.Transactions.Add(transaction);
             await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Yêu cầu nạp tiền đã được ghi nhận, vui lòng chờ Admin duyệt." });
+            return Ok(new { message = "Yêu cầu thanh toán đã được gửi tới Admin." });
         }
+        
 
         // 3. API Dành cho Admin Duyệt nạp tiền (MỚI)
         [HttpPost("approve-deposit/{transactionId}")]

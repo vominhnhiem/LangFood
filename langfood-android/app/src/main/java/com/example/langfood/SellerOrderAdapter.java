@@ -21,6 +21,7 @@ public class SellerOrderAdapter extends RecyclerView.Adapter<SellerOrderAdapter.
 
     public interface OnOrderActionListener {
         void onConfirm(Order order);
+        void onItemClick(Order order);
     }
 
     public SellerOrderAdapter(Context context, List<Order> orderList, OnOrderActionListener listener) {
@@ -64,14 +65,19 @@ public class SellerOrderAdapter extends RecyclerView.Adapter<SellerOrderAdapter.
         } else {
             holder.btnConfirmOrder.setVisibility(View.GONE);
         }
+
+        // Bấm vào đơn hàng để xem chi tiết
+        holder.itemView.setOnClickListener(v -> listener.onItemClick(order));
     }
 
     private String translateStatus(String status) {
         if (status == null) return "N/A";
         switch (status) {
             case "Pending": return "Chờ xác nhận";
+            case "Confirmed": return "Đã xác nhận";
             case "Shipping": return "Đang giao";
             case "Delivered": return "Đã giao";
+            case "Cancelled": return "Đã hủy";
             default: return status;
         }
     }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -10,25 +11,23 @@ namespace LangFood.Shared.Models
         [Key]
         public int Id { get; set; }
 
+        [Required]
         public string UserId { get; set; } = string.Empty;
 
+        [StringLength(20)]
+        public string? Mssv { get; set; }
 
         public bool IsOnline { get; set; } = false;
 
-
         public bool IsApproved { get; set; } = false;
 
-        // Expose wallet balance for views that reference shipper.WalletBalance
-        [NotMapped]
-        public decimal WalletBalance => User?.Wallet?.Balance ?? 0m;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        [JsonIgnore]
+        [JsonIgnore] // Thêm để tránh vòng lặp JSON
         [ForeignKey("UserId")]
         public virtual User? User { get; set; }
 
-        // THAY THẾ Leg1Orders và Leg2Orders bằng 1 danh sách duy nhất
         [JsonIgnore]
-        [InverseProperty("Shipper")]
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
     }
 }

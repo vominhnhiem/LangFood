@@ -10,8 +10,8 @@ public class Shipper implements Serializable {
     @SerializedName(value = "userId", alternate = {"UserId"})
     private String userId;
 
-    @SerializedName(value = "activeBuildingId", alternate = {"ActiveBuildingId"})
-    private Integer activeBuildingId;
+    @SerializedName(value = "mssv", alternate = {"Mssv"})
+    private String mssv;
 
     @SerializedName(value = "isOnline", alternate = {"IsOnline"})
     private boolean isOnline;
@@ -27,8 +27,8 @@ public class Shipper implements Serializable {
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
 
-    public Integer getActiveBuildingId() { return activeBuildingId; }
-    public void setActiveBuildingId(Integer activeBuildingId) { this.activeBuildingId = activeBuildingId; }
+    public String getMssv() { return mssv; }
+    public void setMssv(String mssv) { this.mssv = mssv; }
 
     public boolean isOnline() { return isOnline; }
     public void setOnline(boolean online) { isOnline = online; }

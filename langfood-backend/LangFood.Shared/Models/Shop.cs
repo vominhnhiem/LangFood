@@ -24,13 +24,11 @@ namespace LangFood.Shared.Models
 
         public string? ImageUrl { get; set; }
 
-
-
         public bool IsActive { get; set; } = true;
 
         public bool IsOpen { get; set; } = true;
 
-        [JsonIgnore]
+        [JsonIgnore] // Thêm để tránh vòng lặp JSON
         [ForeignKey("UserId")]
         public virtual User? User { get; set; }
 

@@ -27,6 +27,7 @@ import com.example.langfood.models.OrderItem;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -62,7 +63,6 @@ public class CheckoutActivity extends AppCompatActivity {
         userId = prefs.getString("USER_ID", "");
         fullName = prefs.getString("FULL_NAME", "Người dùng");
 
-        // Load lại thông tin cũ
         selectedBuildingId = prefs.getInt("BUILDING_ID", 0);
         selectedBuildingName = prefs.getString("BUILDING_NAME", "");
         selectedRoom = prefs.getString("ROOM", "");
@@ -132,23 +132,25 @@ public class CheckoutActivity extends AppCompatActivity {
         order.setBuyerId(userId);
         order.setBuyerName(fullName);
         
-        // FIX: Lấy shopId an toàn. Nếu shopId của nhóm bị 0, lấy từ món ăn đầu tiên.
         int finalShopId = cartGroup.shopId;
         if (finalShopId == 0 && cartGroup.items != null && !cartGroup.items.isEmpty()) {
             finalShopId = cartGroup.items.get(0).getProduct().getShopId();
         }
         order.setShopId(finalShopId);
         
-        order.setStatus("Pending");
+        // Khi dùng QR, để trạng thái là "PendingPayment" để Admin dễ lọc
+        if (selectedPaymentMethod.contains("Chuyển khoản")) {
+            order.setStatus("PendingPayment");
+        } else {
+            order.setStatus("Pending");
+        }
 
-        // FIX LỖI 500: Chỉ gửi BuildingId nếu > 0
         if (selectedBuildingId > 0) {
             order.setBuildingId(selectedBuildingId);
         }
         order.setDeliveryBuilding(selectedBuildingName);
         order.setDeliveryRoom(selectedRoom);
 
-        // 0: Tiền mặt, 1: Chuyển khoản (Ví)
         order.setPaymentMethod(selectedPaymentMethod.contains("Chuyển khoản") ? 1 : 0);
 
         double total = calculateTotal();
@@ -165,10 +167,6 @@ public class CheckoutActivity extends AppCompatActivity {
         }
         order.setOrderItems(orderItems);
 
-        // DEBUG: Log Request Body ra Console để kiểm tra ShopId
-        String jsonRequest = new com.google.gson.Gson().toJson(order);
-        android.util.Log.d("DEBUG_CHECKOUT", "Request Body: " + jsonRequest);
-        
         if (finalShopId <= 0) {
             Toast.makeText(this, "Lỗi: Không tìm thấy ID cửa hàng!", Toast.LENGTH_SHORT).show();
             return;
@@ -182,7 +180,6 @@ public class CheckoutActivity extends AppCompatActivity {
             public void onResponse(Call<Order> call, Response<Order> response) {
                 if (response.isSuccessful()) {
                     Order createdOrder = response.body();
-                    // Xóa giỏ hàng sau khi đặt thành công
                     for (CartItem item : cartGroup.items) {
                         CartManager.getInstance().removeItem(item.getProduct().getId());
                     }
@@ -196,15 +193,7 @@ public class CheckoutActivity extends AppCompatActivity {
                 } else {
                     btnPlaceOrder.setEnabled(true);
                     btnPlaceOrder.setText("Đặt đơn");
-                    try {
-                        // Đọc thông báo lỗi từ Backend để debug
-                        String errorBody = response.errorBody().string();
-                        JSONObject jsonObject = new JSONObject(errorBody);
-                        String message = jsonObject.optString("message", "Lỗi không xác định");
-                        Toast.makeText(CheckoutActivity.this, "Lỗi Server: " + message, Toast.LENGTH_LONG).show();
-                    } catch (Exception e) {
-                        Toast.makeText(CheckoutActivity.this, "Lỗi hệ thống: " + response.code(), Toast.LENGTH_SHORT).show();
-                    }
+                    Toast.makeText(CheckoutActivity.this, "Lỗi Server: " + response.code(), Toast.LENGTH_SHORT).show();
                 }
             }
 
@@ -237,9 +226,28 @@ public class CheckoutActivity extends AppCompatActivity {
 
         Glide.with(this).load(qrUrl).into(ivQrCode);
         builder.setView(view);
-        builder.setPositiveButton("Tôi đã chuyển khoản", (dialog, which) -> finish());
+        builder.setPositiveButton("Tôi đã chuyển khoản", (dialog, which) -> {
+            // GỬI THÔNG BÁO CHO ADMIN
+            notifyAdminPayment(order, totalAmount);
+        });
         builder.setNegativeButton("Thanh toán sau", (dialog, which) -> finish());
         builder.show();
+    }
+
+    private void notifyAdminPayment(Order order, double amount) {
+        apiService.deposit(userId, amount, order.getId()).enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                Toast.makeText(CheckoutActivity.this, "Đã gửi thông báo thanh toán cho Admin. Vui lòng chờ duyệt!", Toast.LENGTH_LONG).show();
+                finish();
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Toast.makeText(CheckoutActivity.this, "Đặt đơn thành công nhưng lỗi gửi thông báo thanh toán. Hãy liên hệ Admin!", Toast.LENGTH_LONG).show();
+                finish();
+            }
+        });
     }
 
     private void showPaymentSelectionDialog() {

@@ -7,6 +7,7 @@ namespace LangFood.Shared.Models
 {
     public class User
     {
+        [Key]
         public string Id { get; set; } = string.Empty;
         public string Username { get; set; } = string.Empty;
         public string PasswordHash { get; set; } = string.Empty;
@@ -43,14 +44,11 @@ namespace LangFood.Shared.Models
         [JsonIgnore]
         public virtual ICollection<RoleRequest> RoleRequests { get; set; } = new List<RoleRequest>();
 
-        [JsonIgnore]
+        // KHÔNG DÙNG JsonIgnore ở đây để Android nhận được dữ liệu
         public virtual Shop? Shop { get; set; }
 
-        [JsonIgnore]
         public virtual Shipper? Shipper { get; set; }
 
-        // --- NEW: Liên kết trực tiếp tới Ví ---
-        [JsonIgnore]
         public virtual Wallet? Wallet { get; set; }
     }
 }

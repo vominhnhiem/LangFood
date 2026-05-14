@@ -2,17 +2,20 @@ using LangFood.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Net.Sockets;
-using System.Diagnostics;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
+// 1. Cấu hình Controller: Bỏ IgnoreCycles, dùng JsonIgnore ở Model cho nhanh
 builder.Services.AddControllers(options =>
 {
     options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+})
+.AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 });
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -22,7 +25,6 @@ builder.Services.AddDbContext<LangFoodDbContext>(options =>
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
     policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
-// Preferred: configure Kestrel and pick a free port if 5289 is already taken.
 int desiredPort = 5289;
 int portToUse = IsPortAvailable(desiredPort) ? desiredPort : GetAvailablePort();
 
@@ -31,52 +33,35 @@ builder.WebHost.ConfigureKestrel(options =>
     options.ListenAnyIP(portToUse);
 });
 
-builder.Services.AddMemoryCache(); // Để lưu mã OTP tạm thời trong bộ nhớ
+builder.Services.AddMemoryCache();
 builder.Services.AddScoped<LangFoodBackend.Services.EmailService>();
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
 app.UseCors();
-app.UseAuthorization();
 app.UseStaticFiles();
+app.UseAuthorization();
 app.MapControllers();
 
-Console.WriteLine($"Starting on port {portToUse}");
+Console.WriteLine($"Server running on port {portToUse}");
 
-// Start the app so Kestrel binds before opening the browser.
-// Use StartAsync + WaitForShutdownAsync so we can open the correct Swagger URL (with the actual port) when debugging.
-await app.StartAsync();
+await app.RunAsync();
 
-// Removed automatic browser launch to avoid duplicate browser windows when Visual Studio
-// already opens the app's launch URL. Visual Studio will open the configured launch URL(s).
-
-await app.WaitForShutdownAsync();
-
+// --- Helpers ---
 static bool IsPortAvailable(int port)
 {
-    try
-    {
-        TcpListener l = new TcpListener(IPAddress.Any, port);
-        l.Start();
-        l.Stop();
-        return true;
-    }
-    catch (SocketException)
-    {
-        return false;
-    }
+    try { TcpListener l = new TcpListener(IPAddress.Any, port); l.Start(); l.Stop(); return true; }
+    catch { return false; }
 }
 
 static int GetAvailablePort()
 {
-    TcpListener l = new TcpListener(IPAddress.Loopback, 0);
-    l.Start();
-    int port = ((IPEndPoint)l.LocalEndpoint).Port;
-    l.Stop();
-    return port;
+    TcpListener l = new TcpListener(IPAddress.Loopback, 0); l.Start();
+    int port = ((IPEndPoint)l.LocalEndpoint).Port; l.Stop(); return port;
 }

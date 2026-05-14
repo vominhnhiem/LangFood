@@ -8,27 +8,17 @@ namespace LangFood.Shared.Models
     {
         [Key]
         public int Id { get; set; }
-
-        [Required]
-        public string UserId { get; set; } = string.Empty;
-
-        [ForeignKey(nameof(UserId))]
-        public virtual User User { get; set; } = null!;
-
-        [Required]
+        public string UserId { get; set; }
         public int RequestType { get; set; } // 1: Seller, 2: Shipper
 
-        [StringLength(500)]
-        public string? ImageProof { get; set; }
-
-        [StringLength(200)]
-        public string? ShopName { get; set; }
-
-        [StringLength(500)]
+        public string? ImageProof { get; set; } // Đường dẫn ảnh thẻ SV
+        public string? ShopName { get; set; }   // Dùng để lưu "MSSV: 12345"
         public string? ShopAddress { get; set; }
 
-        public int Status { get; set; } = 0; // 0: Pending, 1: Approved, 2: Rejected
+        public int Status { get; set; } // 0: Pending, 1: Approved, 2: Rejected
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        [ForeignKey("UserId")]
+        public virtual User? User { get; set; }
     }
 }

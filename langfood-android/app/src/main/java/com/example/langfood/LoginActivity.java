@@ -7,9 +7,9 @@ import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.UnderlineSpan;
-import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,11 +17,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.langfood.api.ApiClient;
 import com.example.langfood.api.ApiService;
-import com.example.langfood.models.Shipper;
-import com.example.langfood.models.Shop;
 import com.example.langfood.models.User;
-
-import java.io.IOException;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -31,12 +27,17 @@ public class LoginActivity extends AppCompatActivity {
 
     private EditText etUsername, etPassword;
     private Button btnLogin;
-    private TextView tvRegisterLink, tvAppTitle, tvForgotPassword;
+    private TextView tvRegisterLink, tvAppTitle, tvForgotPassword, tvSlogan;
+    private ImageView ivLogo;
     private ApiService apiService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Kiểm tra đăng nhập cũ để chuyển hướng ngay
+        checkLoggedUser();
+
         setContentView(R.layout.activity_login);
 
         apiService = ApiClient.getClient().create(ApiService.class);
@@ -47,7 +48,10 @@ public class LoginActivity extends AppCompatActivity {
         tvRegisterLink = findViewById(R.id.tvRegisterLink);
         tvAppTitle = findViewById(R.id.tvAppTitle);
         tvForgotPassword = findViewById(R.id.tvForgotPassword);
+        ivLogo = findViewById(R.id.ivLogo);
+        tvSlogan = findViewById(R.id.tvSlogan);
 
+        // Thiết lập link đăng ký
         String content = "Chưa có tài khoản? Đăng ký ngay";
         SpannableString ss = new SpannableString(content);
         int start = content.indexOf("Đăng ký ngay");
@@ -73,22 +77,20 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         if (tvForgotPassword != null) {
-            tvForgotPassword.setOnClickListener(v -> {
-                startActivity(new Intent(LoginActivity.this, ForgotPasswordActivity.class));
-            });
+            tvForgotPassword.setOnClickListener(v -> startActivity(new Intent(LoginActivity.this, ForgotPasswordActivity.class)));
         }
 
-        setupTestShortcuts();
+        // --- ĐÃ GỠ BỎ TOÀN BỘ LOGIC CLICK LOGO/SLOGAN ĐỂ ĐIỀN NHANH TÀI KHOẢN ---
     }
 
-    private void setupTestShortcuts() {
-        if (tvAppTitle != null) {
-            tvAppTitle.setOnLongClickListener(v -> {
-                etUsername.setText("sell");
-                etPassword.setText("nhiem2512005");
-                btnLogin.performClick(); 
-                return true;
-            });
+    private void checkLoggedUser() {
+        SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
+        String userId = prefs.getString("USER_ID", null);
+        if (userId != null) {
+            // Tất cả người dùng đã đăng nhập đều vào HomeActivity
+            Intent intent = new Intent(this, HomeActivity.class);
+            startActivity(intent);
+            finish();
         }
     }
 
@@ -102,19 +104,17 @@ public class LoginActivity extends AppCompatActivity {
             public void onResponse(Call<User> call, Response<User> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     User userResponse = response.body();
-                    if (userResponse.getRoleId() == 0) {
-                        Toast.makeText(LoginActivity.this, "Admin vui lòng dùng Web", Toast.LENGTH_LONG).show();
-                        return;
-                    }
+                    
+                    // Lưu vào Local trước
                     saveUserToLocal(userResponse);
                     
-                    if (userResponse.getRoleId() == 2) { // Seller
-                        fetchShopInfo(userResponse.getId());
-                    } else if (userResponse.getRoleId() == 3) { // Shipper
-                        fetchShipperInfo(userResponse.getId());
-                    } else {
-                        onLoginSuccess();
-                    }
+                    Toast.makeText(LoginActivity.this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
+                    
+                    // Sau khi đăng nhập thành công, tất cả đều vào HomeActivity
+                    Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
                 } else {
                     Toast.makeText(LoginActivity.this, "Sai tài khoản hoặc mật khẩu!", Toast.LENGTH_SHORT).show();
                 }
@@ -122,69 +122,43 @@ public class LoginActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<User> call, Throwable t) {
-                Toast.makeText(LoginActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                Toast.makeText(LoginActivity.this, "Lỗi kết nối server", Toast.LENGTH_LONG).show();
             }
         });
-    }
-
-    private void fetchShopInfo(String userId) {
-        apiService.getShopByUserId(userId).enqueue(new Callback<Shop>() {
-            @Override
-            public void onResponse(Call<Shop> call, Response<Shop> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
-                    prefs.edit().putInt("SHOP_ID", response.body().getId()).apply();
-                }
-                onLoginSuccess();
-            }
-
-            @Override
-            public void onFailure(Call<Shop> call, Throwable t) {
-                onLoginSuccess();
-            }
-        });
-    }
-
-    private void fetchShipperInfo(String userId) {
-        apiService.getShipperByUserId(userId).enqueue(new Callback<Shipper>() {
-            @Override
-            public void onResponse(Call<Shipper> call, Response<Shipper> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
-                    prefs.edit().putInt("SHIPPER_ID", response.body().getId()).apply();
-                }
-                onLoginSuccess();
-            }
-
-            @Override
-            public void onFailure(Call<Shipper> call, Throwable t) {
-                onLoginSuccess();
-            }
-        });
-    }
-
-    private void onLoginSuccess() {
-        Toast.makeText(LoginActivity.this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
-        startActivity(new Intent(LoginActivity.this, HomeActivity.class));
-        finish();
     }
 
     private void saveUserToLocal(User user) {
-        SharedPreferences sharedPreferences = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
+        SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
         editor.putString("USER_ID", user.getId());
         editor.putString("USERNAME", user.getUsername());
         editor.putString("FULL_NAME", user.getFullName());
         editor.putString("PHONE", user.getPhoneNumber());
+        editor.putString("AVATAR_URL", user.getAvatarUrl());
         editor.putInt("ROLE_ID", user.getRoleId());
         
-        // LƯU SỐ DƯ VÍ VÀO PREFS ĐỂ DÙNG NHANH
+        // Cực kỳ quan trọng: Lưu ID để các màn hình sau không bị crash
+        if (user.getShop() != null) {
+            editor.putInt("SHOP_ID", user.getShop().getId());
+            editor.putString("SHOP_NAME", user.getShop().getName());
+        } else {
+            editor.putInt("SHOP_ID", -1);
+        }
+
+        if (user.getShipper() != null) {
+            editor.putInt("SHIPPER_ID", user.getShipper().getId());
+        } else {
+            editor.putInt("SHIPPER_ID", -1);
+        }
+
         if (user.getWallet() != null) {
             editor.putFloat("WALLET_BALANCE", (float) user.getWallet().getBalance());
         } else {
             editor.putFloat("WALLET_BALANCE", 0.0f);
         }
 
-        editor.apply();
+        // Sử dụng commit() thay vì apply() để đảm bảo dữ liệu được ghi vào disk ngay lập tức 
+        // trước khi màn hình tiếp theo được mở và đọc dữ liệu này.
+        editor.commit();
     }
 }
