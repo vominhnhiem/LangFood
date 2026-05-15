@@ -1,0 +1,61 @@
+@model IEnumerable<LangFood.Shared.ViewModels.TransactionHistoryViewModel>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle table-sm">
+        <thead class="table-light">
+            <tr>
+                <th>Ngày</th>
+                <th>Người dùng</th>
+                <th>Loại GD</th>
+                <th>Số tiền</th>
+                <th>Trạng thái</th>
+                <th>Nội dung</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">Chưa có giao dịch nào.</td>
+                </tr>
+            }
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td class="text-nowrap text-muted small">@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>
+                        <div class="fw-medium">@item.UserFullName</div>
+                        <span class="badge bg-light text-dark border" style="font-size:0.7rem;">@item.UserRole</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">@item.TypeLabel</span>
+                    </td>
+                    <td class="fw-bold @(item.IsPositive ? "text-success" : "text-danger")">
+                        @(item.IsPositive ? "+" : "")@item.Amount.ToString("N0") ₫
+                    </td>
+                    <td>
+                        @if (item.Status == 0)
+                        {
+                            <span class="badge bg-warning text-dark"><i class="fa-solid fa-clock"></i> Chờ duyệt</span>
+                        }
+                        else if (item.Status == 1)
+                        {
+                            <span class="badge bg-success"><i class="fa-solid fa-check"></i> Thành công</span>
+                        }
+                        else if (item.Status == 2)
+                        {
+                            <span class="badge bg-danger"><i class="fa-solid fa-xmark"></i> Thất bại</span>
+                        }
+                    </td>
+                    <td class="small text-muted" style="max-width: 300px;">
+                        @item.Description
+                        @if (item.OrderId.HasValue)
+                        {
+                            <br/><a href="/Orders/Details/@item.OrderId" class="text-decoration-none"><i class="fa-solid fa-link"></i> Đơn #@item.OrderId</a>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

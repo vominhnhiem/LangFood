@@ -1,0 +1,100 @@
+@model IEnumerable<LangFood.Shared.ViewModels.WithdrawalRequestViewModel>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Ngày</th>
+                <th>Người yêu cầu</th>
+                <th>Số dư Ví (Hiện tại)</th>
+                <th>Số tiền Rút</th>
+                <th>Thông tin Ngân hàng</th>
+                <th class="text-center">Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">Không có yêu cầu rút tiền nào đang chờ.</td>
+                </tr>
+            }
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>
+                        <div class="fw-medium">@item.UserFullName</div>
+                        <span class="badge bg-secondary">@item.UserRole</span>
+                    </td>
+                    <td>
+                        <span class="text-primary fw-medium">@item.CurrentWalletBalance.ToString("N0") ₫</span>
+                        @if (item.CurrentWalletBalance < item.Amount)
+                        {
+                            <br/><small class="text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Không đủ số dư</small>
+                        }
+                    </td>
+                    <td class="text-danger fw-bold">@item.Amount.ToString("N0") ₫</td>
+                    <td>
+                        <div class="small">
+                            <strong>NH:</strong> @item.BankName<br/>
+                            <strong>STK:</strong> @item.BankAccountNumber<br/>
+                            <strong>Tên:</strong> @item.BankAccountName
+                        </div>
+                        @if (!string.IsNullOrEmpty(item.Note))
+                        {
+                            <div class="small text-muted mt-1"><i class="fa-regular fa-comment"></i> @item.Note</div>
+                        }
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex flex-column gap-2 align-items-center">
+                            <!-- Nút mở Modal Xác nhận Đã chuyển -->
+                            <button class="btn btn-sm btn-success w-100" data-bs-toggle="modal" data-bs-target="#confirmWithdrawModal_@item.WithdrawalId" @(item.CurrentWalletBalance < item.Amount ? "disabled" : "")>
+                                <i class="fa-solid fa-check"></i> Đã Chuyển
+                            </button>
+
+                            <form asp-action="RejectWithdrawal" asp-route-id="@item.WithdrawalId" method="post" class="w-100" onsubmit="var reason = prompt('Lý do từ chối (Vd: Sai STK):'); if(!reason) return false; this.reason.value = reason; return true;">
+                                <input type="hidden" name="reason" value="" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+                                    <i class="fa-solid fa-xmark"></i> Từ chối
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Modal Xác nhận Chuyển khoản cho item này -->
+                        <div class="modal fade" id="confirmWithdrawModal_@item.WithdrawalId" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content text-start">
+                                    <form asp-action="ConfirmWithdrawal" asp-route-id="@item.WithdrawalId" method="post" enctype="multipart/form-data">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Xác nhận chuyển khoản</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="alert alert-info py-2">
+                                                Bạn đang xác nhận đã chuyển <strong>@item.Amount.ToString("N0")₫</strong> cho <strong>@item.UserFullName</strong>.
+                                                Hành động này sẽ trừ tiền trong ví ảo của họ.
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Upload ảnh Bill chuyển khoản (Bắt buộc/Tùy chọn)</label>
+                                                <input type="file" name="billImage" class="form-control" accept="image/*" />
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Ghi chú (Tùy chọn)</label>
+                                                <textarea name="adminNote" class="form-control" rows="2" placeholder="VD: Đã chuyển Vietcombank lúc 14:00"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                            <button type="submit" class="btn btn-success">Xác nhận Đã chuyển</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

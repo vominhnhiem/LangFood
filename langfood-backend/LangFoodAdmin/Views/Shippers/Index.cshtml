@@ -63,9 +63,9 @@ razor
                                     <td>@(item.User?.PhoneNumber ?? "N/A")</td>
                                     <td>@item.ShopName</td> @* Đây thường là nơi lưu MSSV gửi từ Android *@
                                     <td>
-                                        @* SỬA: Dùng ImageProof thay vì StudentCardImageUrl *@
+                                        @* SỬA: Dùng ImageProof thay vì StudentCardImageUrl, và trỏ về port của Backend (5289) *@
                                         <button class="btn btn-sm btn-outline-info view-image-btn rounded-pill px-3" 
-                                                data-img-src="@(item.ImageProof ?? "/images/default-card.png")">
+                                                data-img-src="@(!string.IsNullOrEmpty(item.ImageProof) ? "http://localhost:5289" + item.ImageProof : "/images/default-card.png")">
                                             <i class="fas fa-image me-1"></i> Xem ảnh
                                         </button>
                                     </td>
@@ -129,7 +129,7 @@ razor
                                     <td class="fw-bold">#SP-@shipper.Id.ToString("D3")</td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <img src="@(shipper.User?.AvatarUrl ?? $"https://ui-avatars.com/api/?name={shipper.User?.FullName}&background=random")" class="rounded-circle me-2" width="32" height="32">
+                                            <img src="@(!string.IsNullOrEmpty(shipper.User?.AvatarUrl) ? "http://localhost:5289" + shipper.User?.AvatarUrl : $"https://ui-avatars.com/api/?name={shipper.User?.FullName}&background=random")" class="rounded-circle me-2" width="32" height="32">
                                             <span>@shipper.User?.FullName</span>
                                         </div>
                                     </td>

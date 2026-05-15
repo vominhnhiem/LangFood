@@ -1,0 +1,54 @@
+@model IEnumerable<LangFood.Shared.ViewModels.DepositRequestViewModel>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Ngày</th>
+                <th>Người dùng</th>
+                <th>Vai trò</th>
+                <th>Số tiền</th>
+                <th>Mã / Nội dung GD</th>
+                <th class="text-center">Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">Không có yêu cầu nạp tiền nào đang chờ.</td>
+                </tr>
+            }
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td><span class="fw-medium">@item.UserFullName</span></td>
+                    <td><span class="badge bg-secondary">@item.UserRole</span></td>
+                    <td class="text-success fw-bold">@item.Amount.ToString("N0") ₫</td>
+                    <td>@item.Description</td>
+                    <td class="text-center">
+                        <div class="d-flex justify-content-center gap-2">
+                            <button class="btn btn-sm btn-outline-info" onclick="showBillModal('@item.BillImageUrl')">
+                                <i class="fa-solid fa-eye"></i> Xem Bill
+                            </button>
+
+                            <form asp-action="ApproveDeposit" asp-route-id="@item.TransactionId" method="post" style="display:inline;" onsubmit="return confirm('Bạn có chắc chắn duyệt +@item.Amount.ToString("N0")₫ cho @item.UserFullName?');">
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="fa-solid fa-check"></i> Duyệt
+                                </button>
+                            </form>
+
+                            <form asp-action="RejectDeposit" asp-route-id="@item.TransactionId" method="post" style="display:inline;" onsubmit="var reason = prompt('Lý do từ chối:'); if(reason === null) return false; this.reason.value = reason; return true;">
+                                <input type="hidden" name="reason" value="" />
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    <i class="fa-solid fa-xmark"></i> Từ chối
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

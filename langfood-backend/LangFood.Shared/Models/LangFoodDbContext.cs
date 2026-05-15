@@ -20,6 +20,7 @@ namespace LangFood.Shared.Models
         public DbSet<Building> Buildings { get; set; }
         public DbSet<Wallet> Wallets { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<WithdrawalRequest> WithdrawalRequests { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -95,6 +96,16 @@ namespace LangFood.Shared.Models
                 .WithMany(o => o.Transactions) // Map vào danh sách Transactions trong class Order
                 .HasForeignKey(t => t.OrderId)
                 .IsRequired(false)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // 9. CẤU HÌNH WITHDRAWAL REQUEST
+            modelBuilder.Entity<WithdrawalRequest>()
+                .Property(w => w.Amount).HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<WithdrawalRequest>()
+                .HasOne(w => w.User)
+                .WithMany()
+                .HasForeignKey(w => w.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
         }
     }

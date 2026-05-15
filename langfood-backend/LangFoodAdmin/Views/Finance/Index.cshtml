@@ -1,0 +1,143 @@
+@model LangFood.Shared.ViewModels.FinanceDashboardViewModel
+
+@{
+    ViewData["Title"] = "Quản lý Tài chính";
+}
+
+<div class="container-fluid mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+        <h2>@ViewData["Title"]</h2>
+    </div>
+
+    <!-- 4 Thẻ Dashboard (Cards) -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary h-100 shadow-sm rounded-4 border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="mb-1 text-white-50">Tổng số dư hệ thống</p>
+                            <h3 class="mb-0 fw-bold">@Model.TotalSystemBalance.ToString("N0") ₫</h3>
+                        </div>
+                        <div class="fs-1 text-white-50"><i class="fa-solid fa-wallet"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success h-100 shadow-sm rounded-4 border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="mb-1 text-white-50">Doanh thu hệ thống</p>
+                            <h3 class="mb-0 fw-bold">@Model.TotalAdminRevenue.ToString("N0") ₫</h3>
+                        </div>
+                        <div class="fs-1 text-white-50"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning h-100 shadow-sm rounded-4 border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="mb-1 text-dark text-opacity-75">Yêu cầu nạp tiền</p>
+                            <h3 class="mb-0 fw-bold text-dark">@Model.PendingDepositCount</h3>
+                        </div>
+                        <div class="fs-1 text-dark text-opacity-50"><i class="fa-solid fa-money-bill-transfer"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger h-100 shadow-sm rounded-4 border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="mb-1 text-white-50">Yêu cầu rút tiền</p>
+                            <h3 class="mb-0 fw-bold">@Model.PendingWithdrawalCount</h3>
+                        </div>
+                        <div class="fs-1 text-white-50"><i class="fa-solid fa-money-bill-trend-up"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs Content -->
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4 rounded-top-4">
+            <ul class="nav nav-tabs border-bottom-0" id="financeTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-semibold text-dark pb-3 px-4 border-0 border-bottom border-3 border-primary" id="deposit-tab" data-bs-toggle="tab" data-bs-target="#deposit" type="button" role="tab" style="background:none;">Phê duyệt Nạp tiền</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-semibold text-secondary pb-3 px-4 border-0" id="withdraw-tab" data-bs-toggle="tab" data-bs-target="#withdraw" type="button" role="tab" style="background:none;" onclick="switchTab(this)">Yêu cầu Rút tiền</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-semibold text-secondary pb-3 px-4 border-0" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" style="background:none;" onclick="switchTab(this)">Lịch sử biến động</button>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="card-body p-0">
+            <div class="tab-content" id="financeTabsContent">
+                <!-- Tab 1: Phê duyệt nạp tiền -->
+                <div class="tab-pane fade show active p-4" id="deposit" role="tabpanel">
+                    @await Html.PartialAsync("_PendingDeposits", Model.PendingDeposits)
+                </div>
+
+                <!-- Tab 2: Yêu cầu rút tiền -->
+                <div class="tab-pane fade p-4" id="withdraw" role="tabpanel">
+                    @await Html.PartialAsync("_PendingWithdrawals", Model.PendingWithdrawals)
+                </div>
+
+                <!-- Tab 3: Lịch sử biến động -->
+                <div class="tab-pane fade p-4" id="history" role="tabpanel">
+                    @await Html.PartialAsync("_TransactionHistory", Model.TransactionHistory)
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function switchTab(el) {
+            // Xóa border active của các tab khác
+            document.querySelectorAll('#financeTabs .nav-link').forEach(btn => {
+                btn.classList.remove('border-bottom', 'border-3', 'border-primary', 'text-dark');
+                btn.classList.add('text-secondary');
+            });
+            // Thêm border cho tab hiện tại
+            el.classList.remove('text-secondary');
+            el.classList.add('border-bottom', 'border-3', 'border-primary', 'text-dark');
+        }
+
+        function showBillModal(imgUrl) {
+            if (!imgUrl) {
+                alert("Người dùng chưa upload ảnh hóa đơn.");
+                return;
+            }
+            document.getElementById('billImagePreview').src = imgUrl;
+            var modal = new bootstrap.Modal(document.getElementById('billModal'));
+            modal.show();
+        }
+    </script>
+}
+
+<!-- Modal Xem Ảnh Bill Nạp Tiền -->
+<div class="modal fade" id="billModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Hóa đơn chuyển khoản</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img id="billImagePreview" src="" alt="Bill" class="img-fluid rounded shadow-sm" style="max-height: 80vh;" />
+      </div>
+    </div>
+  </div>
+</div>
