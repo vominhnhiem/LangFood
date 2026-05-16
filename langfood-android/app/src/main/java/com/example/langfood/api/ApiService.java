@@ -126,6 +126,9 @@ public interface ApiService {
     @PUT("api/Orders/shop-accept/{id}")
     Call<Void> shopAcceptOrder(@Path("id") int id);
 
+    @PUT("api/Orders/shop-ready/{id}")
+    Call<Void> shopReadyOrder(@Path("id") int id);
+
     @PUT("api/Orders/accept/{id}")
     Call<Void> acceptOrder(@Path("id") int id, @Query("shipperId") int shipperId);
 

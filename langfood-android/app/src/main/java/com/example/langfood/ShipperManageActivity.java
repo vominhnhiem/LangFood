@@ -10,6 +10,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
 import com.example.langfood.api.ApiClient;
 import com.example.langfood.api.ApiService;
 import com.example.langfood.models.Order;
@@ -28,6 +30,7 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
     private ImageView btnBack;
     private ApiService apiService;
     private int shipperId;
+    private SwipeRefreshLayout swipeRefresh;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +39,7 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
 
         initViews();
         setupRecyclerView();
+        setupSwipeRefresh();
 
         SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
         shipperId = prefs.getInt("SHIPPER_ID", -1);
@@ -52,6 +56,11 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
         });
 
         loadAvailableOrders();
+    }
+
+    private void setupSwipeRefresh() {
+        swipeRefresh.setColorSchemeResources(R.color.shopee_orange);
+        swipeRefresh.setOnRefreshListener(this::loadAvailableOrders);
     }
 
     private void showLogoutDialog() {
@@ -74,6 +83,7 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
     private void initViews() {
         rvShipperOrders = findViewById(R.id.rvShipperOrders);
         btnBack = findViewById(R.id.btnBack);
+        swipeRefresh = findViewById(R.id.swipeRefresh);
     }
 
     private void setupRecyclerView() {
@@ -83,9 +93,13 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
     }
 
     private void loadAvailableOrders() {
+        if (apiService == null) return;
+        
+        swipeRefresh.setRefreshing(true);
         apiService.getAvailableOrders().enqueue(new Callback<List<Order>>() {
             @Override
             public void onResponse(Call<List<Order>> call, Response<List<Order>> response) {
+                if (swipeRefresh.isRefreshing()) swipeRefresh.setRefreshing(false);
                 if (response.isSuccessful() && response.body() != null) {
                     orderList.clear();
                     orderList.addAll(response.body());
@@ -99,6 +113,7 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
 
             @Override
             public void onFailure(Call<List<Order>> call, Throwable t) {
+                if (swipeRefresh.isRefreshing()) swipeRefresh.setRefreshing(false);
                 Toast.makeText(ShipperManageActivity.this, "Lỗi kết nối server", Toast.LENGTH_SHORT).show();
             }
         });

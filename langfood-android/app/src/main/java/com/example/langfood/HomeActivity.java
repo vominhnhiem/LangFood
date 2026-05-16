@@ -14,6 +14,8 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
 import com.example.langfood.api.ApiClient;
 import com.example.langfood.api.ApiService;
 import com.example.langfood.models.Category;
@@ -38,6 +40,7 @@ public class HomeActivity extends AppCompatActivity {
     private EditText editSearch;
     private ApiService apiService;
     private int selectedCategoryId = -1; 
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     private ViewPager2 vpBanners;
     private Handler bannerHandler = new Handler(Looper.getMainLooper());
@@ -70,6 +73,7 @@ public class HomeActivity extends AppCompatActivity {
 
         initViews();
         setupRecyclerViews();
+        setupSwipeRefresh();
         loadCategories();
         fetchAllProducts(); 
         setupNavigation();
@@ -81,6 +85,15 @@ public class HomeActivity extends AppCompatActivity {
         rcvProducts = findViewById(R.id.rv_recommend);
         rcvCategories = findViewById(R.id.rv_categories);
         editSearch = findViewById(R.id.et_search);
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+    }
+
+    private void setupSwipeRefresh() {
+        swipeRefreshLayout.setColorSchemeResources(R.color.shopee_orange);
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            loadCategories();
+            fetchAllProducts();
+        });
     }
 
     private void setupRecyclerViews() {
@@ -120,6 +133,9 @@ public class HomeActivity extends AppCompatActivity {
         apiService.getProducts(null).enqueue(new Callback<List<Product>>() {
             @Override
             public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
+                if (swipeRefreshLayout.isRefreshing()) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
                 if (response.isSuccessful() && response.body() != null) {
                     allProducts.clear();
                     allProducts.addAll(response.body());
@@ -127,7 +143,12 @@ public class HomeActivity extends AppCompatActivity {
                 }
             }
             @Override
-            public void onFailure(Call<List<Product>> call, Throwable t) {}
+            public void onFailure(Call<List<Product>> call, Throwable t) {
+                if (swipeRefreshLayout.isRefreshing()) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
+                Toast.makeText(HomeActivity.this, "Lỗi tải dữ liệu", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 

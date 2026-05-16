@@ -89,7 +89,7 @@ public class HistoryActivity extends AppCompatActivity {
         swipeRefresh.setRefreshing(true);
         if (tvEmpty != null) tvEmpty.setVisibility(View.GONE);
 
-        apiService.getOrdersByBuyer(userId).enqueue(new Callback<>() {
+        apiService.getOrdersByBuyer(userId).enqueue(new Callback<List<Order>>() {
             @Override
             public void onResponse(@NonNull Call<List<Order>> call, @NonNull Response<List<Order>> response) {
                 swipeRefresh.setRefreshing(false);
@@ -99,8 +99,19 @@ public class HistoryActivity extends AppCompatActivity {
                     orderList.clear();
                     orderList.addAll(response.body());
                     
-                    // Sắp xếp đơn hàng mới nhất lên đầu
-                    Collections.reverse(orderList);
+                    // Sắp xếp:
+                    // 1. Đơn chưa hoàn thành lên đầu
+                    // 2. Sau đó sắp xếp theo ID giảm dần (mới nhất lên đầu)
+                    Collections.sort(orderList, (o1, o2) -> {
+                        boolean completed1 = isCompleted(o1.getStatus());
+                        boolean completed2 = isCompleted(o2.getStatus());
+                        
+                        if (completed1 != completed2) {
+                            return completed1 ? 1 : -1; // Chưa hoàn thành lên trước
+                        }
+                        
+                        return Integer.compare(o2.getId(), o1.getId()); // ID lớn hơn lên trước
+                    });
                     
                     if (adapter != null) adapter.notifyDataSetChanged();
 
@@ -119,5 +130,11 @@ public class HistoryActivity extends AppCompatActivity {
                 Toast.makeText(HistoryActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private boolean isCompleted(String status) {
+        if (status == null) return false;
+        String s = status.toLowerCase().trim();
+        return s.equals("completed") || s.equals("delivered") || s.equals("cancelled");
     }
 }

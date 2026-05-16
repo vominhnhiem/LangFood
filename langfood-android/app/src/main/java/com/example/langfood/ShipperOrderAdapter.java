@@ -63,7 +63,7 @@ public class ShipperOrderAdapter extends RecyclerView.Adapter<ShipperOrderAdapte
 
     @Override
     public int getItemCount() {
-        return orderList.size();
+        return orderList != null ? orderList.size() : 0;
     }
 
     public void updateList(List<Order> newList) {
@@ -77,11 +77,11 @@ public class ShipperOrderAdapter extends RecyclerView.Adapter<ShipperOrderAdapte
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            tvShopName = itemView.findViewById(R.id.tvShopName); // Cần đảm bảo layout có ID này
+            tvShopName = itemView.findViewById(R.id.tvShopName);
             tvOrderTime = itemView.findViewById(R.id.tvOrderTime);
             tvOrderAddress = itemView.findViewById(R.id.tvOrderAddress);
             tvTotalAmount = itemView.findViewById(R.id.tvTotalAmount);
-            tvShippingFee = itemView.findViewById(R.id.tvShippingFee); // Cần đảm bảo layout có ID này
+            tvShippingFee = itemView.findViewById(R.id.tvShippingFee);
             btnAcceptOrder = itemView.findViewById(R.id.btnAcceptOrder);
         }
     }

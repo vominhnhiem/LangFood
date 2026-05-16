@@ -8,6 +8,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
+import com.example.langfood.api.ApiClient;
 import com.example.langfood.models.OrderItem;
 import com.example.langfood.models.Product;
 import java.util.List;
@@ -16,8 +17,6 @@ import java.util.Locale;
 public class OrderItemDetailAdapter extends RecyclerView.Adapter<OrderItemDetailAdapter.ViewHolder> {
 
     private List<OrderItem> orderItems;
-    // Cập nhật IP đồng bộ với ApiClient
-    private static final String BASE_URL = "http://192.168.61.39:5289/";
 
     public OrderItemDetailAdapter(List<OrderItem> orderItems) {
         this.orderItems = orderItems;
@@ -34,7 +33,6 @@ public class OrderItemDetailAdapter extends RecyclerView.Adapter<OrderItemDetail
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         OrderItem item = orderItems.get(position);
         
-        // Backend đã trả về full Product, lấy Name và ImageUrl từ đó
         String name = "Món ăn";
         String imageUrl = null;
         
@@ -50,8 +48,11 @@ public class OrderItemDetailAdapter extends RecyclerView.Adapter<OrderItemDetail
         holder.tvProductPrice.setText(String.format(Locale.getDefault(), "%,.0fđ", item.getUnitPrice()));
         holder.tvProductQuantity.setText("x" + item.getQuantity());
 
+        // Sử dụng ApiClient.BASE_URL để đảm bảo đồng bộ địa chỉ IP server
+        String fullImageUrl = ApiClient.BASE_URL + imageUrl;
+
         Glide.with(holder.itemView.getContext())
-                .load(BASE_URL + imageUrl)
+                .load(fullImageUrl)
                 .placeholder(R.drawable.lang_food_avt)
                 .error(R.drawable.lang_food_avt)
                 .into(holder.ivProductImage);

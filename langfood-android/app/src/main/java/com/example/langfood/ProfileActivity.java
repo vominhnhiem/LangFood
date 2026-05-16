@@ -118,8 +118,8 @@ public class ProfileActivity extends AppCompatActivity {
         }
 
         // 3. Xử lý nút Đăng ký (Register Partner)
-        // Nếu đã là cả Seller và Shipper thì ẩn nút đăng ký
-        if (shopId != -1 && shipperId != -1) {
+        // Nếu đã là Seller HOẶC Shipper thì ẩn nút đăng ký
+        if (shopId != -1 || shipperId != -1) {
             btnRegisterPartner.setVisibility(View.GONE);
         } else {
             btnRegisterPartner.setVisibility(View.VISIBLE);

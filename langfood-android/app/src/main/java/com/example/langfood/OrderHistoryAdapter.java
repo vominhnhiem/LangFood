@@ -1,12 +1,14 @@
 package com.example.langfood;
 
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.langfood.api.ApiClient;
@@ -38,17 +40,24 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
     public void onBindViewHolder(@NonNull OrderViewHolder holder, int position) {
         Order order = orderList.get(position);
 
-        // 1. Set Shop Name
         holder.tvShopName.setText(order.getShopName() != null ? order.getShopName() : "Cửa hàng #" + order.getShopId());
 
-        // 2. Set Status and Color
         String status = order.getStatus() != null ? order.getStatus() : "Pending";
         setStatusUI(holder.tvStatus, status);
 
-        // 3. Set Date
+        // LÀM NỔI BẬT ĐƠN CHƯA HOÀN THÀNH
+        if (isUnfinished(status)) {
+            holder.cardRoot.setCardBackgroundColor(Color.parseColor("#FFF8E1")); // Vàng nhạt nổi bật
+            holder.tvStatus.setTextSize(14f);
+            holder.tvStatus.setTypeface(null, Typeface.BOLD_ITALIC);
+        } else {
+            holder.cardRoot.setCardBackgroundColor(Color.WHITE);
+            holder.tvStatus.setTextSize(12f);
+            holder.tvStatus.setTypeface(null, Typeface.BOLD);
+        }
+
         holder.tvOrderDate.setText(formatDate(order.getCreatedAt()));
 
-        // 4. Set Item Count
         int count = 0;
         if (order.getOrderItems() != null) {
             for (OrderItem item : order.getOrderItems()) {
@@ -56,11 +65,8 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
             }
         }
         holder.tvItemCount.setText(count + " món");
-
-        // 5. Set Total Amount
         holder.tvTotalAmount.setText(String.format(Locale.getDefault(), "%,.0fđ", order.getTotalAmount()));
 
-        // 6. Set Image (using first item's product image or placeholder)
         String imageUrl = "";
         if (order.getOrderItems() != null && !order.getOrderItems().isEmpty() && order.getOrderItems().get(0).getProduct() != null) {
             imageUrl = order.getOrderItems().get(0).getProduct().getImageUrl();
@@ -73,22 +79,48 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
                 .into(holder.ivOrderThumb);
     }
 
+    private boolean isUnfinished(String status) {
+        if (status == null) return true;
+        String s = status.toLowerCase().trim();
+        return !s.equals("completed") && !s.equals("delivered") && !s.equals("cancelled");
+    }
+
     private void setStatusUI(TextView tvStatus, String status) {
-        switch (status) {
-            case "Pending":
-                tvStatus.setText("Chờ xác nhận");
+        if (status == null) return;
+        String s = status.toLowerCase().trim();
+        switch (s) {
+            case "pending":
+                tvStatus.setText("● Chờ xác nhận");
                 tvStatus.setTextColor(Color.parseColor("#FF9800"));
                 break;
-            case "Processing":
-            case "Shipping":
-                tvStatus.setText(status.equals("Shipping") ? "Đang giao" : "Đang xử lý");
-                tvStatus.setTextColor(Color.parseColor("#2196F3"));
+            case "pendingpayment":
+                tvStatus.setText("● Chờ thanh toán");
+                tvStatus.setTextColor(Color.parseColor("#E91E63"));
                 break;
-            case "Completed":
-                tvStatus.setText("Đã hoàn thành");
+            case "confirmed":
+            case "approved":
+                tvStatus.setText("● Đã xác nhận");
                 tvStatus.setTextColor(Color.parseColor("#4CAF50"));
                 break;
-            case "Cancelled":
+            case "preparing":
+                tvStatus.setText("● Đang chế biến");
+                tvStatus.setTextColor(Color.parseColor("#FBC02D"));
+                break;
+            case "ready":
+                tvStatus.setText("● Chờ shipper lấy");
+                tvStatus.setTextColor(Color.parseColor("#008000"));
+                break;
+            case "shipping":
+            case "delivering":
+                tvStatus.setText("● Đang giao hàng");
+                tvStatus.setTextColor(Color.parseColor("#2196F3"));
+                break;
+            case "completed":
+            case "delivered":
+                tvStatus.setText("Đã hoàn thành");
+                tvStatus.setTextColor(Color.parseColor("#808080"));
+                break;
+            case "cancelled":
                 tvStatus.setText("Đã hủy");
                 tvStatus.setTextColor(Color.parseColor("#F44336"));
                 break;
@@ -102,15 +134,13 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
     private String formatDate(String isoDate) {
         if (isoDate == null) return "--/--/----";
         try {
-            // ISO 8601 format usually is yyyy-MM-dd'T'HH:mm:ss
             SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
             parser.setTimeZone(TimeZone.getTimeZone("UTC"));
             Date date = parser.parse(isoDate);
-            
             SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
             return formatter.format(date);
         } catch (ParseException e) {
-            return isoDate; // Fallback to original string
+            return isoDate;
         }
     }
 
@@ -122,9 +152,11 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
     public static class OrderViewHolder extends RecyclerView.ViewHolder {
         TextView tvStatus, tvOrderDate, tvShopName, tvItemCount, tvTotalAmount;
         ImageView ivOrderThumb;
+        CardView cardRoot;
 
         public OrderViewHolder(@NonNull View itemView) {
             super(itemView);
+            cardRoot = (CardView) itemView; // Gốc là CardView
             tvStatus = itemView.findViewById(R.id.tvStatus);
             tvOrderDate = itemView.findViewById(R.id.tvOrderDate);
             tvShopName = itemView.findViewById(R.id.tvShopName);

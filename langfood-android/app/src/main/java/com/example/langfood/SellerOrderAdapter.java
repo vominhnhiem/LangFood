@@ -1,6 +1,7 @@
 package com.example.langfood;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,6 +22,7 @@ public class SellerOrderAdapter extends RecyclerView.Adapter<SellerOrderAdapter.
 
     public interface OnOrderActionListener {
         void onConfirm(Order order);
+        void onReady(Order order);
         void onItemClick(Order order);
     }
 
@@ -42,10 +44,18 @@ public class SellerOrderAdapter extends RecyclerView.Adapter<SellerOrderAdapter.
         Order order = orderList.get(position);
 
         holder.tvOrderId.setText("Đơn hàng #" + order.getId());
-        holder.tvOrderStatus.setText(translateStatus(order.getStatus()));
+        
+        // Làm sạch chuỗi status để so khớp chính xác
+        String rawStatus = (order.getStatus() != null) ? order.getStatus().trim() : "";
+        
+        holder.tvOrderStatus.setText(translateStatus(rawStatus));
+        setStatusColor(holder.tvOrderStatus, rawStatus);
+
         holder.tvBuyerName.setText("Khách hàng: " + (order.getBuyerName() != null ? order.getBuyerName() : "N/A"));
         holder.tvDeliveryAddress.setText("Địa chỉ: " + (order.getDeliveryBuilding() != null ? order.getDeliveryBuilding() : "N/A"));
-        holder.tvTotalAmount.setText(String.format(Locale.getDefault(), "Tổng: %,.0fđ", order.getTotalAmount()));
+        
+        double total = order.getTotalAmount();
+        holder.tvTotalAmount.setText(String.format(Locale.getDefault(), "Tổng: %,.0fđ", total));
 
         // Hiển thị tóm tắt món ăn
         StringBuilder itemsSummary = new StringBuilder("Món ăn: ");
@@ -58,26 +68,46 @@ public class SellerOrderAdapter extends RecyclerView.Adapter<SellerOrderAdapter.
         if (summary.endsWith(", ")) summary = summary.substring(0, summary.length() - 2);
         holder.tvOrderItems.setText(summary);
 
-        // Nút xác nhận chỉ hiện khi đơn đang ở trạng thái Pending
-        if ("Pending".equalsIgnoreCase(order.getStatus())) {
+        // Logic hiển thị nút bấm linh hoạt
+        if ("Pending".equalsIgnoreCase(rawStatus)) {
             holder.btnConfirmOrder.setVisibility(View.VISIBLE);
+            holder.btnConfirmOrder.setText("Xác nhận");
             holder.btnConfirmOrder.setOnClickListener(v -> listener.onConfirm(order));
+        } else if ("Preparing".equalsIgnoreCase(rawStatus)) {
+            holder.btnConfirmOrder.setVisibility(View.VISIBLE);
+            holder.btnConfirmOrder.setText("Đã nấu xong");
+            holder.btnConfirmOrder.setOnClickListener(v -> listener.onReady(order));
         } else {
+            // Các trạng thái khác (Ready, Delivering, Completed) không hiện nút thao tác
             holder.btnConfirmOrder.setVisibility(View.GONE);
         }
 
-        // Bấm vào đơn hàng để xem chi tiết
         holder.itemView.setOnClickListener(v -> listener.onItemClick(order));
+    }
+
+    private void setStatusColor(TextView tv, String status) {
+        if (status == null) return;
+        String s = status.toLowerCase().trim();
+        switch (s) {
+            case "pending": tv.setTextColor(Color.parseColor("#FFA500")); break; // Orange
+            case "preparing": tv.setTextColor(Color.parseColor("#FFD700")); break; // Gold
+            case "ready": tv.setTextColor(Color.parseColor("#008000")); break; // Green
+            case "delivering": tv.setTextColor(Color.parseColor("#1E90FF")); break; // Blue
+            case "completed": tv.setTextColor(Color.parseColor("#808080")); break; // Gray
+            default: tv.setTextColor(Color.BLACK); break;
+        }
     }
 
     private String translateStatus(String status) {
         if (status == null) return "N/A";
-        switch (status) {
-            case "Pending": return "Chờ xác nhận";
-            case "Confirmed": return "Đã xác nhận";
-            case "Shipping": return "Đang giao";
-            case "Delivered": return "Đã giao";
-            case "Cancelled": return "Đã hủy";
+        String s = status.toLowerCase().trim();
+        switch (s) {
+            case "pending": return "Chờ xác nhận";
+            case "preparing": return "Đang chế biến";
+            case "ready": return "Chờ Shipper lấy";
+            case "delivering": return "Đang giao hàng";
+            case "completed": return "Đã hoàn thành";
+            case "cancelled": return "Đã hủy";
             default: return status;
         }
     }

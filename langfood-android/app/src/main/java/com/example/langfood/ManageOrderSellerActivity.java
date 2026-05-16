@@ -9,6 +9,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
 import com.example.langfood.api.ApiClient;
 import com.example.langfood.api.ApiService;
 import com.example.langfood.models.Order;
@@ -27,6 +29,7 @@ public class ManageOrderSellerActivity extends AppCompatActivity {
     private ApiService apiService;
     private int shopId;
     private ImageView btnBack, btnLogout;
+    private SwipeRefreshLayout swipeRefresh;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,7 +45,13 @@ public class ManageOrderSellerActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
         btnLogout.setOnClickListener(v -> showLogoutDialog());
 
+        setupSwipeRefresh();
         loadOrders();
+    }
+
+    private void setupSwipeRefresh() {
+        swipeRefresh.setColorSchemeResources(R.color.shopee_orange);
+        swipeRefresh.setOnRefreshListener(this::loadOrders);
     }
 
     private void showLogoutDialog() {
@@ -66,11 +75,17 @@ public class ManageOrderSellerActivity extends AppCompatActivity {
         rvOrders = findViewById(R.id.rvOrders);
         btnBack = findViewById(R.id.btnBack);
         btnLogout = findViewById(R.id.btnLogout);
+        swipeRefresh = findViewById(R.id.swipeRefresh);
         
         adapter = new SellerOrderAdapter(this, sellerOrders, new SellerOrderAdapter.OnOrderActionListener() {
             @Override
             public void onConfirm(Order order) {
                 confirmOrder(order);
+            }
+
+            @Override
+            public void onReady(Order order) {
+                markOrderReady(order);
             }
 
             @Override
@@ -88,6 +103,7 @@ public class ManageOrderSellerActivity extends AppCompatActivity {
 
     private void loadOrders() {
         if (shopId == -1) {
+            if (swipeRefresh.isRefreshing()) swipeRefresh.setRefreshing(false);
             Toast.makeText(this, "Không tìm thấy thông tin cửa hàng", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -95,6 +111,7 @@ public class ManageOrderSellerActivity extends AppCompatActivity {
         apiService.getOrdersByShop(shopId).enqueue(new Callback<List<Order>>() {
             @Override
             public void onResponse(Call<List<Order>> call, Response<List<Order>> response) {
+                if (swipeRefresh.isRefreshing()) swipeRefresh.setRefreshing(false);
                 if (response.isSuccessful() && response.body() != null) {
                     sellerOrders.clear();
                     sellerOrders.addAll(response.body());
@@ -104,6 +121,7 @@ public class ManageOrderSellerActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<Order>> call, Throwable t) {
+                if (swipeRefresh.isRefreshing()) swipeRefresh.setRefreshing(false);
                 Toast.makeText(ManageOrderSellerActivity.this, "Lỗi tải đơn hàng", Toast.LENGTH_SHORT).show();
             }
         });
@@ -114,10 +132,29 @@ public class ManageOrderSellerActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
-                    Toast.makeText(ManageOrderSellerActivity.this, "Đã xác nhận đơn #" + order.getId() + ". Đơn đã sẵn sàng cho Shipper!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ManageOrderSellerActivity.this, "Đã xác nhận đơn #" + order.getId() + ". Hãy bắt đầu chế biến!", Toast.LENGTH_SHORT).show();
                     loadOrders();
                 } else {
                     Toast.makeText(ManageOrderSellerActivity.this, "Lỗi xác nhận đơn", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                Toast.makeText(ManageOrderSellerActivity.this, "Lỗi kết nối", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void markOrderReady(Order order) {
+        apiService.shopReadyOrder(order.getId()).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(ManageOrderSellerActivity.this, "Đơn #" + order.getId() + " đã sẵn sàng cho Shipper!", Toast.LENGTH_SHORT).show();
+                    loadOrders();
+                } else {
+                    Toast.makeText(ManageOrderSellerActivity.this, "Lỗi cập nhật trạng thái", Toast.LENGTH_SHORT).show();
                 }
             }
 

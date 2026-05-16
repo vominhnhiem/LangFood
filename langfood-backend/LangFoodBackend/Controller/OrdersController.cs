@@ -97,6 +97,21 @@ namespace LangFoodBackend.Controller
             return Ok(new { message = "Shop đã nhận đơn và đang chuẩn bị món." });
         }
 
+        // 5.1. Shop báo đã chuẩn bị xong (MỚI THÊM)
+        [HttpPut("shop-ready/{id}")]
+        public async Task<IActionResult> ShopReadyOrder(int id)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+
+            if (order.Status != "Preparing")
+                return BadRequest(new { message = "Đơn hàng phải ở trạng thái đang chuẩn bị mới có thể báo sẵn sàng." });
+
+            order.Status = "Ready"; // Chuyển sang Ready để Shipper có thể thấy đơn ở mục "Available"
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Đơn hàng đã sẵn sàng. Shipper có thể đến lấy." });
+        }
+
         // 6. Shipper nhận đơn và đặt cọc (PUT api/Orders/accept/{id}?shipperId=...)
         [HttpPut("accept/{id}")]
         public async Task<IActionResult> AcceptOrder(int id, [FromQuery] int shipperId)

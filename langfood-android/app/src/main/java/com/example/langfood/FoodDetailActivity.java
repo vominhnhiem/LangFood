@@ -24,7 +24,6 @@ public class FoodDetailActivity extends AppCompatActivity {
     private TextView txtFoodName, txtFoodPrice, txtFoodDescription, tvSellerName;
     private Button btnAddToCart;
     private Product currentProduct;
-    private static final String BASE_URL = "http://192.168.100.192:5289/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,6 +99,7 @@ public class FoodDetailActivity extends AppCompatActivity {
             loadSellerInfo(sellerId);
         }
 
+        // Sử dụng duy nhất ApiClient.BASE_URL
         String imageUrl = ApiClient.BASE_URL + imagePath;
         Glide.with(this)
                 .load(imageUrl)
