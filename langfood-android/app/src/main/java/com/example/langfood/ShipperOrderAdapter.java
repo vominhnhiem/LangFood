@@ -1,6 +1,7 @@
 package com.example.langfood;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,22 +41,27 @@ public class ShipperOrderAdapter extends RecyclerView.Adapter<ShipperOrderAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Order order = orderList.get(position);
         
-        // Hiển thị tên Shop để shipper biết chỗ lấy hàng
         holder.tvShopName.setText("Từ: " + (order.getShopName() != null ? order.getShopName() : "Cửa hàng"));
-        
-        // Hiển thị thời gian đặt
         holder.tvOrderTime.setText(order.getCreatedAt());
         
-        // Hiển thị địa chỉ giao hàng đầy đủ
         String address = "📍 Tới: " + order.getDeliveryBuilding();
         if (order.getDeliveryRoom() != null && !order.getDeliveryRoom().isEmpty()) {
             address += " - Phòng " + order.getDeliveryRoom();
         }
         holder.tvOrderAddress.setText(address);
 
-        // Hiển thị tiền phí ship (Shipper nhận) và tổng tiền (nếu thu hộ)
-        holder.tvShippingFee.setText(String.format(Locale.getDefault(), "Phí ship: %,.0fđ", order.getShippingFee()));
-        holder.tvTotalAmount.setText(String.format(Locale.getDefault(), "Tổng thu: %,.0fđ", order.getTotalAmount()));
+        double totalToCollect = order.getTotalAmount() + order.getShippingFee();
+        holder.tvTotalAmount.setText(String.format(Locale.getDefault(), "Thu khách: %,.0fđ", totalToCollect));
+        holder.tvShippingFee.setText("Công ship: 20,000đ");
+
+        // KIỂM TRA TRẠNG THÁI ĐỂ ĐỔI NÚT
+        if ("Delivering".equals(order.getStatus())) {
+            holder.btnAcceptOrder.setText("Tiếp tục giao");
+            holder.btnAcceptOrder.setBackgroundColor(Color.parseColor("#4CAF50")); // Màu xanh lá
+        } else {
+            holder.btnAcceptOrder.setText("Nhận đơn");
+            holder.btnAcceptOrder.setBackgroundColor(Color.parseColor("#FF5722")); // Màu cam mặc định
+        }
 
         holder.btnAcceptOrder.setOnClickListener(v -> listener.onAcceptClick(order));
         holder.itemView.setOnClickListener(v -> listener.onItemClick(order));

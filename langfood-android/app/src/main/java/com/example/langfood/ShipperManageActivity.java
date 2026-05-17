@@ -15,9 +15,11 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.example.langfood.api.ApiClient;
 import com.example.langfood.api.ApiService;
 import com.example.langfood.models.Order;
+import com.example.langfood.models.Wallet;
 import com.google.gson.Gson;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -30,6 +32,7 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
     private ImageView btnBack;
     private ApiService apiService;
     private int shipperId;
+    private String userId;
     private SwipeRefreshLayout swipeRefresh;
 
     @Override
@@ -43,13 +46,11 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
 
         SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
         shipperId = prefs.getInt("SHIPPER_ID", -1);
+        userId = prefs.getString("USER_ID", "");
 
         apiService = ApiClient.getClient().create(ApiService.class);
 
-        // Nhấn bình thường: Thoát app
         btnBack.setOnClickListener(v -> finish());
-
-        // NHẤN GIỮ NÚT BACK: ĐĂNG XUẤT
         btnBack.setOnLongClickListener(v -> {
             showLogoutDialog();
             return true;
@@ -69,11 +70,8 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
                 .setMessage("Bạn có muốn đăng xuất khỏi tài khoản Shipper không?")
                 .setPositiveButton("Đăng xuất", (dialog, which) -> {
                     SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
-                    prefs.edit().clear().commit(); // Xóa sạch dữ liệu
-                    
-                    Intent intent = new Intent(ShipperManageActivity.this, LoginActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
+                    prefs.edit().clear().commit(); 
+                    startActivity(new Intent(ShipperManageActivity.this, LoginActivity.class));
                     finish();
                 })
                 .setNegativeButton("Hủy", null)
@@ -93,10 +91,10 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
     }
 
     private void loadAvailableOrders() {
-        if (apiService == null) return;
+        if (apiService == null || shipperId == -1) return;
         
         swipeRefresh.setRefreshing(true);
-        apiService.getAvailableOrders().enqueue(new Callback<List<Order>>() {
+        apiService.getOrdersForShipper(shipperId).enqueue(new Callback<List<Order>>() {
             @Override
             public void onResponse(Call<List<Order>> call, Response<List<Order>> response) {
                 if (swipeRefresh.isRefreshing()) swipeRefresh.setRefreshing(false);
@@ -107,7 +105,6 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
                 } else {
                     orderList.clear();
                     adapter.updateList(orderList);
-                    Toast.makeText(ShipperManageActivity.this, "Không có đơn hàng nào khả dụng", Toast.LENGTH_SHORT).show();
                 }
             }
 
@@ -121,25 +118,77 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
 
     @Override
     public void onAcceptClick(Order order) {
-        if (shipperId == -1) {
-            Toast.makeText(this, "Không tìm thấy thông tin Shipper. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
+        if ("Delivering".equals(order.getStatus())) {
+            goToDetail(order, false);
             return;
         }
 
+        if (shipperId == -1 || userId.isEmpty()) {
+            Toast.makeText(this, "Lỗi thông tin tài khoản!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        double requiredAmount = order.getTotalAmount() + order.getShippingFee();
+
+        apiService.getWallet(userId).enqueue(new Callback<Wallet>() {
+            @Override
+            public void onResponse(Call<Wallet> call, Response<Wallet> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    double balance = response.body().getBalance();
+                    if (balance < requiredAmount) {
+                        showInsufficientBalanceDialog(requiredAmount, balance);
+                    } else {
+                        showAcceptConfirmation(order, requiredAmount);
+                    }
+                } else {
+                    Toast.makeText(ShipperManageActivity.this, "Không thể kiểm tra số dư ví!", Toast.LENGTH_SHORT).show();
+                }
+            }
+            @Override
+            public void onFailure(Call<Wallet> call, Throwable t) {
+                Toast.makeText(ShipperManageActivity.this, "Lỗi kết nối ví!", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void showInsufficientBalanceDialog(double required, double current) {
+        new AlertDialog.Builder(this)
+                .setTitle("Số dư không đủ")
+                .setMessage(String.format(Locale.getDefault(), 
+                    "Bạn cần ít nhất %,.0fđ trong ví để nhận đơn này.\nSố dư hiện tại: %,.0fđ.\nVui lòng nạp thêm tiền!", required, current))
+                .setPositiveButton("Nạp tiền", (d, w) -> startActivity(new Intent(this, WalletActivity.class)))
+                .setNegativeButton("Đóng", null)
+                .show();
+    }
+
+    private void showAcceptConfirmation(Order order, double holdAmount) {
+        double foodPrice = order.getTotalAmount();
+        new AlertDialog.Builder(this)
+                .setTitle("Xác nhận nhận đơn")
+                .setMessage(String.format(Locale.getDefault(), 
+                    "Hệ thống sẽ tạm giam %,.0fđ từ ví (Món + phí 3k).\n\n" +
+                    "Quyền lợi khi giao thành công:\n" +
+                    "✅ Nhận %,.0fđ tiền mặt từ khách.\n" +
+                    "✅ Hoàn %,.0fđ vào ví (Tiền món).\n" +
+                    "✅ Cộng thêm 20,000đ tiền công vào ví.\n\n" +
+                    "Bạn đồng ý chứ?", holdAmount, holdAmount, foodPrice))
+                .setPositiveButton("Đồng ý nhận", (d, w) -> executeAcceptOrder(order))
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    private void executeAcceptOrder(Order order) {
         apiService.acceptOrder(order.getId(), shipperId).enqueue(new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
                     Toast.makeText(ShipperManageActivity.this, "Nhận đơn thành công!", Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(ShipperManageActivity.this, OrderDetailShipperActivity.class);
-                    intent.putExtra("ORDER_DATA", new Gson().toJson(order));
-                    startActivity(intent);
+                    goToDetail(order, false);
                     loadAvailableOrders();
                 } else {
-                    Toast.makeText(ShipperManageActivity.this, "Lỗi khi nhận đơn hoặc đơn đã có người nhận", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ShipperManageActivity.this, "Đơn đã có người nhận!", Toast.LENGTH_SHORT).show();
                 }
             }
-
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
                 Toast.makeText(ShipperManageActivity.this, "Lỗi kết nối", Toast.LENGTH_SHORT).show();
@@ -149,9 +198,14 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
 
     @Override
     public void onItemClick(Order order) {
-        Intent intent = new Intent(ShipperManageActivity.this, OrderDetailShipperActivity.class);
+        boolean isPreview = !"Delivering".equals(order.getStatus());
+        goToDetail(order, isPreview);
+    }
+
+    private void goToDetail(Order order, boolean isPreview) {
+        Intent intent = new Intent(this, OrderDetailShipperActivity.class);
         intent.putExtra("ORDER_DATA", new Gson().toJson(order));
-        intent.putExtra("IS_PREVIEW", true);
+        intent.putExtra("IS_PREVIEW", isPreview);
         startActivity(intent);
     }
 

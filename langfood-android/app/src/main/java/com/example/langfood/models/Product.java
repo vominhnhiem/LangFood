@@ -22,14 +22,15 @@ public class Product implements Serializable {
     @SerializedName(value = "isAvailable", alternate = {"IsAvailable"})
     private boolean isAvailable;
 
-    @SerializedName(value = "shopId", alternate = {"ShopId", "ShopID", "shop_id", "Shop_Id", "Shop"})
+    @SerializedName(value = "shopId", alternate = {"ShopId", "ShopID", "shop_id", "Shop_Id"})
     private int shopId;
 
     @SerializedName(value = "shopName", alternate = {"ShopName", "SellerName"})
     private String shopName;
 
-    @SerializedName(value = "sellerId", alternate = {"SellerId"})
-    private String sellerId;
+    // Thêm đối tượng Shop để nhận dữ liệu từ API giỏ hàng
+    @SerializedName(value = "shop", alternate = {"Shop"})
+    private ShopInfo shop;
 
     @SerializedName(value = "categoryId", alternate = {"CategoryId", "CategoryID"})
     private int categoryId;
@@ -39,6 +40,9 @@ public class Product implements Serializable {
 
     @SerializedName(value = "status", alternate = {"Status"})
     private String status;
+
+    @SerializedName(value = "sellerId", alternate = {"SellerId"})
+    private String sellerId;
 
     public Product() {}
 
@@ -60,17 +64,24 @@ public class Product implements Serializable {
     public boolean isAvailable() { return isAvailable; }
     public void setAvailable(boolean available) { isAvailable = available; }
 
-    public int getShopId() { return shopId; }
+    public int getShopId() { 
+        if (shopId <= 0 && shop != null) return shop.id;
+        return shopId; 
+    }
     public void setShopId(int shopId) { this.shopId = shopId; }
-
-    public String getShopName() { return shopName; }
+    
+    public String getShopName() { 
+        if (shopName != null && !shopName.isEmpty()) return shopName;
+        if (shop != null && shop.name != null) return shop.name;
+        return "Quán ăn Lang Food";
+    }
     public void setShopName(String shopName) { this.shopName = shopName; }
+
+    public String getSellerName() { return getShopName(); }
+    public void setSellerName(String sellerName) { this.shopName = sellerName; }
 
     public String getSellerId() { return sellerId; }
     public void setSellerId(String sellerId) { this.sellerId = sellerId; }
-
-    public String getSellerName() { return shopName; }
-    public void setSellerName(String sellerName) { this.shopName = sellerName; }
 
     public int getCategoryId() { return categoryId; }
     public void setCategoryId(int categoryId) { this.categoryId = categoryId; }
@@ -80,4 +91,12 @@ public class Product implements Serializable {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    // Class phụ để hứng dữ liệu Shop từ BE
+    public static class ShopInfo implements Serializable {
+        @SerializedName(value = "id", alternate = {"Id"})
+        public int id;
+        @SerializedName(value = "name", alternate = {"Name"})
+        public String name;
+    }
 }

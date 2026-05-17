@@ -82,6 +82,20 @@
         android:background="#FFFFFF"
         android:padding="8dp"/>
 
+    <!-- Nút Nhận đơn (chỉ hiện khi xem trước) -->
+    <Button
+        android:id="@+id/btnAcceptOrder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Nhận đơn hàng này"
+        android:backgroundTint="#FF5722"
+        android:textColor="#FFFFFF"
+        android:layout_marginTop="16dp"
+        android:padding="12dp"
+        android:textStyle="bold"
+        android:visibility="gone"/>
+
+    <!-- Nút Hoàn thành (hiện khi shipper đã nhận đơn) -->
     <Button
         android:id="@+id/btnCompleteOrder"
         android:layout_width="match_parent"

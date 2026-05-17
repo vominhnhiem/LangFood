@@ -120,6 +120,9 @@ public interface ApiService {
     @GET("api/Orders/available")
     Call<List<Order>> getAvailableOrders();
 
+    @GET("api/Orders/available-for-shipper/{shipperId}")
+    Call<List<Order>> getOrdersForShipper(@Path("shipperId") int shipperId);
+
     @PUT("api/Orders/admin-approve/{id}")
     Call<Void> adminApproveOrder(@Path("id") int id);
 

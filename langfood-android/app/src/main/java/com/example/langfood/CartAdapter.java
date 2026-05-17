@@ -21,7 +21,7 @@ import java.util.Map;
 public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder> {
 
     private Context context;
-    private List<CartGroup> cartGroups;
+    private List<CartGroup> cartGroups = new ArrayList<>();
     private OnCartChangeListener listener;
 
     public interface OnCartChangeListener {
@@ -35,14 +35,26 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
     }
 
     public void setCartItems(List<CartItem> cartItems) {
+        if (cartItems == null || cartItems.isEmpty()) {
+            this.cartGroups = new ArrayList<>();
+            notifyDataSetChanged();
+            return;
+        }
+        
         Map<Integer, CartGroup> groupMap = new HashMap<>();
         for (CartItem item : cartItems) {
+            // KIỂM TRA NULL TUYỆT ĐỐI ĐỂ TRÁNH VĂNG APP
+            if (item == null || item.getProduct() == null) continue;
+            
             int shopId = item.getProduct().getShopId();
+            // Nếu shopId = 0 (do lỗi parse), gán tạm vào shop mặc định thay vì crash
+            if (shopId <= 0) shopId = 999; 
             
             if (!groupMap.containsKey(shopId)) {
                 CartGroup group = new CartGroup();
                 group.shopId = shopId;
-                group.shopName = item.getProduct().getShopName();
+                group.shopName = (item.getProduct().getShopName() != null && !item.getProduct().getShopName().isEmpty()) 
+                                ? item.getProduct().getShopName() : "Cửa hàng Lang Food";
                 group.shopAvatar = item.getProduct().getImageUrl(); 
                 group.items = new ArrayList<>();
                 groupMap.put(shopId, group);
@@ -64,23 +76,23 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
     public void onBindViewHolder(@NonNull CartViewHolder holder, int position) {
         CartGroup group = cartGroups.get(position);
         
-        String shopName = group.shopName != null ? group.shopName : "Quán ăn Lang Food";
-        holder.tvStoreName.setText(shopName);
+        holder.tvStoreName.setText(group.shopName);
         
         int totalItems = 0;
         for (CartItem item : group.items) {
             totalItems += item.getQuantity();
         }
-        holder.tvStoreSummary.setText(totalItems + " món • Đang hoạt động");
+        holder.tvStoreSummary.setText(totalItems + " món • Nhấn để đặt đơn");
 
         String imageUrl = group.shopAvatar;
-        if (imageUrl != null && !imageUrl.startsWith("http")) {
+        if (imageUrl != null && !imageUrl.isEmpty() && !imageUrl.startsWith("http")) {
             imageUrl = ApiClient.BASE_URL + (imageUrl.startsWith("/") ? imageUrl.substring(1) : imageUrl);
         }
 
         Glide.with(context)
                 .load(imageUrl)
                 .placeholder(R.drawable.lang_food_avt)
+                .error(R.drawable.lang_food_avt)
                 .into(holder.imgStore);
 
         holder.itemView.setOnClickListener(v -> {
@@ -108,9 +120,9 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
     }
 
     public static class CartGroup implements Serializable {
-        int shopId;
-        String shopName;
-        String shopAvatar;
-        List<CartItem> items;
+        public int shopId;
+        public String shopName;
+        public String shopAvatar;
+        public List<CartItem> items;
     }
 }

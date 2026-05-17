@@ -90,10 +90,11 @@ public class ManageOrderSellerActivity extends AppCompatActivity {
 
             @Override
             public void onItemClick(Order order) {
-                // Mở chi tiết đơn hàng (Dùng chung layout với Shipper nhưng ở chế độ xem)
+                // Mở chi tiết đơn hàng
                 Intent intent = new Intent(ManageOrderSellerActivity.this, OrderDetailShipperActivity.class);
                 intent.putExtra("ORDER_DATA", new Gson().toJson(order));
-                intent.putExtra("IS_PREVIEW", true); // Ẩn nút "Hoàn thành" của shipper
+                intent.putExtra("IS_PREVIEW", true);
+                intent.putExtra("IS_SELLER_VIEW", true); // BÁO CHO ACTIVITY BIẾT ĐÂY LÀ SHOP XEM
                 startActivity(intent);
             }
         });

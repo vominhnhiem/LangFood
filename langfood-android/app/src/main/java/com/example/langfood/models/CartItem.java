@@ -1,9 +1,13 @@
 package com.example.langfood.models;
 
+import com.google.gson.annotations.SerializedName;
 import java.io.Serializable;
 
 public class CartItem implements Serializable {
+    @SerializedName("product")
     private Product product;
+    
+    @SerializedName("quantity")
     private int quantity;
 
     public CartItem(Product product, int quantity) {

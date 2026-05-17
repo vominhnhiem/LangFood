@@ -41,6 +41,9 @@ public class Order implements Serializable {
     @SerializedName(value = "deliveryRoom", alternate = {"DeliveryRoom"})
     private String deliveryRoom;
 
+    @SerializedName(value = "deliveryPhone", alternate = {"DeliveryPhone"})
+    private String deliveryPhone;
+
     @SerializedName(value = "createdAt", alternate = {"CreatedAt"})
     private String createdAt;
 
@@ -90,6 +93,9 @@ public class Order implements Serializable {
 
     public String getDeliveryRoom() { return deliveryRoom; }
     public void setDeliveryRoom(String deliveryRoom) { this.deliveryRoom = deliveryRoom; }
+
+    public String getDeliveryPhone() { return deliveryPhone; }
+    public void setDeliveryPhone(String deliveryPhone) { this.deliveryPhone = deliveryPhone; }
 
     public String getCreatedAt() { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }

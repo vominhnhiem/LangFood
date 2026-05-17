@@ -1,5 +1,6 @@
 package com.example.langfood;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -31,11 +32,11 @@ import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import org.json.JSONObject;
 
 public class CheckoutActivity extends AppCompatActivity {
 
     private TextView tvStoreName, tvTotalAmount, tvPaymentMethod, tvDormitoryDetails;
+    private TextView tvSubtotal, tvShippingFee, tvServiceFee;
     private RecyclerView rvOrderItems;
     private ImageView btnClose;
     private Button btnPlaceOrder;
@@ -48,10 +49,15 @@ public class CheckoutActivity extends AppCompatActivity {
     private int selectedBuildingId = 0;
     private String selectedBuildingName = "";
     private String selectedRoom = "";
+    private String selectedPhone = "";
 
     private ApiService apiService;
     private String userId;
     private String fullName;
+
+    // Định nghĩa các loại phí - 3.000đ phí dịch vụ hệ thống
+    private final double APP_SERVICE_FEE = 3000;
+    private final double DEFAULT_SHIPPING_FEE = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +72,7 @@ public class CheckoutActivity extends AppCompatActivity {
         selectedBuildingId = prefs.getInt("BUILDING_ID", 0);
         selectedBuildingName = prefs.getString("BUILDING_NAME", "");
         selectedRoom = prefs.getString("ROOM", "");
+        selectedPhone = prefs.getString("DELIVERY_PHONE", "");
 
         cartGroup = (CartAdapter.CartGroup) getIntent().getSerializableExtra("CART_GROUP");
 
@@ -88,6 +95,10 @@ public class CheckoutActivity extends AppCompatActivity {
         tvPaymentMethod = findViewById(R.id.tvPaymentMethod);
         layoutEditAddress = findViewById(R.id.layoutEditAddress);
         tvDormitoryDetails = findViewById(R.id.tvDormitoryDetails);
+
+        tvSubtotal = findViewById(R.id.tvSubtotal);
+        tvShippingFee = findViewById(R.id.tvShippingFee);
+        tvServiceFee = findViewById(R.id.tvServiceFee);
     }
 
     private void setupData() {
@@ -97,12 +108,32 @@ public class CheckoutActivity extends AppCompatActivity {
             rvOrderItems.setLayoutManager(new LinearLayoutManager(this));
             rvOrderItems.setAdapter(adapter);
 
-            double total = calculateTotal();
+            double subtotal = calculateTotal();
+            double total = subtotal + DEFAULT_SHIPPING_FEE + APP_SERVICE_FEE;
+
+            tvSubtotal.setText(String.format(Locale.getDefault(), "%,.0fđ", subtotal));
+            tvShippingFee.setText("Miễn phí");
+            tvShippingFee.setTextColor(android.graphics.Color.parseColor("#4CAF50"));
+            
+            tvServiceFee.setText(String.format(Locale.getDefault(), "%,.0fđ", APP_SERVICE_FEE));
             tvTotalAmount.setText(String.format(Locale.getDefault(), "%,.0fđ", total));
+            
+            btnPlaceOrder.setEnabled(true);
+            btnPlaceOrder.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getResources().getColor(R.color.main_orange)));
         }
 
+        updateAddressDisplay();
+    }
+
+    private void updateAddressDisplay() {
         if (!selectedBuildingName.isEmpty() && !selectedRoom.isEmpty()) {
-            tvDormitoryDetails.setText("Tòa " + selectedBuildingName + " - Phòng " + selectedRoom);
+            String address = "Tòa " + selectedBuildingName + " - Phòng " + selectedRoom;
+            if (!selectedPhone.isEmpty()) {
+                address += "\nSĐT: " + selectedPhone;
+            }
+            tvDormitoryDetails.setText(address);
+        } else {
+            tvDormitoryDetails.setText("Chưa cập nhật địa chỉ");
         }
     }
 
@@ -117,8 +148,15 @@ public class CheckoutActivity extends AppCompatActivity {
     }
 
     private void placeOrder() {
-        if (selectedBuildingName.isEmpty() || selectedRoom.isEmpty()) {
-            Toast.makeText(this, "Vui lòng cập nhật địa chỉ!", Toast.LENGTH_SHORT).show();
+        if (selectedBuildingName.isEmpty() || selectedRoom.isEmpty() || selectedPhone.isEmpty()) {
+            Toast.makeText(this, "Vui lòng cập nhật đầy đủ thông tin địa chỉ và SĐT!", Toast.LENGTH_SHORT).show();
+            showEditAddressDialog();
+            return;
+        }
+
+        // RÀNG BUỘC SĐT KHI ĐẶT ĐƠN: Phải bắt đầu bằng 0 và đủ 10 số
+        if (!selectedPhone.matches("^0\\d{9}$")) {
+            Toast.makeText(this, "Số điện thoại giao hàng không hợp lệ!", Toast.LENGTH_SHORT).show();
             showEditAddressDialog();
             return;
         }
@@ -138,7 +176,6 @@ public class CheckoutActivity extends AppCompatActivity {
         }
         order.setShopId(finalShopId);
         
-        // Khi dùng QR, để trạng thái là "PendingPayment" để Admin dễ lọc
         if (selectedPaymentMethod.contains("Chuyển khoản")) {
             order.setStatus("PendingPayment");
         } else {
@@ -150,12 +187,12 @@ public class CheckoutActivity extends AppCompatActivity {
         }
         order.setDeliveryBuilding(selectedBuildingName);
         order.setDeliveryRoom(selectedRoom);
-
+        order.setDeliveryPhone(selectedPhone);
         order.setPaymentMethod(selectedPaymentMethod.contains("Chuyển khoản") ? 1 : 0);
 
-        double total = calculateTotal();
-        order.setTotalAmount(total);
-        order.setShippingFee(15000);
+        double subtotal = calculateTotal();
+        order.setTotalAmount(subtotal);
+        order.setShippingFee(APP_SERVICE_FEE);
 
         List<OrderItem> orderItems = new ArrayList<>();
         for (CartItem cartItem : cartGroup.items) {
@@ -166,11 +203,6 @@ public class CheckoutActivity extends AppCompatActivity {
             orderItems.add(orderItem);
         }
         order.setOrderItems(orderItems);
-
-        if (finalShopId <= 0) {
-            Toast.makeText(this, "Lỗi: Không tìm thấy ID cửa hàng!", Toast.LENGTH_SHORT).show();
-            return;
-        }
 
         btnPlaceOrder.setEnabled(false);
         btnPlaceOrder.setText("Đang xử lý...");
@@ -215,20 +247,19 @@ public class CheckoutActivity extends AppCompatActivity {
         ImageView ivQrCode = view.findViewById(R.id.ivQrCode);
         LinearLayout llSteps = view.findViewById(R.id.llSteps);
 
-        double totalAmount = order.getTotalAmount() + order.getShippingFee();
-        etAmount.setText(String.format(Locale.getDefault(), "%,.0f", totalAmount));
+        double totalToPay = order.getTotalAmount() + order.getShippingFee();
+        etAmount.setText(String.format(Locale.getDefault(), "%,.0f", totalToPay));
         etAmount.setEnabled(false);
         llSteps.setVisibility(View.VISIBLE);
 
-        String qrUrl = "https://img.vietqr.io/image/MB-0372076779-compact.jpg?amount=" + (int)totalAmount
+        String qrUrl = "https://img.vietqr.io/image/MB-0372076779-compact.jpg?amount=" + (int)totalToPay
                 + "&addInfo=THANHTOAN_DH_" + order.getId()
                 + "&accountName=VO%20MINH%20NHIEM";
 
         Glide.with(this).load(qrUrl).into(ivQrCode);
         builder.setView(view);
         builder.setPositiveButton("Tôi đã chuyển khoản", (dialog, which) -> {
-            // GỬI THÔNG BÁO CHO ADMIN
-            notifyAdminPayment(order, totalAmount);
+            notifyAdminPayment(order, totalToPay);
         });
         builder.setNegativeButton("Thanh toán sau", (dialog, which) -> finish());
         builder.show();
@@ -251,7 +282,7 @@ public class CheckoutActivity extends AppCompatActivity {
     }
 
     private void showPaymentSelectionDialog() {
-        String[] methods = {"Tiền mặt", "Chuyển khoản (Zalopay/Ngân hàng)"};
+        String[] methods = {"Tiền mặt", "Chuyển khoản (Ngân hàng)"};
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Chọn phương thức thanh toán");
         builder.setItems(methods, (dialog, which) -> {
@@ -267,9 +298,11 @@ public class CheckoutActivity extends AppCompatActivity {
         View viewInflated = LayoutInflater.from(this).inflate(R.layout.dialog_edit_address, null);
         final AutoCompleteTextView inputBuilding = viewInflated.findViewById(R.id.spinnerBuilding);
         final EditText inputRoom = viewInflated.findViewById(R.id.editRoom);
+        final EditText inputPhone = viewInflated.findViewById(R.id.editPhone);
 
         inputBuilding.setText(selectedBuildingName);
         inputRoom.setText(selectedRoom);
+        inputPhone.setText(selectedPhone);
 
         apiService.getBuildings().enqueue(new Callback<List<Building>>() {
             @Override
@@ -291,18 +324,41 @@ public class CheckoutActivity extends AppCompatActivity {
         });
 
         builder.setView(viewInflated);
-        builder.setPositiveButton("Lưu", (dialog, which) -> {
-            selectedRoom = inputRoom.getText().toString().trim();
-            if (!selectedBuildingName.isEmpty() && !selectedRoom.isEmpty()) {
-                tvDormitoryDetails.setText("Tòa " + selectedBuildingName + " - Phòng " + selectedRoom);
-                SharedPreferences.Editor editor = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE).edit();
-                editor.putInt("BUILDING_ID", selectedBuildingId);
-                editor.putString("BUILDING_NAME", selectedBuildingName);
-                editor.putString("ROOM", selectedRoom);
-                editor.apply();
-            }
-        });
+        builder.setPositiveButton("Lưu", null); 
         builder.setNegativeButton("Hủy", null);
-        builder.show();
+
+        final AlertDialog dialog = builder.create();
+        dialog.show();
+
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String typedBuilding = inputBuilding.getText().toString().trim();
+            String typedRoom = inputRoom.getText().toString().trim();
+            String typedPhone = inputPhone.getText().toString().trim();
+
+            if (typedBuilding.isEmpty() || typedRoom.isEmpty() || typedPhone.isEmpty()) {
+                Toast.makeText(this, "Vui lòng nhập đầy đủ thông tin!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // RÀNG BUỘC SĐT: Bắt đầu từ số 0 và có 10 số
+            if (!typedPhone.matches("^0\\d{9}$")) {
+                Toast.makeText(this, "Số điện thoại phải bắt đầu bằng số 0 và có đúng 10 chữ số!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            selectedBuildingName = typedBuilding;
+            selectedRoom = typedRoom;
+            selectedPhone = typedPhone;
+            updateAddressDisplay();
+            
+            SharedPreferences.Editor editor = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE).edit();
+            editor.putInt("BUILDING_ID", selectedBuildingId);
+            editor.putString("BUILDING_NAME", selectedBuildingName);
+            editor.putString("ROOM", selectedRoom);
+            editor.putString("DELIVERY_PHONE", selectedPhone);
+            editor.apply();
+            
+            dialog.dismiss();
+        });
     }
 }
