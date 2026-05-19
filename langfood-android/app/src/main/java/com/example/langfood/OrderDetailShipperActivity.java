@@ -54,6 +54,7 @@ public class OrderDetailShipperActivity extends AppCompatActivity {
             displayOrderInfo();
         }
 
+        // Xử lý hiển thị nút bấm
         if (isSellerView) {
             btnAcceptOrder.setVisibility(View.GONE);
             btnCompleteOrder.setVisibility(View.GONE);
@@ -63,7 +64,8 @@ public class OrderDetailShipperActivity extends AppCompatActivity {
                 btnCompleteOrder.setVisibility(View.GONE);
             } else {
                 btnAcceptOrder.setVisibility(View.GONE);
-                if (order != null && "Delivering".equals(order.getStatus()) && order.getShipperId() != null && order.getShipperId() == currentShipperId) {
+                if (order != null && "Delivering".equals(order.getStatus()) && 
+                    order.getShipperId() != null && order.getShipperId() == currentShipperId) {
                     btnCompleteOrder.setVisibility(View.VISIBLE);
                 } else {
                     btnCompleteOrder.setVisibility(View.GONE);
@@ -105,7 +107,7 @@ public class OrderDetailShipperActivity extends AppCompatActivity {
             }
             tvDeliveryAddress.setText(addressInfo.toString());
 
-            // Nhấn vào địa chỉ (SĐT) để gọi điện nhanh cho khách (Dành cho Shipper)
+            // Nhấn vào SĐT để gọi (chỉ dành cho shipper)
             if (order.getDeliveryPhone() != null && !order.getDeliveryPhone().isEmpty() && !isSellerView) {
                 tvDeliveryAddress.setOnClickListener(v -> {
                     Intent intent = new Intent(Intent.ACTION_DIAL);
@@ -115,8 +117,10 @@ public class OrderDetailShipperActivity extends AppCompatActivity {
             }
             
             if (isSellerView) {
+                // Shop xem: Chỉ hiện tiền món ăn
                 tvTotalAmount.setText("💰 Giá trị đơn: " + String.format(Locale.getDefault(), "%,.0fđ", order.getTotalAmount()));
             } else {
+                // Shipper xem: Hiện tiền thu khách (Món + 3k phí)
                 double totalToCollect = order.getTotalAmount() + order.getShippingFee();
                 tvTotalAmount.setText("💰 Tổng thu khách: " + String.format(Locale.getDefault(), "%,.0fđ", totalToCollect));
             }
@@ -131,20 +135,22 @@ public class OrderDetailShipperActivity extends AppCompatActivity {
 
     private void handleAcceptOrder() {
         if (currentShipperId == -1 || currentUserId.isEmpty()) {
-            Toast.makeText(this, "Lỗi: Bạn không có quyền Shipper!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Lỗi: Không tìm thấy thông tin Shipper!", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        double requiredAmount = order.getTotalAmount() + order.getShippingFee();
+        // Với COD, holdAmount là số tiền Shipper sẽ thu của khách và bị hệ thống giam ngay
+        double holdAmount = order.getTotalAmount() + order.getShippingFee();
         apiService.getWallet(currentUserId).enqueue(new Callback<Wallet>() {
             @Override
             public void onResponse(Call<Wallet> call, Response<Wallet> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     double balance = response.body().getBalance();
-                    if (balance < requiredAmount) {
-                        showInsufficientBalanceDialog(requiredAmount, balance);
+                    // Shipper phải có đủ tiền trong ví để hệ thống trừ nợ (giam tiền)
+                    if (balance < holdAmount) {
+                        showInsufficientBalanceDialog(holdAmount, balance);
                     } else {
-                        showAcceptConfirmation(requiredAmount);
+                        showAcceptConfirmation(holdAmount);
                     }
                 }
             }
@@ -155,16 +161,23 @@ public class OrderDetailShipperActivity extends AppCompatActivity {
     private void showInsufficientBalanceDialog(double required, double current) {
         new AlertDialog.Builder(this)
                 .setTitle("Số dư không đủ")
-                .setMessage(String.format(Locale.getDefault(), "Bạn cần %,.0fđ để nhận đơn.\nSố dư hiện tại: %,.0fđ.", required, current))
+                .setMessage(String.format(Locale.getDefault(), "Bạn cần ít nhất %,.0fđ để hệ thống giam tiền nhận đơn thu hộ.\nSố dư hiện tại: %,.0fđ.", required, current))
                 .setPositiveButton("Nạp tiền", (d, w) -> startActivity(new Intent(this, WalletActivity.class)))
                 .setNegativeButton("Đóng", null).show();
     }
 
-    private void showAcceptConfirmation(double amount) {
+    private void showAcceptConfirmation(double holdAmount) {
         new AlertDialog.Builder(this)
                 .setTitle("Xác nhận nhận đơn")
-                .setMessage(String.format(Locale.getDefault(), "Hệ thống giam %,.0fđ.\nGiao xong: Hoàn %,.0fđ + Tặng 20k công.\nBạn đồng ý chứ?", amount, order.getTotalAmount()))
-                .setPositiveButton("Đồng ý", (d, w) -> executeAccept()).setNegativeButton("Hủy", null).show();
+                .setMessage(String.format(Locale.getDefault(),
+                    "Hệ thống sẽ GIAM (trừ nợ) %,.0fđ vào ví của bạn ngay bây giờ.\n\n" +
+                    "Sau khi giao xong:\n" +
+                    "✅ Bạn lấy %,.0fđ tiền mặt từ khách (Bù lại khoản bị giam).\n" +
+                    "✅ Hệ thống CỘNG THÊM 10,000đ tiền công ship vào ví.\n\n" +
+                    "Tổng thu nhập: 10,000đ.\n" +
+                    "Bạn đồng ý nhận đơn này chứ?", holdAmount, holdAmount))
+                .setPositiveButton("Đồng ý nhận", (d, w) -> executeAccept())
+                .setNegativeButton("Hủy", null).show();
     }
 
     private void executeAccept() {
@@ -173,11 +186,11 @@ public class OrderDetailShipperActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
-                    Toast.makeText(OrderDetailShipperActivity.this, "Nhận đơn thành công!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(OrderDetailShipperActivity.this, "Nhận đơn thành công! Ví đã bị trừ nợ.", Toast.LENGTH_SHORT).show();
                     finish();
                 } else {
                     btnAcceptOrder.setEnabled(true);
-                    Toast.makeText(OrderDetailShipperActivity.this, "Đơn đã có chủ!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(OrderDetailShipperActivity.this, "Lỗi: " + response.code(), Toast.LENGTH_SHORT).show();
                 }
             }
             @Override public void onFailure(Call<Void> call, Throwable t) { btnAcceptOrder.setEnabled(true); }
@@ -191,7 +204,7 @@ public class OrderDetailShipperActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
-                    Toast.makeText(OrderDetailShipperActivity.this, "Giao hàng thành công!", Toast.LENGTH_LONG).show();
+                    Toast.makeText(OrderDetailShipperActivity.this, "Giao hàng thành công! Đã nhận 10k tiền công.", Toast.LENGTH_LONG).show();
                     finish();
                 } else {
                     btnCompleteOrder.setEnabled(true);

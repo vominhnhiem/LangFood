@@ -1,12 +1,14 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using LangFood.Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LangFood.Shared.DTOs;
+using LangFood.Shared.DTOs.LangFood.Shared.DTOs;
+using LangFood.Shared.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
-namespace LangFoodBackend.Controller
+namespace LangFoodBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -19,87 +21,93 @@ namespace LangFoodBackend.Controller
             _context = context;
         }
 
-        // 1. Lấy đơn cho Shipper (Đơn Ready chưa ai nhận + Đơn mình đang giao)
-        // API này cực kỳ quan trọng để Shipper thấy lại đơn sau khi lỡ thoát app
-        [HttpGet("available-for-shipper/{shipperId}")]
-        public async Task<ActionResult<IEnumerable<Order>>> GetOrdersForShipper(int shipperId)
+        // 1. Lấy thống kê chi tiết cho Quán ăn (Bao gồm biểu đồ Top món ăn)
+        [HttpGet("shop-stats-detailed/{shopId}")]
+        public async Task<ActionResult<DetailedShopStatsDto>> GetDetailedShopStats(
+            int shopId,
+            [FromQuery] string startDate,
+            [FromQuery] string endDate)
         {
-            var orders = await _context.Orders
-                .Where(o => (o.Status == "Ready" && o.ShipperId == null)
-                         || (o.ShipperId == shipperId && o.Status == "Delivering"))
-                .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.Product)
-                .OrderByDescending(o => o.CreatedAt)
+            DateTime start = DateTime.Parse(startDate).Date;
+            DateTime end = DateTime.Parse(endDate).Date.AddDays(1).AddTicks(-1);
+            DateTime now = DateTime.Now;
+
+            var stats = new DetailedShopStatsDto();
+
+            var allShopOrders = await _context.Orders
+                .Where(o => o.ShopId == shopId)
                 .ToListAsync();
 
-            return Ok(orders);
+            stats.TodayOrderCount = allShopOrders.Count(o => o.CreatedAt.Date == now.Date);
+            stats.TodayRevenue = allShopOrders
+                .Where(o => o.CreatedAt.Date == now.Date && o.Status == "Completed")
+                .Sum(o => (decimal)o.TotalAmount);
+
+            stats.MonthRevenue = allShopOrders
+                .Where(o => o.CreatedAt.Month == now.Month && o.CreatedAt.Year == now.Year && o.Status == "Completed")
+                .Sum(o => (decimal)o.TotalAmount);
+
+            var filteredOrders = allShopOrders
+                .Where(o => o.CreatedAt >= start && o.CreatedAt <= end)
+                .ToList();
+
+            stats.TotalOrders = filteredOrders.Count;
+            stats.SuccessOrders = filteredOrders.Count(o => o.Status == "Completed");
+            stats.FailedOrders = filteredOrders.Count(o => o.Status == "Cancelled" || o.Status == "Rejected");
+            stats.TotalRevenue = filteredOrders
+                .Where(o => o.Status == "Completed")
+                .Sum(o => (decimal)o.TotalAmount);
+
+            stats.ProductStats = await _context.OrderItems
+                .Include(oi => oi.Product)
+                .Where(oi => oi.Order.ShopId == shopId &&
+                             oi.Order.Status == "Completed" &&
+                             oi.Order.CreatedAt >= start &&
+                             oi.Order.CreatedAt <= end)
+                .GroupBy(oi => oi.Product.Name)
+                .Select(g => new ProductStatDTO
+                {
+                    ProductName = g.Key,
+                    TotalQuantity = g.Sum(x => x.Quantity),
+                    TotalRevenue = (decimal)g.Sum(x => x.Quantity * x.UnitPrice)
+                })
+                .OrderByDescending(x => x.TotalQuantity)
+                .Take(5)
+                .ToListAsync();
+
+            return Ok(stats);
         }
 
-        // 2. Shipper nhận đơn và TỰ ĐỘNG GIAM TIỀN (Ví dụ giam 28k)
-        [HttpPut("accept/{id}")]
-        public async Task<IActionResult> AcceptOrder(int id, [FromQuery] int shipperId)
-        {
-            var order = await _context.Orders.FindAsync(id);
-            if (order == null) return NotFound();
-
-            // Chặn nếu đơn đã có người nhận hoặc chưa sẵn sàng
-            if (order.ShipperId != null) return BadRequest(new { message = "Đơn này đã có người nhận!" });
-            if (order.Status != "Ready") return BadRequest(new { message = "Đơn chưa sẵn sàng." });
-
-            var shipper = await _context.Shippers.FindAsync(shipperId);
-            var wallet = await _context.Wallets.FirstOrDefaultAsync(w => w.UserId == shipper.UserId);
-
-            // Tiền giam = Tiền món + 3k phí dịch vụ
-            decimal amountToHold = order.TotalAmount + order.ShippingFee;
-
-            if (wallet == null || wallet.Balance < amountToHold)
-                return BadRequest(new { message = "Số dư ví không đủ để nhận đơn này." });
-
-            // Trừ tiền giam
-            wallet.Balance -= amountToHold;
-            _context.Transactions.Add(new Transaction
-            {
-                WalletId = wallet.Id,
-                Amount = amountToHold,
-                Type = "HOLD_ORDER",
-                Description = $"Giam {amountToHold:N0}đ bảo đảm đơn #{order.Id}",
-                Status = 1,
-                OrderId = order.Id,
-                CreatedAt = DateTime.Now
-            });
-
-            order.ShipperId = shipperId;
-            order.Status = "Delivering";
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Nhận đơn thành công." });
-        }
-
-        // 3. Hoàn thành đơn: HOÀN 25k (món) + CỘNG 20k (công) = 45k
+        // 2. HOÀN THÀNH ĐƠN HÀNG - XỬ LÝ LOGIC TIỀN TỆ THEO YÊU CẦU (CHỐT TIỀN)
         [HttpPut("complete/{id}")]
         public async Task<IActionResult> CompleteOrder(int id)
         {
-            var order = await _context.Orders.FindAsync(id);
-            if (order == null || order.Status != "Delivering") return BadRequest();
+            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == id);
+            if (order == null) return NotFound();
+            if (order.Status == "Completed") return Ok(new { message = "Đơn hàng đã hoàn thành từ trước." });
 
-            if (order.ShipperId.HasValue)
+            order.Status = "Completed";
+            order.DeliveredAt = DateTime.Now; // FIX LỖI: Gán trực tiếp DateTime thay vì string
+
+            // CẤU HÌNH PHÍ ĐỒNG BỘ VỚI ANDROID
+            decimal shipperPay = 10000; // Tiền công hệ thống trả cho Shipper (10k)
+            decimal foodAmount = (decimal)order.TotalAmount; // Tiền cơm (ví dụ 25k)
+
+            // --- A. XỬ LÝ VÍ QUÁN ĂN (Luôn nhận được tiền món ăn) ---
+            var shop = await _context.Shops.FindAsync(order.ShopId);
+            if (shop != null)
             {
-                var shipper = await _context.Shippers.FindAsync(order.ShipperId.Value);
-                var wallet = await _context.Wallets.FirstOrDefaultAsync(w => w.UserId == shipper.UserId);
-                if (wallet != null)
+                var shopWallet = await _context.Wallets.FirstOrDefaultAsync(w => w.UserId == shop.UserId);
+                if (shopWallet != null)
                 {
-                    // Hoàn lại tiền món + Thưởng 20k công ship
-                    decimal amountToRefund = order.TotalAmount;
-                    decimal bonus = 20000;
-                    decimal totalBack = amountToRefund + bonus;
-
-                    wallet.Balance += totalBack;
+                    shopWallet.Balance += foodAmount;
+                    shopWallet.UpdatedAt = DateTime.Now;
                     _context.Transactions.Add(new Transaction
                     {
-                        WalletId = wallet.Id,
-                        Amount = totalBack,
-                        Type = "REFUND_BONUS",
-                        Description = $"Hoàn {amountToRefund:N0}đ món + 20k công ship đơn #{order.Id}",
+                        WalletId = shopWallet.Id,
+                        Amount = foodAmount,
+                        Type = "ORDER_REVENUE",
+                        Description = $"Doanh thu món ăn đơn hàng #{order.Id}",
                         Status = 1,
                         OrderId = order.Id,
                         CreatedAt = DateTime.Now
@@ -107,38 +115,86 @@ namespace LangFoodBackend.Controller
                 }
             }
 
-            order.Status = "Completed";
-            order.DeliveredAt = DateTime.Now;
+            // --- B. XỬ LÝ VÍ SHIPPER ---
+            if (order.ShipperId.HasValue)
+            {
+                var shipper = await _context.Shippers.FindAsync(order.ShipperId.Value);
+                if (shipper != null)
+                {
+                    var shipperWallet = await _context.Wallets.FirstOrDefaultAsync(w => w.UserId == shipper.UserId);
+                    if (shipperWallet != null)
+                    {
+                        if (order.PaymentMethod == 0) // THANH TOÁN TIỀN MẶT (COD)
+                        {
+                            // 1. Shipper đã cầm tiền mặt từ khách (Cơm + Phí hệ thống, ví dụ 25k + 3k = 28k)
+                            // => Hệ thống TRỪ NỢ Shipper số tiền này để trả cho quán và admin
+                            decimal amountToDebit = foodAmount + (decimal)order.ShippingFee;
+                            shipperWallet.Balance -= amountToDebit;
+
+                            _context.Transactions.Add(new Transaction
+                            {
+                                WalletId = shipperWallet.Id,
+                                Amount = -amountToDebit,
+                                Type = "COD_COLLECTED",
+                                Description = $"Thu hồi tiền mặt đơn #{order.Id} (Cơm + Phí hệ thống)",
+                                Status = 1,
+                                OrderId = order.Id,
+                                CreatedAt = DateTime.Now
+                            });
+                        }
+
+                        // 2. CỘNG TIỀN CÔNG SHIP (Shipper nhận được 10k công vào ví)
+                        shipperWallet.Balance += shipperPay;
+                        _context.Transactions.Add(new Transaction
+                        {
+                            WalletId = shipperWallet.Id,
+                            Amount = shipperPay,
+                            Type = "SHIPPER_EARNING",
+                            Description = $"Tiền công giao hàng đơn #{order.Id}",
+                            Status = 1,
+                            OrderId = order.Id,
+                            CreatedAt = DateTime.Now
+                        });
+
+                        shipperWallet.UpdatedAt = DateTime.Now;
+                    }
+                }
+            }
+
             await _context.SaveChangesAsync();
-            return Ok(new { message = "Giao hàng hoàn tất." });
+            return Ok(new { message = "Giao hàng thành công. Tiền đã được chia về các ví." });
         }
 
-        // --- CÁC API CƠ BẢN KHÁC (GIỮ NGUYÊN) ---
-        [HttpPost]
-        public async Task<ActionResult<Order>> CreateOrder([FromBody] Order order)
-        {
-            order.CreatedAt = DateTime.Now; order.Status = "Pending";
-            _context.Orders.Add(order); await _context.SaveChangesAsync(); return Ok(order);
-        }
-        [HttpGet("buyer/{buyerId}")]
-        public async Task<ActionResult<IEnumerable<Order>>> GetOrdersByBuyer(string buyerId)
-        {
-            return await _context.Orders.Where(o => o.BuyerId == buyerId).Include(o => o.OrderItems).ThenInclude(oi => oi.Product).OrderByDescending(o => o.CreatedAt).ToListAsync();
-        }
-        [HttpGet("shop/{shopId}")]
-        public async Task<ActionResult<IEnumerable<Order>>> GetOrdersByShop(int shopId)
-        {
-            return await _context.Orders.Where(o => o.ShopId == shopId).Include(o => o.OrderItems).ThenInclude(oi => oi.Product).OrderByDescending(o => o.CreatedAt).ToListAsync();
-        }
+        // 3. Các API hỗ trợ khác
         [HttpPut("shop-accept/{id}")]
         public async Task<IActionResult> ShopAcceptOrder(int id)
         {
-            var o = await _context.Orders.FindAsync(id); if (o == null) return NotFound(); o.Status = "Preparing"; await _context.SaveChangesAsync(); return Ok();
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+            order.Status = "Accepted";
+            await _context.SaveChangesAsync();
+            return Ok();
         }
+
         [HttpPut("shop-ready/{id}")]
         public async Task<IActionResult> ShopReadyOrder(int id)
         {
-            var o = await _context.Orders.FindAsync(id); if (o == null) return NotFound(); o.Status = "Ready"; await _context.SaveChangesAsync(); return Ok();
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+            order.Status = "Ready";
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpGet("shop/{shopId}")]
+        public async Task<ActionResult<IEnumerable<Order>>> GetOrdersByShop(int shopId)
+        {
+            return await _context.Orders
+                .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Product)
+                .Where(o => o.ShopId == shopId)
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync();
         }
     }
 }

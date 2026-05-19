@@ -65,7 +65,10 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
             }
         }
         holder.tvItemCount.setText(count + " món");
-        holder.tvTotalAmount.setText(String.format(Locale.getDefault(), "%,.0fđ", order.getTotalAmount()));
+        
+        // HIỂN THỊ TỔNG TIỀN KHÁCH TRẢ (Tiền món + 3k phí)
+        double totalToPay = order.getTotalAmount() + order.getShippingFee();
+        holder.tvTotalAmount.setText(String.format(Locale.getDefault(), "%,.0fđ", totalToPay));
 
         String imageUrl = "";
         if (order.getOrderItems() != null && !order.getOrderItems().isEmpty() && order.getOrderItems().get(0).getProduct() != null) {

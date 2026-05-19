@@ -79,8 +79,6 @@ public class LoginActivity extends AppCompatActivity {
         if (tvForgotPassword != null) {
             tvForgotPassword.setOnClickListener(v -> startActivity(new Intent(LoginActivity.this, ForgotPasswordActivity.class)));
         }
-
-        // --- ĐÃ GỠ BỎ TOÀN BỘ LOGIC CLICK LOGO/SLOGAN ĐỂ ĐIỀN NHANH TÀI KHOẢN ---
     }
 
     private void checkLoggedUser() {
@@ -104,6 +102,12 @@ public class LoginActivity extends AppCompatActivity {
             public void onResponse(Call<User> call, Response<User> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     User userResponse = response.body();
+                    
+                    // KIỂM TRA PHÊ DUYỆT: Chặn nếu là Người bán (Role 2) hoặc Shipper (Role 3) mà chưa được duyệt
+                    if ((userResponse.getRoleId() == 2 || userResponse.getRoleId() == 3) && !userResponse.isApproved()) {
+                        Toast.makeText(LoginActivity.this, "Tài khoản của bạn đang chờ Admin phê duyệt. Vui lòng quay lại sau!", Toast.LENGTH_LONG).show();
+                        return;
+                    }
                     
                     // Lưu vào Local trước
                     saveUserToLocal(userResponse);
@@ -157,8 +161,6 @@ public class LoginActivity extends AppCompatActivity {
             editor.putFloat("WALLET_BALANCE", 0.0f);
         }
 
-        // Sử dụng commit() thay vì apply() để đảm bảo dữ liệu được ghi vào disk ngay lập tức 
-        // trước khi màn hình tiếp theo được mở và đọc dữ liệu này.
         editor.commit();
     }
 }

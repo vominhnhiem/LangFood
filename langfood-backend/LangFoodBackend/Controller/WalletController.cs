@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LangFood.Shared.Models;
+using LangFood.Shared.DTOs;
 
 namespace LangFoodBackend.Controllers
 {
@@ -29,9 +30,7 @@ namespace LangFoodBackend.Controllers
             return Ok(wallet);
         }
 
-        // 2. API Nạp tiền (Người dùng gửi yêu cầu thông báo đã chuyển khoản)
-        // File: Controllers/WalletController.cs (Backend)
-
+        // 2. API Nạp tiền (Gửi yêu cầu)
         [HttpPost("deposit")]
         public async Task<IActionResult> Deposit([FromQuery] string userId, [FromQuery] decimal amount, [FromQuery] int? orderId)
         {
@@ -43,10 +42,9 @@ namespace LangFoodBackend.Controllers
                 WalletId = wallet.Id,
                 Amount = amount,
                 Type = "DEPOSIT",
-                // Tạo mô tả để Admin dễ nhận biết
                 Description = orderId.HasValue ? $"Thanh toán đơn hàng #{orderId} qua QR" : "Yêu cầu nạp tiền vào ví",
-                Status = 0, // 0 = Pending (Chờ duyệt) -> Để hiện lên danh sách của Admin
-                OrderId = orderId, // Lưu ID đơn hàng vào đây
+                Status = 0,
+                OrderId = orderId,
                 CreatedAt = DateTime.Now
             };
 
@@ -54,27 +52,23 @@ namespace LangFoodBackend.Controllers
             await _context.SaveChangesAsync();
             return Ok(new { message = "Yêu cầu thanh toán đã được gửi tới Admin." });
         }
-        
 
-        // 3. API Dành cho Admin Duyệt nạp tiền (MỚI)
+        // 3. API Duyệt nạp tiền (Dành cho Admin)
         [HttpPost("approve-deposit/{transactionId}")]
         public async Task<IActionResult> ApproveDeposit(int transactionId)
         {
             var transaction = await _context.Transactions.FindAsync(transactionId);
-            if (transaction == null || transaction.Status != 0) return BadRequest("Giao dịch không hợp lệ hoặc đã được xử lý.");
+            if (transaction == null || transaction.Status != 0) return BadRequest("Giao dịch không hợp lệ.");
 
             var wallet = await _context.Wallets.FindAsync(transaction.WalletId);
             if (wallet == null) return NotFound("Không tìm thấy ví");
 
-            // 1. Cập nhật số dư ví
             wallet.Balance += transaction.Amount;
             wallet.UpdatedAt = DateTime.Now;
-
-            // 2. Cập nhật trạng thái giao dịch thành công
             transaction.Status = 1;
 
             await _context.SaveChangesAsync();
-            return Ok(new { message = "Đã duyệt và cộng tiền thành công", newBalance = wallet.Balance });
+            return Ok(new { message = "Đã duyệt nạp tiền thành công", newBalance = wallet.Balance });
         }
 
         // 4. Lấy lịch sử giao dịch
@@ -90,29 +84,84 @@ namespace LangFoodBackend.Controllers
                 .ToListAsync();
         }
 
-        // 5. API Rút tiền
-        [HttpPost("withdraw")]
-        public async Task<IActionResult> Withdraw([FromQuery] string userId, [FromQuery] decimal amount, [FromQuery] string note)
+        // 5. API Tạo yêu cầu rút tiền (Đã thêm ràng buộc số dư tối thiểu và số tiền rút tối thiểu)
+        [HttpPost("withdrawal-request")]
+        public async Task<IActionResult> CreateWithdrawalRequest([FromBody] WithdrawalRequestDto dto)
         {
-            var wallet = await _context.Wallets.FirstOrDefaultAsync(w => w.UserId == userId);
-            if (wallet == null || wallet.Balance < amount) return BadRequest("Số dư không đủ");
+            // Kiểm tra User để lấy RoleId
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == dto.UserId);
+            if (user == null) return NotFound("Không tìm thấy người dùng.");
 
-            wallet.Balance -= amount;
+            var wallet = await _context.Wallets.FirstOrDefaultAsync(w => w.UserId == dto.UserId);
+            if (wallet == null) return NotFound("Không tìm thấy ví.");
+
+            // QUY TẮC 1: Số tiền rút tối thiểu là 50,000đ
+            if (dto.Amount < 50000)
+            {
+                return BadRequest("Số tiền rút tối thiểu là 50,000đ.");
+            }
+
+            // QUY TẮC 2: Đối với Quán ăn (RoleId = 2), số dư sau khi rút phải >= 1,000,000đ
+            if (user.RoleId == 2)
+            {
+                if (wallet.Balance - dto.Amount < 1000000)
+                {
+                    return BadRequest("Quán ăn phải duy trì số dư tối thiểu 1,000,000đ trong ví.");
+                }
+            }
+            else
+            {
+                // Đối với các vai trò khác (Shipper, Sinh viên), chỉ cần đủ số dư
+                if (wallet.Balance < dto.Amount)
+                {
+                    return BadRequest("Số dư không đủ để thực hiện giao dịch.");
+                }
+            }
+
+            // Thực hiện trừ tiền ngay (Đóng băng số tiền rút)
+            wallet.Balance -= dto.Amount;
             wallet.UpdatedAt = DateTime.Now;
 
-            var transaction = new Transaction
+            // Tạo yêu cầu rút tiền
+            var request = new WithdrawalRequest
             {
-                WalletId = wallet.Id,
-                Amount = amount,
-                Type = "WITHDRAW",
-                Description = "Rút tiền: " + note,
-                Status = 1, // Giả sử rút tiền thì trừ luôn
+                UserId = dto.UserId,
+                Amount = dto.Amount,
+                BankName = dto.BankName,
+                BankAccountNumber = dto.BankAccountNumber,
+                BankAccountName = dto.BankAccountName,
+                Note = dto.Note,
+                Status = 0, // Chờ duyệt
                 CreatedAt = DateTime.Now
             };
 
+            // Tạo bản ghi giao dịch (Transaction)
+            var transaction = new Transaction
+            {
+                WalletId = wallet.Id,
+                Amount = -dto.Amount, // Số tiền âm
+                Type = "WITHDRAW",
+                Description = $"Rút tiền về {dto.BankName}",
+                Status = 0, // Đang xử lý
+                CreatedAt = DateTime.Now
+            };
+
+            _context.WithdrawalRequests.Add(request);
             _context.Transactions.Add(transaction);
             await _context.SaveChangesAsync();
-            return Ok(new { message = "Rút tiền thành công", newBalance = wallet.Balance });
+
+            return Ok(new { message = "Gửi yêu cầu thành công.", newBalance = wallet.Balance });
+        }
+
+        // 6. Lấy lịch sử rút tiền
+        [HttpGet("withdrawal-history/{userId}")]
+        public async Task<IActionResult> GetWithdrawalHistory(string userId)
+        {
+            var history = await _context.WithdrawalRequests
+                .Where(w => w.UserId == userId)
+                .OrderByDescending(w => w.CreatedAt)
+                .ToListAsync();
+            return Ok(history);
         }
     }
 }

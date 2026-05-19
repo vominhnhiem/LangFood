@@ -23,6 +23,9 @@ namespace LangFood.Shared.Models
         public string? DeliveryBuilding { get; set; }
         public string? DeliveryRoom { get; set; }
 
+        // --- THÊM DÒNG NÀY ĐỂ LƯU SỐ ĐIỆN THOẠI NHẬN HÀNG ---
+        public string? DeliveryPhone { get; set; }
+
         // 0: Cash (Tiền mặt), 1: Wallet (Ví/QR)
         public int PaymentMethod { get; set; }
 

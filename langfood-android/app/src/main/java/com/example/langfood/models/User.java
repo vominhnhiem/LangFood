@@ -46,6 +46,9 @@ public class User implements Serializable {
     @SerializedName(value = "cccdNumber", alternate = {"CccdNumber"})
     private String cccdNumber;
 
+    @SerializedName(value = "isApproved", alternate = {"IsApproved"})
+    private boolean isApproved;
+
     @SerializedName(value = "shop", alternate = {"Shop"})
     private Shop shop;
 
@@ -98,6 +101,9 @@ public class User implements Serializable {
 
     public String getCccdNumber() { return cccdNumber; }
     public void setCccdNumber(String cccdNumber) { this.cccdNumber = cccdNumber; }
+
+    public boolean isApproved() { return isApproved; }
+    public void setApproved(boolean approved) { isApproved = approved; }
 
     public Shop getShop() { return shop; }
     public void setShop(Shop shop) { this.shop = shop; }

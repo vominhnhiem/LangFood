@@ -50,17 +50,27 @@ public class ShipperOrderAdapter extends RecyclerView.Adapter<ShipperOrderAdapte
         }
         holder.tvOrderAddress.setText(address);
 
-        double totalToCollect = order.getTotalAmount() + order.getShippingFee();
-        holder.tvTotalAmount.setText(String.format(Locale.getDefault(), "Thu khách: %,.0fđ", totalToCollect));
-        holder.tvShippingFee.setText("Công ship: 20,000đ");
+        // Hiển thị số tiền mặt Shipper cần thu từ khách (Cơm 25k + Phí 3k = 28k)
+        double amountToCollect = order.getTotalAmount() + order.getShippingFee();
+        
+        if (order.getPaymentMethod() == 1) { // Chuyển khoản (QR)
+            holder.tvTotalAmount.setText("Đã thanh toán qua QR");
+            holder.tvTotalAmount.setTextColor(Color.parseColor("#4CAF50"));
+        } else {
+            holder.tvTotalAmount.setText(String.format(Locale.getDefault(), "Thu tiền mặt: %,.0fđ", amountToCollect));
+            holder.tvTotalAmount.setTextColor(Color.parseColor("#FF5722"));
+        }
 
-        // KIỂM TRA TRẠNG THÁI ĐỂ ĐỔI NÚT
+        // Hiển thị thu nhập cố định của Shipper
+        holder.tvShippingFee.setText("Tiền công: +10,000đ (Vào ví)");
+        holder.tvShippingFee.setTextColor(Color.parseColor("#4CAF50"));
+
         if ("Delivering".equals(order.getStatus())) {
             holder.btnAcceptOrder.setText("Tiếp tục giao");
-            holder.btnAcceptOrder.setBackgroundColor(Color.parseColor("#4CAF50")); // Màu xanh lá
+            holder.btnAcceptOrder.setBackgroundColor(Color.parseColor("#4CAF50"));
         } else {
             holder.btnAcceptOrder.setText("Nhận đơn");
-            holder.btnAcceptOrder.setBackgroundColor(Color.parseColor("#FF5722")); // Màu cam mặc định
+            holder.btnAcceptOrder.setBackgroundColor(Color.parseColor("#FF5722"));
         }
 
         holder.btnAcceptOrder.setOnClickListener(v -> listener.onAcceptClick(order));

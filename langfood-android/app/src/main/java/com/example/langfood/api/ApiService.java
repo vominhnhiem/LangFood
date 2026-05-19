@@ -12,6 +12,7 @@ import com.example.langfood.models.Shipper;
 import com.example.langfood.models.UsernameCheckResponse;
 import com.example.langfood.models.Wallet;
 import com.example.langfood.models.ShopStats;
+import com.example.langfood.models.WithdrawalRequest;
 
 import java.util.List;
 
@@ -100,6 +101,12 @@ public interface ApiService {
     @POST("api/Wallet/withdraw")
     Call<ResponseBody> withdraw(@Query("userId") String userId, @Query("amount") double amount, @Query("note") String note);
 
+    @POST("api/Wallet/withdrawal-request")
+    Call<ResponseBody> createWithdrawalRequest(@Body WithdrawalRequest request);
+
+    @GET("api/Wallet/withdrawal-history/{userId}")
+    Call<List<WithdrawalRequest>> getWithdrawalHistory(@Path("userId") String userId);
+
     // --- SHOP & SHIPPER INFO ---
     @GET("api/Shops/user/{userId}")
     Call<Shop> getShopByUserId(@Path("userId") String userId);
@@ -140,6 +147,13 @@ public interface ApiService {
 
     @GET("api/Orders/shop-stats/{shopId}")
     Call<ShopStats> getShopStats(@Path("shopId") int shopId);
+
+    @GET("api/Orders/shop-stats-detailed/{shopId}")
+    Call<ShopStats> getDetailedShopStats(
+            @Path("shopId") int shopId,
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate
+    );
 
     // --- CART API ---
     @GET("api/Cart/{userId}")

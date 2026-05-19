@@ -45,7 +45,6 @@ public class SellerOrderAdapter extends RecyclerView.Adapter<SellerOrderAdapter.
 
         holder.tvOrderId.setText("Đơn hàng #" + order.getId());
         
-        // Làm sạch chuỗi status để so khớp chính xác
         String rawStatus = (order.getStatus() != null) ? order.getStatus().trim() : "";
         
         holder.tvOrderStatus.setText(translateStatus(rawStatus));
@@ -54,10 +53,11 @@ public class SellerOrderAdapter extends RecyclerView.Adapter<SellerOrderAdapter.
         holder.tvBuyerName.setText("Khách hàng: " + (order.getBuyerName() != null ? order.getBuyerName() : "N/A"));
         holder.tvDeliveryAddress.setText("Địa chỉ: " + (order.getDeliveryBuilding() != null ? order.getDeliveryBuilding() : "N/A"));
         
-        double total = order.getTotalAmount();
-        holder.tvTotalAmount.setText(String.format(Locale.getDefault(), "Tổng: %,.0fđ", total));
+        // LOGIC: Shop chỉ quan tâm đến doanh thu món ăn họ nhận được
+        double foodRevenue = order.getTotalAmount();
+        holder.tvTotalAmount.setText(String.format(Locale.getDefault(), "Doanh thu món: %,.0fđ", foodRevenue));
+        holder.tvTotalAmount.setTextColor(Color.parseColor("#4CAF50"));
 
-        // Hiển thị tóm tắt món ăn
         StringBuilder itemsSummary = new StringBuilder("Món ăn: ");
         if (order.getOrderItems() != null) {
             for (OrderItem item : order.getOrderItems()) {
@@ -68,7 +68,6 @@ public class SellerOrderAdapter extends RecyclerView.Adapter<SellerOrderAdapter.
         if (summary.endsWith(", ")) summary = summary.substring(0, summary.length() - 2);
         holder.tvOrderItems.setText(summary);
 
-        // Logic hiển thị nút bấm linh hoạt
         if ("Pending".equalsIgnoreCase(rawStatus)) {
             holder.btnConfirmOrder.setVisibility(View.VISIBLE);
             holder.btnConfirmOrder.setText("Xác nhận");
@@ -78,7 +77,6 @@ public class SellerOrderAdapter extends RecyclerView.Adapter<SellerOrderAdapter.
             holder.btnConfirmOrder.setText("Đã nấu xong");
             holder.btnConfirmOrder.setOnClickListener(v -> listener.onReady(order));
         } else {
-            // Các trạng thái khác (Ready, Delivering, Completed) không hiện nút thao tác
             holder.btnConfirmOrder.setVisibility(View.GONE);
         }
 
@@ -89,11 +87,11 @@ public class SellerOrderAdapter extends RecyclerView.Adapter<SellerOrderAdapter.
         if (status == null) return;
         String s = status.toLowerCase().trim();
         switch (s) {
-            case "pending": tv.setTextColor(Color.parseColor("#FFA500")); break; // Orange
-            case "preparing": tv.setTextColor(Color.parseColor("#FFD700")); break; // Gold
-            case "ready": tv.setTextColor(Color.parseColor("#008000")); break; // Green
-            case "delivering": tv.setTextColor(Color.parseColor("#1E90FF")); break; // Blue
-            case "completed": tv.setTextColor(Color.parseColor("#808080")); break; // Gray
+            case "pending": tv.setTextColor(Color.parseColor("#FFA500")); break;
+            case "preparing": tv.setTextColor(Color.parseColor("#FFD700")); break;
+            case "ready": tv.setTextColor(Color.parseColor("#008000")); break;
+            case "delivering": tv.setTextColor(Color.parseColor("#1E90FF")); break;
+            case "completed": tv.setTextColor(Color.parseColor("#808080")); break;
             default: tv.setTextColor(Color.BLACK); break;
         }
     }
@@ -114,7 +112,7 @@ public class SellerOrderAdapter extends RecyclerView.Adapter<SellerOrderAdapter.
 
     @Override
     public int getItemCount() {
-        return orderList.size();
+        return orderList != null ? orderList.size() : 0;
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {

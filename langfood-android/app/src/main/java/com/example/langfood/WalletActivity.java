@@ -24,6 +24,7 @@ import com.example.langfood.api.ApiClient;
 import com.example.langfood.api.ApiService;
 import com.example.langfood.models.Transaction;
 import com.example.langfood.models.Wallet;
+import com.example.langfood.models.WithdrawalRequest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +46,7 @@ public class WalletActivity extends AppCompatActivity {
     private List<Transaction> transactionList = new ArrayList<>();
     private ApiService apiService;
     private String userId;
+    private int roleId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,7 +56,7 @@ public class WalletActivity extends AppCompatActivity {
         apiService = ApiClient.getClient().create(ApiService.class);
         SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
         userId = prefs.getString("USER_ID", "");
-        int roleId = prefs.getInt("ROLE_ID", 0);
+        roleId = prefs.getInt("ROLE_ID", 0);
 
         initViews();
         setupRecyclerView();
@@ -199,27 +201,87 @@ public class WalletActivity extends AppCompatActivity {
 
     private void showWithdrawDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Rút tiền về tài khoản");
+        builder.setTitle("Rút tiền về ngân hàng");
         
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_withdraw, null);
         EditText etAmount = view.findViewById(R.id.etAmount);
+        EditText etBankName = view.findViewById(R.id.etBankName);
+        EditText etAccountNumber = view.findViewById(R.id.etAccountNumber);
+        EditText etAccountName = view.findViewById(R.id.etAccountName);
         EditText etNote = view.findViewById(R.id.etNote);
+        
         builder.setView(view);
 
         builder.setPositiveButton("Gửi yêu cầu", (dialog, which) -> {
             String amountStr = etAmount.getText().toString();
+            String bankName = etBankName.getText().toString();
+            String accountNumber = etAccountNumber.getText().toString();
+            String accountName = etAccountName.getText().toString();
             String note = etNote.getText().toString();
-            if (!amountStr.isEmpty() && !note.isEmpty()) {
+
+            if (!amountStr.isEmpty() && !bankName.isEmpty() && !accountNumber.isEmpty() && !accountName.isEmpty()) {
                 double amount = Double.parseDouble(amountStr);
-                handleWithdraw(amount, note);
+                
+                // --- KIỂM TRA QUY TẮC RÚT TIỀN ---
+                if (amount < 50000) {
+                    Toast.makeText(this, "Số tiền rút tối thiểu là 50,000đ", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                float currentBalance = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE)
+                        .getFloat("WALLET_BALANCE", 0);
+
+                if (roleId == 2) { // Quán ăn
+                    if (currentBalance - amount < 1000000) {
+                        Toast.makeText(this, "Quán ăn phải duy trì số dư tối thiểu 1,000,000đ", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                } else { // Các vai trò khác
+                    if (amount > currentBalance) {
+                        Toast.makeText(this, "Số dư không đủ để rút", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                }
+                
+                WithdrawalRequest request = new WithdrawalRequest(
+                        userId, amount, bankName, accountNumber, accountName, note
+                );
+                
+                handleWithdrawRequest(request);
             } else {
-                Toast.makeText(this, "Vui lòng nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Vui lòng nhập đầy đủ các trường bắt buộc", Toast.LENGTH_SHORT).show();
             }
         });
         builder.setNegativeButton("Hủy", null);
         builder.show();
     }
 
+    private void handleWithdrawRequest(WithdrawalRequest request) {
+        apiService.createWithdrawalRequest(request).enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(WalletActivity.this, "Yêu cầu rút tiền đã được gửi. Chờ Admin phê duyệt!", Toast.LENGTH_LONG).show();
+                    fetchWalletData();
+                    fetchTransactions();
+                } else {
+                    try {
+                        String errorBody = response.errorBody().string();
+                        Toast.makeText(WalletActivity.this, "Lỗi: " + errorBody, Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        Toast.makeText(WalletActivity.this, "Rút tiền thất bại. Kiểm tra số dư!", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Toast.makeText(WalletActivity.this, "Lỗi kết nối server", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    // Giữ lại method cũ nếu cần hoặc xóa đi nếu đã thay thế hoàn toàn
     private void handleWithdraw(double amount, String note) {
         apiService.withdraw(userId, amount, note).enqueue(new Callback<ResponseBody>() {
             @Override
