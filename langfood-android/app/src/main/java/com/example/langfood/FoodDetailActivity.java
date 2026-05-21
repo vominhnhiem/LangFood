@@ -4,41 +4,88 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.langfood.api.ApiClient;
 import com.example.langfood.api.ApiService;
 import com.example.langfood.models.Product;
+import com.example.langfood.models.ProductOption;
+import com.example.langfood.models.ProductOptionGroup;
 import com.example.langfood.models.User;
+import com.google.gson.Gson;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class FoodDetailActivity extends AppCompatActivity {
+public class FoodDetailActivity extends AppCompatActivity implements OptionAdapter.OnOptionSelectedListener {
 
-    private ImageView imgFood, btnBack, ivSellerAvatar;
-    private TextView txtFoodName, txtFoodPrice, txtFoodDescription, tvSellerName;
+    private ImageView imgFood, btnBack, ivSellerAvatar, btnMinus, btnPlus;
+    private TextView txtFoodName, txtFoodPrice, txtFoodDescription, tvSellerName, tvQuantity;
     private Button btnAddToCart;
+    private EditText etNote;
+    private RecyclerView rvOptionGroups;
+    private OptionGroupAdapter groupAdapter;
+    
     private Product currentProduct;
+    private int quantity = 1;
+    private ApiService apiService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_food_detail);
 
+        apiService = ApiClient.getClient().create(ApiService.class);
         initViews();
-        displayProductDetails();
+        
+        int productId = getIntent().getIntExtra("PRODUCT_ID", -1);
+        if (productId != -1) {
+            loadProductDetail(productId);
+        } else {
+            finish();
+        }
         
         btnBack.setOnClickListener(v -> finish());
         
+        btnPlus.setOnClickListener(v -> {
+            quantity++;
+            updateQuantityUI();
+        });
+
+        btnMinus.setOnClickListener(v -> {
+            if (quantity > 1) {
+                quantity--;
+                updateQuantityUI();
+            }
+        });
+
         btnAddToCart.setOnClickListener(v -> {
             if (currentProduct != null) {
-                CartManager.getInstance().addToCart(currentProduct, 1);
-                Toast.makeText(this, "Đã thêm " + currentProduct.getName() + " vào giỏ hàng!", Toast.LENGTH_SHORT).show();
+                String note = etNote.getText().toString().trim();
+                List<Integer> selectedOptionIds = new ArrayList<>();
+                if (currentProduct.getOptionGroups() != null) {
+                    for (ProductOptionGroup group : currentProduct.getOptionGroups()) {
+                        for (ProductOption option : group.getOptions()) {
+                            if (option.isSelected()) {
+                                selectedOptionIds.add(option.getId());
+                            }
+                        }
+                    }
+                }
+                String optionsJson = new Gson().toJson(selectedOptionIds);
+                
+                CartManager.getInstance().addToCart(currentProduct, quantity, note, optionsJson);
+                Toast.makeText(this, "Đã thêm vào giỏ hàng!", Toast.LENGTH_SHORT).show();
+                finish();
             }
         });
 
@@ -60,79 +107,99 @@ public class FoodDetailActivity extends AppCompatActivity {
         btnBack = findViewById(R.id.btnBack);
         tvSellerName = findViewById(R.id.tvSellerName);
         ivSellerAvatar = findViewById(R.id.ivSellerAvatar);
+        
+        btnMinus = findViewById(R.id.btnMinus);
+        btnPlus = findViewById(R.id.btnPlus);
+        tvQuantity = findViewById(R.id.tvQuantity);
+        etNote = findViewById(R.id.etNote);
+        rvOptionGroups = findViewById(R.id.rvOptionGroups);
+        
+        rvOptionGroups.setLayoutManager(new LinearLayoutManager(this));
     }
 
-    private void displayProductDetails() {
-        int id = getIntent().getIntExtra("PRODUCT_ID", -1);
-        String name = getIntent().getStringExtra("PRODUCT_NAME");
-        double price = getIntent().getDoubleExtra("PRODUCT_PRICE", 0);
-        String desc = getIntent().getStringExtra("PRODUCT_DESC");
-        String imagePath = getIntent().getStringExtra("PRODUCT_IMAGE");
-        int shopId = getIntent().getIntExtra("SHOP_ID", 0);
-        String sellerId = getIntent().getStringExtra("SELLER_ID");
-        String sellerName = getIntent().getStringExtra("SELLER_NAME");
+    private void loadProductDetail(int productId) {
+        apiService.getProductById(productId).enqueue(new Callback<Product>() {
+            @Override
+            public void onResponse(Call<Product> call, Response<Product> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    currentProduct = response.body();
+                    displayData();
+                }
+            }
+            @Override
+            public void onFailure(Call<Product> call, Throwable t) {
+                Toast.makeText(FoodDetailActivity.this, "Không thể tải chi tiết món ăn", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 
-        currentProduct = new Product();
-        currentProduct.setId(id);
-        currentProduct.setName(name);
-        currentProduct.setPrice(price);
-        currentProduct.setDescription(desc);
-        currentProduct.setImageUrl(imagePath);
-        currentProduct.setShopId(shopId);
-        currentProduct.setSellerId(sellerId);
-        currentProduct.setSellerName(sellerName);
-
-        txtFoodName.setText(name);
-        txtFoodPrice.setText(String.format(Locale.getDefault(), "%,.0fđ", price));
-        txtFoodDescription.setText(desc);
-        btnAddToCart.setText("THÊM VÀO GIỎ HÀNG - " + String.format(Locale.getDefault(), "%,.0fđ", price));
-
-        // Hiển thị tên người bán nhận từ Intent
-        if (sellerName != null && !sellerName.isEmpty()) {
-            tvSellerName.setText("Người bán: " + sellerName);
-        } else {
-            tvSellerName.setText("Người bán: Đang tải...");
-        }
-
-        // Gọi API lấy thêm thông tin chi tiết của người bán (như Avatar)
-        if (sellerId != null) {
-            loadSellerInfo(sellerId);
-        }
-
-        // Sử dụng duy nhất ApiClient.BASE_URL
-        String imageUrl = ApiClient.BASE_URL + imagePath;
+    private void displayData() {
+        txtFoodName.setText(currentProduct.getName());
+        txtFoodDescription.setText(currentProduct.getDescription());
+        txtFoodPrice.setText(String.format(Locale.getDefault(), "%,.0fđ", currentProduct.getPrice()));
+        tvSellerName.setText(currentProduct.getSellerName());
+        
         Glide.with(this)
-                .load(imageUrl)
+                .load(ApiClient.BASE_URL + currentProduct.getImageUrl())
                 .placeholder(R.drawable.lang_food_avt)
-                .error(R.drawable.lang_food_avt)
                 .into(imgFood);
+
+        if (currentProduct.getOptionGroups() != null) {
+            groupAdapter = new OptionGroupAdapter(currentProduct.getOptionGroups(), this);
+            rvOptionGroups.setAdapter(groupAdapter);
+        }
+
+        if (currentProduct.getSellerId() != null) {
+            loadSellerInfo(currentProduct.getSellerId());
+        }
+
+        updateQuantityUI();
+    }
+
+    private void updateQuantityUI() {
+        tvQuantity.setText(String.valueOf(quantity));
+        calculateTotalPrice();
+    }
+
+    @Override
+    public void onOptionChanged() {
+        calculateTotalPrice();
+    }
+
+    private void calculateTotalPrice() {
+        if (currentProduct == null) return;
+        
+        double totalPerItem = currentProduct.getPrice();
+        if (currentProduct.getOptionGroups() != null) {
+            for (ProductOptionGroup group : currentProduct.getOptionGroups()) {
+                for (ProductOption option : group.getOptions()) {
+                    if (option.isSelected()) {
+                        totalPerItem += option.getAdditionalPrice();
+                    }
+                }
+            }
+        }
+        
+        double finalTotal = totalPerItem * quantity;
+        btnAddToCart.setText(String.format(Locale.getDefault(), "THÊM VÀO GIỎ - %,.0fđ", finalTotal));
     }
 
     private void loadSellerInfo(String sellerId) {
-        ApiService apiService = ApiClient.getClient().create(ApiService.class);
         apiService.getUserById(sellerId).enqueue(new Callback<User>() {
             @Override
             public void onResponse(Call<User> call, Response<User> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     User user = response.body();
                     tvSellerName.setText(user.getFullName());
-                    
-                    String avatarUrl = user.getAvatarUrl();
-                    if (avatarUrl != null && !avatarUrl.isEmpty()) {
-                        String fullAvatarUrl = avatarUrl.startsWith("http") ? avatarUrl : ApiClient.BASE_URL + avatarUrl;
+                    if (user.getAvatarUrl() != null) {
                         Glide.with(FoodDetailActivity.this)
-                                .load(fullAvatarUrl)
+                                .load(ApiClient.BASE_URL + user.getAvatarUrl())
                                 .placeholder(R.drawable.anhavt)
-                                .error(R.drawable.anhavt)
                                 .into(ivSellerAvatar);
                     }
                 }
             }
-
-            @Override
-            public void onFailure(Call<User> call, Throwable t) {
-                Log.e("API_ERROR", "Load seller info failed: " + t.getMessage());
-            }
+            @Override public void onFailure(Call<User> call, Throwable t) {}
         });
     }
 }

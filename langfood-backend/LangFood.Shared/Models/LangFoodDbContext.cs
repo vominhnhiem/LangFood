@@ -21,12 +21,20 @@ namespace LangFood.Shared.Models
         public DbSet<Wallet> Wallets { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<WithdrawalRequest> WithdrawalRequests { get; set; }
+        // Thêm 2 dòng này vào trong class LangFoodDbContext
+        public DbSet<ProductOptionGroup> ProductOptionGroups { get; set; }
+        public DbSet<ProductOption> ProductOptions { get; set; }
+
+        // Thêm cấu hình decimal vào trong hàm OnModelCreating
+      
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
             // 1. Cấu hình kiểu dữ liệu decimal (Tránh sai số tiền tệ cho tất cả các bảng liên quan)
+            modelBuilder.Entity<ProductOption>().Property(p => p.AdditionalPrice).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<OrderItem>().Property(oi => oi.OptionsPrice).HasColumnType("decimal(18,2)");
             modelBuilder.Entity<Wallet>().Property(w => w.Balance).HasColumnType("decimal(18,2)");
             modelBuilder.Entity<Transaction>().Property(t => t.Amount).HasColumnType("decimal(18,2)");
             modelBuilder.Entity<Product>().Property(p => p.Price).HasColumnType("decimal(18,2)");

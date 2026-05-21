@@ -9,7 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace LangFoodBackend.Controller
+namespace LangFoodBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

@@ -1,6 +1,7 @@
 package com.example.langfood;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -45,34 +46,29 @@ public class ManageFoodAdapter extends RecyclerView.Adapter<ManageFoodAdapter.Vi
         holder.tvFoodName.setText(product.getName());
         holder.tvFoodPrice.setText(String.format(Locale.getDefault(), "%,.0fđ", product.getPrice()));
 
-        // Cập nhật trạng thái dựa trên status từ backend
-        String status = product.getStatus();
-        // Xử lý null, chuyển về chữ thường và loại bỏ khoảng trắng dư thừa (trim)
-        String normalizedStatus = (status != null) ? status.toLowerCase().trim() : "";
+        // Cập nhật trạng thái dựa trên status từ backend (int)
+        int status = product.getStatus();
 
-        switch (normalizedStatus) {
-            case "approved":
-            case "1": // Hỗ trợ trường hợp Backend trả về số 1 cho Approved
+        switch (status) {
+            case 1: // Approved
                 holder.tvFoodStatus.setText("Đang bán");
-                holder.tvFoodStatus.setTextColor(Color.parseColor("#4CAF50")); // Xanh lá
+                holder.tvFoodStatus.setTextColor(Color.parseColor("#4CAF50"));
                 break;
-            case "pending":
-            case "0": // Hỗ trợ trường hợp Backend trả về số 0 cho Pending
+            case 0: // Pending
                 holder.tvFoodStatus.setText("Chờ duyệt...");
-                holder.tvFoodStatus.setTextColor(Color.parseColor("#FF9800")); // Cam
+                holder.tvFoodStatus.setTextColor(Color.parseColor("#FF9800"));
                 break;
-            case "rejected":
-            case "2": // Hỗ trợ trường hợp Backend trả về số 2 cho Rejected
+            case 2: // Rejected
                 holder.tvFoodStatus.setText("Từ chối duyệt");
-                holder.tvFoodStatus.setTextColor(Color.parseColor("#F44336")); // Đỏ
+                holder.tvFoodStatus.setTextColor(Color.parseColor("#F44336"));
                 break;
             default:
-                holder.tvFoodStatus.setText("Không xác định (" + normalizedStatus + ")");
-                holder.tvFoodStatus.setTextColor(Color.parseColor("#9E9E9E")); // Xám
+                holder.tvFoodStatus.setText("Không xác định (" + status + ")");
+                holder.tvFoodStatus.setTextColor(Color.parseColor("#9E9E9E"));
                 break;
         }
 
-        // Load ảnh bằng Glide với BASE_URL
+        // Load ảnh bằng Glide
         String imageUrl = product.getImageUrl();
         String fullImageUrl = (imageUrl != null && imageUrl.startsWith("http")) ? imageUrl : ApiClient.BASE_URL + (imageUrl != null && imageUrl.startsWith("/") ? imageUrl.substring(1) : (imageUrl != null ? imageUrl : ""));
 
@@ -84,11 +80,19 @@ public class ManageFoodAdapter extends RecyclerView.Adapter<ManageFoodAdapter.Vi
 
         holder.btnEdit.setOnClickListener(v -> listener.onEditClick(product));
         holder.btnDelete.setOnClickListener(v -> listener.onDeleteClick(product));
+        
+        // --- XỬ LÝ CLICK NÚT TOPPING ---
+        holder.btnToppings.setOnClickListener(v -> {
+            Intent intent = new Intent(context, ManageOptionsActivity.class);
+            intent.putExtra("PRODUCT_ID", product.getId());
+            intent.putExtra("PRODUCT_NAME", product.getName());
+            context.startActivity(intent);
+        });
     }
 
     @Override
     public int getItemCount() {
-        return productList.size();
+        return productList != null ? productList.size() : 0;
     }
 
     public void updateList(List<Product> newList) {
@@ -97,7 +101,7 @@ public class ManageFoodAdapter extends RecyclerView.Adapter<ManageFoodAdapter.Vi
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        ImageView ivFoodImage, btnEdit, btnDelete;
+        ImageView ivFoodImage, btnEdit, btnDelete, btnToppings;
         TextView tvFoodName, tvFoodPrice, tvFoodStatus;
 
         public ViewHolder(@NonNull View itemView) {
@@ -108,6 +112,7 @@ public class ManageFoodAdapter extends RecyclerView.Adapter<ManageFoodAdapter.Vi
             tvFoodStatus = itemView.findViewById(R.id.tvFoodStatus);
             btnEdit = itemView.findViewById(R.id.btnEdit);
             btnDelete = itemView.findViewById(R.id.btnDelete);
+            btnToppings = itemView.findViewById(R.id.btnToppings);
         }
     }
 }

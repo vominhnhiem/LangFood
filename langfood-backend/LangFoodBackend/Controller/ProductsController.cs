@@ -8,7 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace LangFoodBackend.Controller
+namespace LangFoodBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -21,13 +21,15 @@ namespace LangFoodBackend.Controller
             _context = context;
         }
 
-        // 1. LẤY TẤT CẢ MÓN ĂN (Trang chủ App - Chỉ hiện món đã duyệt Status = 1)
+        // 1. LẤY TẤT CẢ MÓN ĂN (Trang chủ App - Đã thêm Topping)
         [HttpGet]
         public async Task<ActionResult<IEnumerable<object>>> GetProducts()
         {
             return await _context.Products
                 .Include(p => p.Shop)
                     .ThenInclude(s => s.User)
+                .Include(p => p.OptionGroups)
+                    .ThenInclude(g => g.Options)
                 .Where(p => p.IsAvailable && p.Status == 1 && !p.IsDeleted)
                 .OrderByDescending(p => p.Id)
                 .Select(p => new {
@@ -40,20 +42,35 @@ namespace LangFoodBackend.Controller
                     p.Status,
                     p.ShopId,
                     p.CategoryId,
-                    // FIX: Ưu tiên lấy tên Shop, nếu không có lấy FullName của User sở hữu Shop
                     SellerName = !string.IsNullOrEmpty(p.Shop.Name) ? p.Shop.Name :
-                                 (p.Shop.User != null ? p.Shop.User.FullName : "Quán ăn Lang Food")
+                                 (p.Shop.User != null ? p.Shop.User.FullName : "Quán ăn Lang Food"),
+                    // Trả về danh sách option groups để App có thể hiển thị sơ bộ hoặc tính giá
+                    OptionGroups = p.OptionGroups.Select(g => new {
+                        g.Id,
+                        g.Name,
+                        g.IsRequired,
+                        g.MinSelectable,
+                        g.MaxSelectable,
+                        Options = g.Options.Select(o => new {
+                            o.Id,
+                            o.Name,
+                            o.AdditionalPrice,
+                            o.IsAvailable
+                        })
+                    })
                 })
                 .ToListAsync();
         }
 
-        // 2. LẤY CHI TIẾT MỘT MÓN ĂN
+        // 2. LẤY CHI TIẾT MỘT MÓN ĂN (Dùng để hiển thị màn hình chọn Topping như Grab)
         [HttpGet("{id}")]
         public async Task<ActionResult<object>> GetProduct(int id)
         {
             var product = await _context.Products
                 .Include(p => p.Shop)
                     .ThenInclude(s => s.User)
+                .Include(p => p.OptionGroups)
+                    .ThenInclude(g => g.Options)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null) return NotFound(new { message = "Không tìm thấy món này!" });
@@ -69,18 +86,32 @@ namespace LangFoodBackend.Controller
                 product.Status,
                 product.ShopId,
                 product.CategoryId,
-                // FIX: Logic hiển thị tên người bán tương tự như GetProducts
                 SellerName = !string.IsNullOrEmpty(product.Shop?.Name) ? product.Shop.Name :
                              (product.Shop?.User?.FullName ?? "Quán ăn Lang Food"),
-                SellerPhone = product.Shop?.User?.PhoneNumber
+                SellerPhone = product.Shop?.User?.PhoneNumber,
+                // Trả về cấu trúc Topping chi tiết
+                OptionGroups = product.OptionGroups.Select(g => new {
+                    g.Id,
+                    g.Name,
+                    g.IsRequired,
+                    g.MinSelectable,
+                    g.MaxSelectable,
+                    Options = g.Options.Select(o => new {
+                        o.Id,
+                        o.Name,
+                        o.AdditionalPrice,
+                        o.IsAvailable
+                    })
+                })
             });
         }
 
-        // 3. LẤY MÓN THEO SHOP ID (Dùng cho Seller quản lý món của mình)
+        // 3. LẤY MÓN THEO SHOP ID
         [HttpGet("shop/{shopId}")]
         public async Task<ActionResult<IEnumerable<object>>> GetProductsByShop(int shopId)
         {
             return await _context.Products
+                .Include(p => p.OptionGroups) // Shop cũng cần xem món mình có những topping nào
                 .Where(p => p.ShopId == shopId && !p.IsDeleted)
                 .OrderByDescending(p => p.Id)
                 .Select(p => new {
@@ -137,7 +168,7 @@ namespace LangFoodBackend.Controller
                 CategoryId = categoryId,
                 ImageUrl = imageUrl,
                 IsAvailable = true,
-                Status = 0 // Mặc định chờ duyệt
+                Status = 0
             };
 
             _context.Products.Add(product);
@@ -165,7 +196,7 @@ namespace LangFoodBackend.Controller
                 existingProduct.ImageUrl = updatedProduct.ImageUrl;
             }
 
-            existingProduct.Status = 0; // Thay đổi thì phải duyệt lại
+            existingProduct.Status = 0;
             existingProduct.IsAvailable = true;
 
             await _context.SaveChangesAsync();
@@ -179,7 +210,6 @@ namespace LangFoodBackend.Controller
             var product = await _context.Products.FindAsync(id);
             if (product == null) return NotFound();
 
-            // Sử dụng xóa mềm IsDeleted = true
             product.IsDeleted = true;
             await _context.SaveChangesAsync();
 

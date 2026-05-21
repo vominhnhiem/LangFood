@@ -58,23 +58,29 @@ public class CartManager {
         });
     }
 
-    public void addToCart(Product product, int quantity) {
+    public void addToCart(Product product, int quantity, String note, String selectedOptionsJson) {
         // Cập nhật local trước để UI mượt
+        // Chú ý: Cùng một món nhưng Topping khác nhau thì coi như 2 item khác nhau
         boolean exists = false;
         for (CartItem item : cartItems) {
-            if (item.getProduct().getId() == product.getId()) {
+            boolean sameProduct = item.getProduct().getId() == product.getId();
+            boolean sameNote = (note == null && item.getNote() == null) || (note != null && note.equals(item.getNote()));
+            boolean sameOptions = (selectedOptionsJson == null && item.getSelectedOptionsJson() == null) || 
+                                 (selectedOptionsJson != null && selectedOptionsJson.equals(item.getSelectedOptionsJson()));
+            
+            if (sameProduct && sameNote && sameOptions) {
                 item.setQuantity(item.getQuantity() + quantity);
                 exists = true;
                 break;
             }
         }
         if (!exists) {
-            cartItems.add(new CartItem(product, quantity));
+            cartItems.add(new CartItem(product, quantity, note, selectedOptionsJson));
         }
 
         // Đồng bộ lên Server
         if (userId != null && !userId.isEmpty()) {
-            apiService.addToCart(userId, product.getId(), quantity).enqueue(new Callback<Void>() {
+            apiService.addToCart(userId, product.getId(), quantity, note, selectedOptionsJson).enqueue(new Callback<Void>() {
                 @Override
                 public void onResponse(Call<Void> call, Response<Void> response) {
                     Log.d("CartManager", "Added to server cart");
@@ -108,6 +114,7 @@ public class CartManager {
         double total = 0;
         for (CartItem item : cartItems) {
             total += item.getProduct().getPrice() * item.getQuantity();
+            // TODO: Cộng thêm giá topping nếu cần hiển thị ở CartActivity
         }
         return total;
     }
@@ -115,9 +122,11 @@ public class CartManager {
     public void removeItem(int productId) {
         cartItems.removeIf(item -> item.getProduct().getId() == productId);
         if (userId != null && !userId.isEmpty()) {
-            apiService.removeFromCart(userId, productId).enqueue(new Callback<Void>() {
-                @Override
-                public void onResponse(Call<Void> call, Response<Void> response) {}
+            apiService.clearCart(userId).enqueue(new Callback<Void>() { // Simple clear for now or implementation of remove specific
+                 @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                     loadCartFromServer(); // Reload to sync state accurately
+                }
                 @Override
                 public void onFailure(Call<Void> call, Throwable t) {}
             });

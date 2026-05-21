@@ -46,10 +46,29 @@ public class OrderItemDetailAdapter extends RecyclerView.Adapter<OrderItemDetail
 
         holder.tvProductName.setText(name);
         holder.tvProductPrice.setText(String.format(Locale.getDefault(), "%,.0fđ", item.getUnitPrice()));
+        
+        // Hiển thị số lượng tĩnh (x1, x2...)
         holder.tvProductQuantity.setText("x" + item.getQuantity());
+        holder.tvProductQuantity.setVisibility(View.VISIBLE);
+
+        // HIỂN THỊ TOPPING
+        if (item.getOptionsSummary() != null && !item.getOptionsSummary().isEmpty()) {
+            holder.tvProductOptions.setText(item.getOptionsSummary());
+            holder.tvProductOptions.setVisibility(View.VISIBLE);
+        } else {
+            holder.tvProductOptions.setVisibility(View.GONE);
+        }
+
+        // ẨN CÁC NÚT ĐIỀU CHỈNH (Chỉ dùng cho Checkout)
+        if (holder.layoutQuantityControls != null) {
+            holder.layoutQuantityControls.setVisibility(View.GONE);
+        }
+        if (holder.btnRemove != null) {
+            holder.btnRemove.setVisibility(View.GONE);
+        }
 
         // Sử dụng ApiClient.BASE_URL để đảm bảo đồng bộ địa chỉ IP server
-        String fullImageUrl = ApiClient.BASE_URL + imageUrl;
+        String fullImageUrl = (imageUrl != null && imageUrl.startsWith("http")) ? imageUrl : ApiClient.BASE_URL + (imageUrl != null && imageUrl.startsWith("/") ? imageUrl.substring(1) : (imageUrl != null ? imageUrl : ""));
 
         Glide.with(holder.itemView.getContext())
                 .load(fullImageUrl)
@@ -64,15 +83,19 @@ public class OrderItemDetailAdapter extends RecyclerView.Adapter<OrderItemDetail
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvProductName, tvProductPrice, tvProductQuantity;
+        TextView tvProductName, tvProductPrice, tvProductQuantity, tvProductOptions;
         ImageView ivProductImage;
+        View layoutQuantityControls, btnRemove;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             tvProductName = itemView.findViewById(R.id.tvProductName);
             tvProductPrice = itemView.findViewById(R.id.tvProductPrice);
             tvProductQuantity = itemView.findViewById(R.id.tvProductQuantity);
+            tvProductOptions = itemView.findViewById(R.id.tvProductOptions);
             ivProductImage = itemView.findViewById(R.id.ivProductImage);
+            layoutQuantityControls = itemView.findViewById(R.id.layoutQuantityControls);
+            btnRemove = itemView.findViewById(R.id.btnRemove);
         }
     }
 }

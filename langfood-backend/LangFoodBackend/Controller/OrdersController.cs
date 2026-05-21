@@ -21,7 +21,7 @@ namespace LangFoodBackend.Controllers
             _context = context;
         }
 
-        // --- 1. TẠO ĐƠN HÀNG MỚI ---
+        // --- 1. TẠO ĐƠN HÀNG MỚI (Hỗ trợ lưu Topping & Ghi chú từ Android gửi lên) ---
         [HttpPost]
         public async Task<ActionResult<Order>> CreateOrder(Order order)
         {
@@ -29,8 +29,12 @@ namespace LangFoodBackend.Controllers
             {
                 order.CreatedAt = DateTime.Now;
                 order.Status = "Pending";
+
+                // Khi Android gửi Order kèm danh sách OrderItems (có sẵn Note, OptionsSummary, OptionsPrice),
+                // EF Core sẽ tự động lưu toàn bộ vào Database.
                 _context.Orders.Add(order);
                 await _context.SaveChangesAsync();
+
                 return Ok(order);
             }
             catch (Exception ex)
@@ -39,13 +43,14 @@ namespace LangFoodBackend.Controllers
             }
         }
 
-        // --- 2. LẤY LỊCH SỬ CHO NGƯỜI MUA ---
+        // --- 2. LẤY LỊCH SỬ CHO NGƯỜI MUA (Hiển thị cả Topping & Ghi chú) ---
         [HttpGet("buyer/{buyerId}")]
         public async Task<ActionResult<IEnumerable<Order>>> GetOrdersByBuyer(string buyerId)
         {
             buyerId = buyerId.Replace("\"", "");
             var orders = await _context.Orders
-                .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
                 .Where(o => o.BuyerId == buyerId)
                 .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
@@ -74,13 +79,10 @@ namespace LangFoodBackend.Controllers
             return Ok();
         }
 
-        // --- 5. FIX: LẤY ĐƠN CHO SHIPPER (Đã sửa logic để không bị mất đơn sau khi nhận) ---
+        // --- 5. LẤY ĐƠN CHO SHIPPER (Bao gồm đơn chờ và đơn shipper đó đang giao) ---
         [HttpGet("available-for-shipper/{shipperId}")]
         public async Task<ActionResult<IEnumerable<Order>>> GetOrdersForShipper(int shipperId)
         {
-            // Shipper sẽ thấy 2 loại đơn:
-            // 1. Đơn mới đang chờ (Ready/Confirmed) và CHƯA có ai nhận (ShipperId == null)
-            // 2. Đơn ĐANG GIAO (Delivering) bởi CHÍNH Shipper này (ShipperId == shipperId)
             return await _context.Orders
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
                 .Where(o =>
@@ -91,29 +93,29 @@ namespace LangFoodBackend.Controllers
                 .ToListAsync();
         }
 
-        // --- 6. SHIPPER NHẬN ĐƠN ---
+        // --- 6. SHIPPER NHẬN ĐƠN (GIỮ NGUYÊN LOGIC TIỀN/GIAM TIỀN) ---
         [HttpPut("accept/{id}")]
         public async Task<IActionResult> AcceptOrder(int id, [FromQuery] int shipperId)
         {
             var order = await _context.Orders.FindAsync(id);
             if (order == null) return NotFound();
 
-            // Nếu đơn đã có người nhận rồi thì báo lỗi
             if (order.ShipperId != null && order.ShipperId != shipperId)
                 return BadRequest("Đơn hàng đã có người khác nhận.");
 
-            // Chỉ cho phép nhận đơn ở các trạng thái chờ
             if (order.Status != "Ready" && order.Status != "Confirmed" && order.Status != "Accepted")
                 return BadRequest("Đơn hàng không ở trạng thái có thể nhận.");
 
             var shipper = await _context.Shippers.FindAsync(shipperId);
             var wallet = await _context.Wallets.FirstOrDefaultAsync(w => w.UserId == shipper.UserId);
+
+            // Số tiền cần giam (TotalAmount lúc này đã bao gồm tiền món + tiền topping nếu Android tính toán đúng)
             decimal amountToHold = (decimal)(order.TotalAmount + order.ShippingFee);
 
             if (wallet == null || wallet.Balance < amountToHold)
                 return BadRequest("Số dư ví không đủ để nhận đơn.");
 
-            // Thực hiện giam tiền
+            // LOGIC TIỀN: GIỮ NGUYÊN
             wallet.Balance -= amountToHold;
             _context.Transactions.Add(new Transaction
             {
@@ -132,7 +134,7 @@ namespace LangFoodBackend.Controllers
             return Ok();
         }
 
-        // --- 7. HOÀN THÀNH ĐƠN HÀNG (Sửa tiền công khớp App) ---
+        // --- 7. HOÀN THÀNH ĐƠN HÀNG (GIỮ NGUYÊN LOGIC CHIA TIỀN) ---
         [HttpPut("complete/{id}")]
         public async Task<IActionResult> CompleteOrder(int id)
         {
@@ -144,8 +146,9 @@ namespace LangFoodBackend.Controllers
 
             decimal foodAmount = (decimal)order.TotalAmount;
             decimal systemFee = (decimal)order.ShippingFee;
-            decimal shipperPay = 10000; // Khớp với 10k hiển thị trên App của bạn
+            decimal shipperPay = 10000; // Tiền công 10k mặc định
 
+            // LOGIC TIỀN QUÁN: GIỮ NGUYÊN
             var shop = await _context.Shops.FindAsync(order.ShopId);
             if (shop != null)
             {
@@ -157,6 +160,7 @@ namespace LangFoodBackend.Controllers
                 }
             }
 
+            // LOGIC TIỀN SHIPPER: GIỮ NGUYÊN
             if (order.ShipperId.HasValue)
             {
                 var shipper = await _context.Shippers.FindAsync(order.ShipperId.Value);
@@ -174,7 +178,7 @@ namespace LangFoodBackend.Controllers
             return Ok(new { message = "Thành công" });
         }
 
-        // --- 8. DASHBOARD & SHOP OPS ---
+        // --- 8. DASHBOARD & SHOP OPS (Hiển thị thông tin món kèm Topping) ---
         [HttpGet("shop-stats/{shopId}")]
         public async Task<ActionResult<DetailedShopStatsDto>> GetShopStats(int shopId)
         {
@@ -191,8 +195,12 @@ namespace LangFoodBackend.Controllers
         [HttpGet("shop/{shopId}")]
         public async Task<ActionResult<IEnumerable<Order>>> GetOrdersByShop(int shopId)
         {
-            return await _context.Orders.Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
-                .Where(o => o.ShopId == shopId).OrderByDescending(o => o.CreatedAt).ToListAsync();
+            return await _context.Orders
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                .Where(o => o.ShopId == shopId)
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync();
         }
 
         [HttpGet("shop-stats-detailed/{shopId}")]

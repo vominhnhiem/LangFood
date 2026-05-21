@@ -38,7 +38,7 @@ public class EditFoodActivity extends AppCompatActivity {
     private Spinner spCategory;
     private SwitchCompat swAvailable;
     private ImageView ivFoodImage, btnBack;
-    private Button btnUpdateFood;
+    private Button btnUpdateFood, btnManageToppings;
     private MaterialCardView cardEditImage;
     private ApiService apiService;
     private int productId;
@@ -62,6 +62,17 @@ public class EditFoodActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
         btnUpdateFood.setOnClickListener(v -> updateProduct());
         cardEditImage.setOnClickListener(v -> openGallery());
+        
+        btnManageToppings.setOnClickListener(v -> {
+            if (productId != -1 && currentProduct != null) {
+                Intent intent = new Intent(EditFoodActivity.this, ManageOptionsActivity.class);
+                intent.putExtra("PRODUCT_ID", productId);
+                intent.putExtra("PRODUCT_NAME", currentProduct.getName());
+                startActivity(intent);
+            } else {
+                Toast.makeText(this, "Đang tải thông tin món ăn, vui lòng đợi...", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void initViews() {
@@ -73,6 +84,7 @@ public class EditFoodActivity extends AppCompatActivity {
         ivFoodImage = findViewById(R.id.ivFoodImage);
         btnBack = findViewById(R.id.btnBack);
         btnUpdateFood = findViewById(R.id.btnUpdateFood);
+        btnManageToppings = findViewById(R.id.btnManageToppings);
         cardEditImage = findViewById(R.id.cardEditImage);
     }
 

@@ -61,7 +61,15 @@ public class SellerOrderAdapter extends RecyclerView.Adapter<SellerOrderAdapter.
         StringBuilder itemsSummary = new StringBuilder("Món ăn: ");
         if (order.getOrderItems() != null) {
             for (OrderItem item : order.getOrderItems()) {
-                itemsSummary.append(item.getProductName() != null ? item.getProductName() : "Món ẩn").append(" (x").append(item.getQuantity()).append("), ");
+                String name = item.getProductName() != null ? item.getProductName() : "Món ẩn";
+                itemsSummary.append(name);
+                
+                // HIỂN THỊ TOPPING KÈM THEO (Ví dụ: cơm rang [trứng chiên, xúc xích])
+                if (item.getOptionsSummary() != null && !item.getOptionsSummary().isEmpty()) {
+                    itemsSummary.append(" [").append(item.getOptionsSummary()).append("]");
+                }
+                
+                itemsSummary.append(" (x").append(item.getQuantity()).append("), ");
             }
         }
         String summary = itemsSummary.toString();

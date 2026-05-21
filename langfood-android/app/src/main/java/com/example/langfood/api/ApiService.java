@@ -4,6 +4,8 @@ import com.example.langfood.models.Building;
 import com.example.langfood.models.CartItem;
 import com.example.langfood.models.Category;
 import com.example.langfood.models.Product;
+import com.example.langfood.models.ProductOption;
+import com.example.langfood.models.ProductOptionGroup;
 import com.example.langfood.models.Transaction;
 import com.example.langfood.models.User;
 import com.example.langfood.models.Order;
@@ -58,6 +60,22 @@ public interface ApiService {
 
     @PUT("api/Products/{id}")
     Call<Void> updateProduct(@Path("id") int id, @Body Product product);
+
+    // --- PRODUCT OPTIONS API ---
+    @GET("api/ProductOptions/product/{productId}")
+    Call<List<ProductOptionGroup>> getProductOptions(@Path("productId") int productId);
+
+    @POST("api/ProductOptions/group")
+    Call<ProductOptionGroup> createOptionGroup(@Body ProductOptionGroup group);
+
+    @POST("api/ProductOptions/option")
+    Call<ProductOption> createOption(@Body ProductOption option);
+
+    @DELETE("api/ProductOptions/group/{id}")
+    Call<Void> deleteOptionGroup(@Path("id") int id);
+
+    @DELETE("api/ProductOptions/option/{id}")
+    Call<Void> deleteOption(@Path("id") int id);
 
     // --- USER API ---
     @POST("api/Users/login")
@@ -160,7 +178,13 @@ public interface ApiService {
     Call<List<CartItem>> getCart(@Path("userId") String userId);
 
     @POST("api/Cart")
-    Call<Void> addToCart(@Query("userId") String userId, @Query("productId") int productId, @Query("quantity") int quantity);
+    Call<Void> addToCart(
+            @Query("userId") String userId,
+            @Query("productId") int productId,
+            @Query("quantity") int quantity,
+            @Query("note") String note,
+            @Query("selectedOptions") String selectedOptions
+    );
 
     @DELETE("api/Cart/{userId}/{productId}")
     Call<Void> removeFromCart(@Path("userId") String userId, @Path("productId") int productId);

@@ -90,6 +90,13 @@
             android:name=".ShopRevenueActivity"
             android:exported="false" />
 
+        <!-- ĐĂNG KÝ MÀN HÌNH QUẢN LÝ TOPPING -->
+        <activity
+            android:name=".ManageOptionsActivity"
+            android:exported="false"
+            android:label="Quản lý Topping"
+            android:theme="@style/Theme.LangFood" />
+
         <activity
             android:name=".LoginActivity"
             android:exported="true"

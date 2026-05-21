@@ -38,6 +38,16 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/tvProductOptions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text=""
+                android:textColor="#9E9E9E"
+                android:textSize="12sp"
+                android:visibility="gone" />
+
+            <TextView
                 android:id="@+id/tvProductPrice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -45,6 +55,51 @@
                 android:text="0đ"
                 android:textColor="#757575" />
         </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layoutQuantityControls"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:background="#F5F5F5"
+            android:padding="2dp">
+
+            <ImageView
+                android:id="@+id/btnMinus"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/btn_minus"
+                app:tint="#757575"
+                android:padding="4dp"/>
+
+            <TextView
+                android:id="@+id/tvQuantityValue"
+                android:layout_width="30dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="1"
+                android:textColor="#333333"
+                android:textStyle="bold"
+                android:textSize="14sp"/>
+
+            <ImageView
+                android:id="@+id/btnPlus"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_input_add"
+                app:tint="#757575"
+                android:padding="4dp"/>
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/btnRemove"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@android:drawable/ic_menu_delete"
+            app:tint="#D32F2F"
+            android:layout_marginStart="8dp"
+            android:padding="4dp"/>
 
         <TextView
             android:id="@+id/tvProductQuantity"
@@ -54,7 +109,8 @@
             android:textColor="#2196F3"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:layout_marginStart="16dp"/>
+            android:layout_marginStart="16dp"
+            android:visibility="gone"/>
 
     </LinearLayout>
 </androidx.cardview.widget.CardView>

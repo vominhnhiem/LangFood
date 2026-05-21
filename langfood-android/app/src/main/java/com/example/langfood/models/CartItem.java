@@ -10,9 +10,22 @@ public class CartItem implements Serializable {
     @SerializedName("quantity")
     private int quantity;
 
+    @SerializedName("note")
+    private String note;
+
+    @SerializedName("selectedOptionsJson")
+    private String selectedOptionsJson;
+
     public CartItem(Product product, int quantity) {
         this.product = product;
         this.quantity = quantity;
+    }
+
+    public CartItem(Product product, int quantity, String note, String selectedOptionsJson) {
+        this.product = product;
+        this.quantity = quantity;
+        this.note = note;
+        this.selectedOptionsJson = selectedOptionsJson;
     }
 
     public Product getProduct() {
@@ -29,5 +42,21 @@ public class CartItem implements Serializable {
 
     public void setQuantity(int quantity) {
         this.quantity = quantity;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
+    }
+
+    public String getSelectedOptionsJson() {
+        return selectedOptionsJson;
+    }
+
+    public void setSelectedOptionsJson(String selectedOptionsJson) {
+        this.selectedOptionsJson = selectedOptionsJson;
     }
 }

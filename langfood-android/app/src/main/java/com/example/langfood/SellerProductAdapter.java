@@ -1,8 +1,10 @@
 package com.example.langfood;
 
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -24,7 +26,8 @@ public class SellerProductAdapter extends RecyclerView.Adapter<SellerProductAdap
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_product_grid, parent, false);
+        // Sử dụng một layout mới có nút Quản lý Topping
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_seller_product, parent, false);
         return new ViewHolder(view);
     }
 
@@ -33,31 +36,26 @@ public class SellerProductAdapter extends RecyclerView.Adapter<SellerProductAdap
         Product product = productList.get(position);
         
         holder.tvName.setText(product.getName());
-
-        // Hiển thị tên thể loại
-        if (holder.tvCategoryName != null) {
-            holder.tvCategoryName.setText(product.getCategoryName() != null ? product.getCategoryName() : "Khác");
-        }
+        holder.tvPrice.setText(String.format(Locale.getDefault(), "%,.0fđ", product.getPrice()));
         
-        // Fix lỗi hiển thị giá tiền: Thêm đ và format dấu chấm
-        String formattedPrice = String.format(Locale.getDefault(), "%,.0fđ", product.getPrice());
-        holder.tvPrice.setText(formattedPrice);
-
-        // Hiển thị mô tả nếu có
-        if (holder.tvDescription != null) {
-            holder.tvDescription.setText(product.getDescription() != null ? product.getDescription() : "Món ngon mỗi ngày");
-        }
-
-        // Dùng BASE_URL tập trung từ ApiClient để tránh lỗi load ảnh
         Glide.with(holder.itemView.getContext())
                 .load(ApiClient.BASE_URL + product.getImageUrl())
                 .placeholder(R.drawable.lang_food_avt)
-                .error(R.drawable.lang_food_avt)
                 .into(holder.ivProduct);
 
-        // Xử lý click vào cả item để xem chi tiết hoặc thêm vào giỏ
-        holder.itemView.setOnClickListener(v -> {
-            // Logic xử lý khi click vào món ăn
+        // Nút Quản lý Topping
+        holder.btnManageOptions.setOnClickListener(v -> {
+            Intent intent = new Intent(v.getContext(), ManageOptionsActivity.class);
+            intent.putExtra("PRODUCT_ID", product.getId());
+            intent.putExtra("PRODUCT_NAME", product.getName());
+            v.getContext().startActivity(intent);
+        });
+
+        // Nút Chỉnh sửa món
+        holder.btnEditProduct.setOnClickListener(v -> {
+            Intent intent = new Intent(v.getContext(), EditFoodActivity.class);
+            intent.putExtra("PRODUCT_ID", product.getId());
+            v.getContext().startActivity(intent);
         });
     }
 
@@ -68,15 +66,16 @@ public class SellerProductAdapter extends RecyclerView.Adapter<SellerProductAdap
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivProduct;
-        TextView tvName, tvPrice, tvDescription, tvCategoryName;
+        TextView tvName, tvPrice;
+        Button btnManageOptions, btnEditProduct;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             ivProduct = itemView.findViewById(R.id.ivProductImage);
             tvName = itemView.findViewById(R.id.tvProductName);
-            tvCategoryName = itemView.findViewById(R.id.tvCategoryName);
             tvPrice = itemView.findViewById(R.id.tvProductPrice);
-            tvDescription = itemView.findViewById(R.id.tvProductDescription);
+            btnManageOptions = itemView.findViewById(R.id.btnManageOptions);
+            btnEditProduct = itemView.findViewById(R.id.btnEditProduct);
         }
     }
 }

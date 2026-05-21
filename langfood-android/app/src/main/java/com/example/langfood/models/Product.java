@@ -2,6 +2,7 @@ package com.example.langfood.models;
 
 import com.google.gson.annotations.SerializedName;
 import java.io.Serializable;
+import java.util.List;
 
 public class Product implements Serializable {
     @SerializedName(value = "id", alternate = {"Id", "ID"})
@@ -28,7 +29,6 @@ public class Product implements Serializable {
     @SerializedName(value = "shopName", alternate = {"ShopName", "SellerName"})
     private String shopName;
 
-    // Thêm đối tượng Shop để nhận dữ liệu từ API giỏ hàng
     @SerializedName(value = "shop", alternate = {"Shop"})
     private ShopInfo shop;
 
@@ -39,10 +39,14 @@ public class Product implements Serializable {
     private String categoryName;
 
     @SerializedName(value = "status", alternate = {"Status"})
-    private String status;
+    private int status; // Changed from String to int to match Backend
 
     @SerializedName(value = "sellerId", alternate = {"SellerId"})
     private String sellerId;
+
+    // --- NEW FIELD FOR TOPPINGS/OPTIONS ---
+    @SerializedName("optionGroups")
+    private List<ProductOptionGroup> optionGroups;
 
     public Product() {}
 
@@ -89,10 +93,12 @@ public class Product implements Serializable {
     public String getCategoryName() { return categoryName; }
     public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public int getStatus() { return status; }
+    public void setStatus(int status) { this.status = status; }
 
-    // Class phụ để hứng dữ liệu Shop từ BE
+    public List<ProductOptionGroup> getOptionGroups() { return optionGroups; }
+    public void setOptionGroups(List<ProductOptionGroup> optionGroups) { this.optionGroups = optionGroups; }
+
     public static class ShopInfo implements Serializable {
         @SerializedName(value = "id", alternate = {"Id"})
         public int id;

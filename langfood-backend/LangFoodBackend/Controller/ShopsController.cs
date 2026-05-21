@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace LangFoodBackend.Controller
+namespace LangFoodBackend.Controllers
 {
         [Route("api/[controller]")]
         [ApiController]

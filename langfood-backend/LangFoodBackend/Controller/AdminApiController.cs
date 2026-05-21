@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using LangFood.Shared.Models;
 using LangFood.Shared.DTOs;
 
-namespace LangFoodBackend.Controller
+namespace LangFoodBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
