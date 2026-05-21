@@ -2,6 +2,7 @@ package com.example.langfood;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -109,12 +110,18 @@ public class CheckoutActivity extends AppCompatActivity {
             rvOrderItems.setAdapter(adapter);
 
             double subtotal = calculateTotal();
-            // Tổng tiền khách trả = Tiền món + 3.000đ phí
+            // Tổng tiền khách trả = Tiền món + 3.000đ phí dịch vụ
             double total = subtotal + SYSTEM_SERVICE_FEE;
 
             tvSubtotal.setText(String.format(Locale.getDefault(), "%,.0fđ", subtotal));
-            tvShippingFee.setText(String.format(Locale.getDefault(), "%,.0fđ", SYSTEM_SERVICE_FEE));
-            tvServiceFee.setText("0đ"); // Phí ship đã gộp vào dòng trên
+            
+            // HIỂN THỊ FREESHIP ĐỂ KHÁCH HÀNG THẤY SƯỚNG
+            tvShippingFee.setText("Miễn phí");
+            tvShippingFee.setTextColor(Color.parseColor("#4CAF50")); // Màu xanh lá cho Freeship
+            
+            // Phí dịch vụ hệ thống (3.000đ)
+            tvServiceFee.setText(String.format(Locale.getDefault(), "%,.0fđ", SYSTEM_SERVICE_FEE));
+            
             tvTotalAmount.setText(String.format(Locale.getDefault(), "%,.0fđ", total));
             
             btnPlaceOrder.setEnabled(true);
@@ -241,13 +248,79 @@ public class CheckoutActivity extends AppCompatActivity {
 
     private void showPaymentSelectionDialog() {
         String[] methods = {"Tiền mặt", "Chuyển khoản (Ngân hàng)"};
-        new AlertDialog.Builder(this).setTitle("Phương thức thanh toán").setItems(methods, (dialog, which) -> {
+        new AlertDialog.Builder(this).setTitle("Chọn phương thức thanh toán").setItems(methods, (dialog, which) -> {
             selectedPaymentMethod = methods[which];
             tvPaymentMethod.setText(selectedPaymentMethod);
+            setupData(); // Cập nhật lại số tiền hiển thị nếu cần
         }).show();
     }
 
     private void showEditAddressDialog() {
-        // ... (Giữ nguyên logic cũ nhưng thêm ràng buộc Phone như đã có)
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Thông tin địa chỉ");
+        View viewInflated = LayoutInflater.from(this).inflate(R.layout.dialog_edit_address, null);
+        final AutoCompleteTextView inputBuilding = viewInflated.findViewById(R.id.spinnerBuilding);
+        final EditText inputRoom = viewInflated.findViewById(R.id.editRoom);
+        final EditText inputPhone = viewInflated.findViewById(R.id.editPhone);
+
+        inputBuilding.setText(selectedBuildingName);
+        inputRoom.setText(selectedRoom);
+        inputPhone.setText(selectedPhone);
+
+        apiService.getBuildings().enqueue(new Callback<List<Building>>() {
+            @Override
+            public void onResponse(Call<List<Building>> call, Response<List<Building>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Building> buildings = response.body();
+                    ArrayAdapter<Building> adapter = new ArrayAdapter<>(CheckoutActivity.this,
+                            android.R.layout.simple_dropdown_item_1line, buildings);
+                    inputBuilding.setAdapter(adapter);
+
+                    inputBuilding.setOnItemClickListener((parent, view, position, id) -> {
+                        Building selected = (Building) parent.getItemAtPosition(position);
+                        selectedBuildingId = selected.getId();
+                        selectedBuildingName = selected.getName();
+                    });
+                }
+            }
+            @Override public void onFailure(Call<List<Building>> call, Throwable t) {}
+        });
+
+        builder.setView(viewInflated);
+        builder.setPositiveButton("Lưu", null); 
+        builder.setNegativeButton("Hủy", null);
+
+        final AlertDialog dialog = builder.create();
+        dialog.show();
+
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String typedBuilding = inputBuilding.getText().toString().trim();
+            String typedRoom = inputRoom.getText().toString().trim();
+            String typedPhone = inputPhone.getText().toString().trim();
+
+            if (typedBuilding.isEmpty() || typedRoom.isEmpty() || typedPhone.isEmpty()) {
+                Toast.makeText(this, "Vui lòng nhập đầy đủ thông tin!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!typedPhone.matches("^0\\d{9}$")) {
+                Toast.makeText(this, "Số điện thoại phải bắt đầu bằng số 0 và có đúng 10 chữ số!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            selectedBuildingName = typedBuilding;
+            selectedRoom = typedRoom;
+            selectedPhone = typedPhone;
+            updateAddressDisplay();
+            
+            SharedPreferences.Editor editor = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE).edit();
+            editor.putInt("BUILDING_ID", selectedBuildingId);
+            editor.putString("BUILDING_NAME", selectedBuildingName);
+            editor.putString("ROOM", selectedRoom);
+            editor.putString("DELIVERY_PHONE", selectedPhone);
+            editor.apply();
+            
+            dialog.dismiss();
+        });
     }
 }
