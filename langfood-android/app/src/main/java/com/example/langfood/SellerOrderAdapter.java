@@ -64,9 +64,14 @@ public class SellerOrderAdapter extends RecyclerView.Adapter<SellerOrderAdapter.
                 String name = item.getProductName() != null ? item.getProductName() : "Món ẩn";
                 itemsSummary.append(name);
                 
-                // HIỂN THỊ TOPPING KÈM THEO (Ví dụ: cơm rang [trứng chiên, xúc xích])
+                // HIỂN THỊ TOPPING KÈM THEO (Ví dụ: cơm rang [trứng chiên])
                 if (item.getOptionsSummary() != null && !item.getOptionsSummary().isEmpty()) {
                     itemsSummary.append(" [").append(item.getOptionsSummary()).append("]");
+                }
+
+                // HIỂN THỊ GHI CHÚ TRONG TÓM TẮT (Ví dụ: GC: Ít hành)
+                if (item.getNote() != null && !item.getNote().isEmpty()) {
+                    itemsSummary.append(" (GC: ").append(item.getNote()).append(")");
                 }
                 
                 itemsSummary.append(" (x").append(item.getQuantity()).append("), ");

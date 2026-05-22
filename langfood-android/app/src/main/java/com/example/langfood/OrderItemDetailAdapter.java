@@ -53,10 +53,18 @@ public class OrderItemDetailAdapter extends RecyclerView.Adapter<OrderItemDetail
 
         // HIỂN THỊ TOPPING
         if (item.getOptionsSummary() != null && !item.getOptionsSummary().isEmpty()) {
-            holder.tvProductOptions.setText(item.getOptionsSummary());
+            holder.tvProductOptions.setText("Lựa chọn: " + item.getOptionsSummary());
             holder.tvProductOptions.setVisibility(View.VISIBLE);
         } else {
             holder.tvProductOptions.setVisibility(View.GONE);
+        }
+
+        // HIỂN THỊ GHI CHÚ
+        if (item.getNote() != null && !item.getNote().isEmpty()) {
+            holder.tvProductNote.setText("Ghi chú: " + item.getNote());
+            holder.tvProductNote.setVisibility(View.VISIBLE);
+        } else {
+            holder.tvProductNote.setVisibility(View.GONE);
         }
 
         // ẨN CÁC NÚT ĐIỀU CHỈNH (Chỉ dùng cho Checkout)
@@ -67,7 +75,7 @@ public class OrderItemDetailAdapter extends RecyclerView.Adapter<OrderItemDetail
             holder.btnRemove.setVisibility(View.GONE);
         }
 
-        // Sử dụng ApiClient.BASE_URL để đảm bảo đồng bộ địa chỉ IP server
+        // Sử dụng ApiClient.BASE_URL để đảm bộ đồng bộ địa chỉ IP server
         String fullImageUrl = (imageUrl != null && imageUrl.startsWith("http")) ? imageUrl : ApiClient.BASE_URL + (imageUrl != null && imageUrl.startsWith("/") ? imageUrl.substring(1) : (imageUrl != null ? imageUrl : ""));
 
         Glide.with(holder.itemView.getContext())
@@ -83,7 +91,7 @@ public class OrderItemDetailAdapter extends RecyclerView.Adapter<OrderItemDetail
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvProductName, tvProductPrice, tvProductQuantity, tvProductOptions;
+        TextView tvProductName, tvProductPrice, tvProductQuantity, tvProductOptions, tvProductNote;
         ImageView ivProductImage;
         View layoutQuantityControls, btnRemove;
 
@@ -93,6 +101,7 @@ public class OrderItemDetailAdapter extends RecyclerView.Adapter<OrderItemDetail
             tvProductPrice = itemView.findViewById(R.id.tvProductPrice);
             tvProductQuantity = itemView.findViewById(R.id.tvProductQuantity);
             tvProductOptions = itemView.findViewById(R.id.tvProductOptions);
+            tvProductNote = itemView.findViewById(R.id.tvProductNote);
             ivProductImage = itemView.findViewById(R.id.ivProductImage);
             layoutQuantityControls = itemView.findViewById(R.id.layoutQuantityControls);
             btnRemove = itemView.findViewById(R.id.btnRemove);

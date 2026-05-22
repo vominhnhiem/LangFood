@@ -10,7 +10,7 @@ public class CartItem implements Serializable {
     @SerializedName("quantity")
     private int quantity;
 
-    @SerializedName("note")
+    @SerializedName(value = "note", alternate = {"Note"})
     private String note;
 
     @SerializedName("selectedOptionsJson")

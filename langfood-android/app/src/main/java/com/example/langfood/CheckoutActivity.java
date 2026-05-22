@@ -241,6 +241,9 @@ public class CheckoutActivity extends AppCompatActivity implements CheckoutAdapt
             orderItem.setProductId(cartItem.getProduct().getId());
             orderItem.setQuantity(cartItem.getQuantity());
             
+            // Lấy ghi chú từ CartItem
+            orderItem.setNote(cartItem.getNote());
+            
             // Tính UnitPrice và OptionsSummary đã bao gồm Topping cho Order
             StringBuilder optionsSummary = new StringBuilder();
             double finalUnitPrice = cartItem.getProduct().getPrice();

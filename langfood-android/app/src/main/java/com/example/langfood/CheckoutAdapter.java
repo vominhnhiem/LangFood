@@ -75,11 +75,20 @@ public class CheckoutAdapter extends RecyclerView.Adapter<CheckoutAdapter.Checko
             }
         }
 
+        // Hiển thị Topping
         if (optionsBuilder.length() > 0) {
-            holder.tvProductOptions.setText(optionsBuilder.toString());
+            holder.tvProductOptions.setText("Lựa chọn: " + optionsBuilder.toString());
             holder.tvProductOptions.setVisibility(View.VISIBLE);
         } else {
             holder.tvProductOptions.setVisibility(View.GONE);
+        }
+
+        // HIỂN THỊ GHI CHÚ
+        if (item.getNote() != null && !item.getNote().isEmpty()) {
+            holder.tvProductNote.setText("Ghi chú: " + item.getNote());
+            holder.tvProductNote.setVisibility(View.VISIBLE);
+        } else {
+            holder.tvProductNote.setVisibility(View.GONE);
         }
 
         double totalPricePerItem = basePrice + toppingTotal;
@@ -132,7 +141,7 @@ public class CheckoutAdapter extends RecyclerView.Adapter<CheckoutAdapter.Checko
 
     static class CheckoutViewHolder extends RecyclerView.ViewHolder {
         ImageView ivProductImage, btnMinus, btnPlus, btnRemove;
-        TextView tvProductName, tvProductPrice, tvQuantityValue, tvProductOptions;
+        TextView tvProductName, tvProductPrice, tvQuantityValue, tvProductOptions, tvProductNote;
 
         public CheckoutViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -141,6 +150,7 @@ public class CheckoutAdapter extends RecyclerView.Adapter<CheckoutAdapter.Checko
             tvProductPrice = itemView.findViewById(R.id.tvProductPrice);
             tvQuantityValue = itemView.findViewById(R.id.tvQuantityValue);
             tvProductOptions = itemView.findViewById(R.id.tvProductOptions);
+            tvProductNote = itemView.findViewById(R.id.tvProductNote);
             btnMinus = itemView.findViewById(R.id.btnMinus);
             btnPlus = itemView.findViewById(R.id.btnPlus);
             btnRemove = itemView.findViewById(R.id.btnRemove);

@@ -42,9 +42,20 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text=""
-                android:textColor="#9E9E9E"
+                android:text="Topping: ..."
+                android:textColor="#757575"
                 android:textSize="12sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvProductNote"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Ghi chú: ..."
+                android:textColor="#FF5722"
+                android:textSize="12sp"
+                android:textStyle="italic"
                 android:visibility="gone" />
 
             <TextView
@@ -53,7 +64,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="0đ"
-                android:textColor="#757575" />
+                android:textColor="#333333" />
         </LinearLayout>
 
         <LinearLayout
