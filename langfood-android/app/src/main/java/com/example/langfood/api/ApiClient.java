@@ -10,7 +10,7 @@ public class ApiClient {
     /**
      * The base URL of the backend API.
      */
-    public static final String BASE_URL = "http://10.168.182.38:5289/";
+    public static final String BASE_URL = "http://192.168.100.192:5289/";
 
     /**
      * Static instance of Retrofit.
@@ -18,6 +18,7 @@ public class ApiClient {
     private static Retrofit retrofit = null;
 
     /**
+     * Returns the singleton Retrofit client instance.
      * Returns the singleton Retrofit client instance.
      * If the instance doesn't exist, it creates a new one using the {@link #BASE_URL}.
      *

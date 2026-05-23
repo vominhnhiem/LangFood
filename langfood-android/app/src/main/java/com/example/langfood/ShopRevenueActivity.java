@@ -30,7 +30,6 @@ import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import com.github.mikephil.charting.formatter.PercentFormatter;
 import com.github.mikephil.charting.formatter.ValueFormatter;
-import com.github.mikephil.charting.utils.ColorTemplate;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -44,7 +43,6 @@ import retrofit2.Response;
 
 public class ShopRevenueActivity extends AppCompatActivity {
 
-    private TextView tvTodayOrders, tvTodayRevenue, tvMonthRevenue;
     private TextView tvFilteredRevenue, tvFilteredTotalOrders, tvFilteredSuccessOrders, tvFilteredFailedOrders, tvFilteredProcessingOrders;
     private TextView tvStartDate, tvEndDate;
     private Button btnFilter, btnTodayQuick, btnMonthQuick;
@@ -79,15 +77,10 @@ public class ShopRevenueActivity extends AppCompatActivity {
             }
         });
 
-        // Lấy thông tin Shop trước, sau đó mới lấy thống kê
         fetchShopInfo();
     }
 
     private void initViews() {
-        tvTodayOrders = findViewById(R.id.tvTodayOrders);
-        tvTodayRevenue = findViewById(R.id.tvTodayRevenue);
-        tvMonthRevenue = findViewById(R.id.tvMonthRevenue);
-
         tvFilteredRevenue = findViewById(R.id.tvFilteredRevenue);
         tvFilteredTotalOrders = findViewById(R.id.tvFilteredTotalOrders);
         tvFilteredSuccessOrders = findViewById(R.id.tvFilteredSuccessOrders);
@@ -106,7 +99,6 @@ public class ShopRevenueActivity extends AppCompatActivity {
         calendarStart = Calendar.getInstance();
         calendarEnd = Calendar.getInstance();
         
-        // Mặc định là tháng hiện tại
         calendarStart.set(Calendar.DAY_OF_MONTH, 1);
         tvStartDate.setText(displaySdf.format(calendarStart.getTime()));
         tvEndDate.setText(displaySdf.format(calendarEnd.getTime()));
@@ -127,7 +119,6 @@ public class ShopRevenueActivity extends AppCompatActivity {
             calendarStart = Calendar.getInstance();
             calendarStart.set(Calendar.DAY_OF_MONTH, 1);
             calendarEnd = Calendar.getInstance();
-            calendarEnd.set(Calendar.DAY_OF_MONTH, calendarEnd.getActualMaximum(Calendar.DAY_OF_MONTH));
             updateDateTextViews();
             if (shopId != -1) fetchStats();
         });
@@ -169,7 +160,6 @@ public class ShopRevenueActivity extends AppCompatActivity {
         barChart.getAxisLeft().setDrawGridLines(false);
         barChart.getAxisLeft().setAxisMinimum(0f);
         barChart.getAxisRight().setEnabled(false);
-        barChart.getLegend().setEnabled(false);
     }
 
     private void setupDatePickers() {
@@ -194,16 +184,10 @@ public class ShopRevenueActivity extends AppCompatActivity {
             public void onResponse(Call<Shop> call, Response<Shop> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     shopId = response.body().getId();
-                    fetchStats(); // Lấy thống kê lần đầu
-                } else {
-                    Toast.makeText(ShopRevenueActivity.this, "Không tìm thấy thông tin quán ăn", Toast.LENGTH_SHORT).show();
+                    fetchStats();
                 }
             }
-
-            @Override
-            public void onFailure(Call<Shop> call, Throwable t) {
-                Log.e("STATS", "Error fetching shop info: " + t.getMessage());
-            }
+            @Override public void onFailure(Call<Shop> call, Throwable t) {}
         });
     }
 
@@ -216,26 +200,13 @@ public class ShopRevenueActivity extends AppCompatActivity {
             public void onResponse(Call<ShopStats> call, Response<ShopStats> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     updateUI(response.body());
-                } else {
-                    Toast.makeText(ShopRevenueActivity.this, "Lỗi tải thống kê", Toast.LENGTH_SHORT).show();
                 }
             }
-
-            @Override
-            public void onFailure(Call<ShopStats> call, Throwable t) {
-                Log.e("STATS", "Error fetching stats: " + t.getMessage());
-                Toast.makeText(ShopRevenueActivity.this, "Lỗi kết nối server", Toast.LENGTH_SHORT).show();
-            }
+            @Override public void onFailure(Call<ShopStats> call, Throwable t) {}
         });
     }
 
     private void updateUI(ShopStats stats) {
-        // Thống kê nhanh (Dashboard)
-        tvTodayOrders.setText(String.valueOf(stats.getTodayOrderCount()));
-        tvTodayRevenue.setText(formatCurrency(stats.getTodayRevenue()));
-        tvMonthRevenue.setText(formatCurrency(stats.getMonthRevenue()));
-
-        // Chi tiết theo bộ lọc
         tvFilteredRevenue.setText(formatCurrency(stats.getTotalRevenue()));
         tvFilteredTotalOrders.setText(String.valueOf(stats.getTotalOrders()));
         tvFilteredSuccessOrders.setText(String.valueOf(stats.getSuccessOrders()));
@@ -250,7 +221,6 @@ public class ShopRevenueActivity extends AppCompatActivity {
 
     private void updatePieChart(ShopStats stats) {
         ArrayList<PieEntry> entries = new ArrayList<>();
-        
         int success = stats.getSuccessOrders();
         int failed = stats.getFailedOrders();
         int others = stats.getTotalOrders() - success - failed;
@@ -261,18 +231,16 @@ public class ShopRevenueActivity extends AppCompatActivity {
 
         if (entries.isEmpty()) {
             pieChart.clear();
-            pieChart.setNoDataText("Không có dữ liệu đơn hàng trong khoảng thời gian này");
+            pieChart.setNoDataText("Không có dữ liệu đơn hàng");
             return;
         }
 
         PieDataSet dataSet = new PieDataSet(entries, "");
         dataSet.setSliceSpace(3f);
-        dataSet.setSelectionShift(5f);
-
         ArrayList<Integer> colors = new ArrayList<>();
-        colors.add(Color.parseColor("#4CAF50")); // Green
-        colors.add(Color.parseColor("#F44336")); // Red
-        colors.add(Color.parseColor("#2196F3")); // Blue
+        colors.add(Color.parseColor("#4CAF50"));
+        colors.add(Color.parseColor("#F44336"));
+        colors.add(Color.parseColor("#2196F3"));
         dataSet.setColors(colors);
 
         PieData data = new PieData(dataSet);
@@ -281,8 +249,7 @@ public class ShopRevenueActivity extends AppCompatActivity {
         data.setValueTextColor(Color.WHITE);
 
         pieChart.setData(data);
-        pieChart.highlightValues(null);
-        pieChart.invalidate(); // Refresh
+        pieChart.invalidate();
         pieChart.animateY(1000);
     }
 
@@ -290,13 +257,13 @@ public class ShopRevenueActivity extends AppCompatActivity {
         if (productStats == null || productStats.isEmpty()) {
             barChart.clear();
             barChart.setNoDataText("Không có dữ liệu món ăn");
+            barChart.invalidate();
             return;
         }
 
         ArrayList<BarEntry> entries = new ArrayList<>();
         ArrayList<String> labels = new ArrayList<>();
 
-        // MPAndroidChart HorizontalBarChart displays entries from bottom to top.
         for (int i = 0; i < productStats.size(); i++) {
             ProductStat stat = productStats.get(i);
             entries.add(new BarEntry(i, stat.getTotalQuantity()));
@@ -314,10 +281,11 @@ public class ShopRevenueActivity extends AppCompatActivity {
         });
 
         BarData data = new BarData(dataSet);
-        data.setBarWidth(0.7f);
+        data.setBarWidth(0.5f);
 
         barChart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(labels));
         barChart.setData(data);
+        barChart.setFitBars(true); // Căn chỉnh các thanh cho vừa vặn
         barChart.invalidate();
         barChart.animateY(1000);
     }

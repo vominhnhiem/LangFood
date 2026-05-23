@@ -206,16 +206,47 @@ namespace LangFoodBackend.Controllers
         [HttpGet("shop-stats-detailed/{shopId}")]
         public async Task<ActionResult<DetailedShopStatsDto>> GetDetailedShopStats(int shopId, [FromQuery] string startDate, [FromQuery] string endDate)
         {
-            DateTime start = DateTime.Parse(startDate).Date;
-            DateTime end = DateTime.Parse(endDate).Date.AddDays(1).AddTicks(-1);
-            var filtered = await _context.Orders.Where(o => o.ShopId == shopId && o.CreatedAt >= start && o.CreatedAt <= end).ToListAsync();
-            return Ok(new DetailedShopStatsDto
+            try
             {
-                TotalOrders = filtered.Count,
-                SuccessOrders = filtered.Count(o => o.Status == "Completed"),
-                FailedOrders = filtered.Count(o => o.Status == "Cancelled" || o.Status == "Rejected"),
-                TotalRevenue = filtered.Where(o => o.Status == "Completed").Sum(o => (decimal)o.TotalAmount)
-            });
+                DateTime start = DateTime.Parse(startDate).Date;
+                DateTime end = DateTime.Parse(endDate).Date.AddDays(1).AddTicks(-1);
+
+                // Lấy đơn hàng kèm OrderItems và Product trong khoảng thời gian
+                var filtered = await _context.Orders
+                    .Include(o => o.OrderItems)
+                        .ThenInclude(oi => oi.Product)
+                    .Where(o => o.ShopId == shopId && o.CreatedAt >= start && o.CreatedAt <= end)
+                    .ToListAsync();
+
+                var successOrders = filtered.Where(o => o.Status == "Completed").ToList();
+
+                // Logic tính Top món ăn bán chạy
+                var productStats = successOrders
+                    .SelectMany(o => o.OrderItems)
+                    .GroupBy(oi => oi.Product.Name)
+                    .Select(g => new ProductStatDTO
+                    {
+                        ProductName = g.Key,
+                        TotalQuantity = g.Sum(oi => oi.Quantity),
+                        TotalRevenue = (decimal)g.Sum(oi => (double)oi.UnitPrice * oi.Quantity)
+                    })
+                    .OrderByDescending(ps => ps.TotalQuantity)
+                    .Take(10) // Lấy Top 10 món bán chạy nhất
+                    .ToList();
+
+                return Ok(new DetailedShopStatsDto
+                {
+                    TotalOrders = filtered.Count,
+                    SuccessOrders = successOrders.Count,
+                    FailedOrders = filtered.Count(o => o.Status == "Cancelled" || o.Status == "Rejected"),
+                    TotalRevenue = successOrders.Sum(o => (decimal)o.TotalAmount),
+                    ProductStats = productStats // Gán dữ liệu vào đây để Android hiển thị biểu đồ
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Lỗi lấy thống kê chi tiết: " + ex.Message });
+            }
         }
     }
 }
