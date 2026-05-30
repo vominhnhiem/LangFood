@@ -39,10 +39,10 @@ app.UseRouting();
 
 app.UseAuthorization();
 
-// 5. Cấu hình Route mặc định: Khi chạy Web sẽ vào trang Home trước
+// 5. Cấu hình Route mặc định: Khi chạy Web sẽ vào trang Dashboard trước
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Dashboard}/{action=Index}/{id?}");
 
 // 6. Chạy ứng dụng
 Console.WriteLine("LangFood Admin is starting...");

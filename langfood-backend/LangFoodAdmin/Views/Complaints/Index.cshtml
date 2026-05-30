@@ -1,0 +1,277 @@
+@model IEnumerable<LangFood.Shared.Models.Complaint>
+@using System.Text.Encodings.Web
+@{
+    ViewData["Title"] = "Quản lý Khiếu nại";
+    var buildings = ViewBag.Buildings as IEnumerable<LangFood.Shared.Models.Building>;
+    var shops = ViewBag.Shops as IEnumerable<LangFood.Shared.Models.Shop>;
+}
+
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Quản lý Khiếu nại Đơn hàng</h2>
+    </div>
+
+    <!-- BỘ LỌC -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-secondary">Tòa nhà</label>
+                    <select name="buildingId" class="form-select">
+                        <option value="">-- Tất cả tòa nhà --</option>
+                        @if (buildings != null)
+                        {
+                            foreach (var b in buildings)
+                            {
+                                <option value="@b.Id" selected="@(ViewBag.SelectedBuildingId == b.Id ? "selected" : null)">@b.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-secondary">Cửa hàng</label>
+                    <select name="shopId" class="form-select">
+                        <option value="">-- Tất cả cửa hàng --</option>
+                        @if (shops != null)
+                        {
+                            foreach (var s in shops)
+                            {
+                                <option value="@s.Id" selected="@(ViewBag.SelectedShopId == s.Id ? "selected" : null)">@s.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-secondary">Trạng thái</label>
+                    <select name="status" class="form-select">
+                        <option value="">-- Tất cả trạng thái --</option>
+                        <option value="0" selected="@(ViewBag.SelectedStatus == 0 ? "selected" : null)">Đang chờ xử lý</option>
+                        <option value="1" selected="@(ViewBag.SelectedStatus == 1 ? "selected" : null)">Đã giải quyết</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold"><i class="fas fa-filter me-2"></i>Lọc dữ liệu</button>
+                    <a href="@Url.Action("Index")" class="btn btn-light border w-100 fw-bold">Xóa lọc</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- DANH SÁCH BẢNG -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Mã KN</th>
+                            <th>Đơn hàng</th>
+                            <th>Ngày gửi</th>
+                            <th>Khách hàng</th>
+                            <th>Cửa hàng</th>
+                            <th>Lý do</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end pe-4">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                    <p class="mb-0">Không có đơn khiếu nại nào cần xử lý!</p>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="ps-4 fw-bold">#@item.Id</td>
+                                    <td>
+                                        <span class="badge bg-secondary">#@item.OrderId</span>
+                                    </td>
+                                    <td class="text-muted">@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@item.Order?.Buyer?.FullName</td>
+                                    <td class="fw-semibold">@item.Order?.Shop?.Name</td>
+                                    <td>
+                                        <span class="text-danger fw-medium">@item.Reason</span>
+                                    </td>
+                                    <td>
+                                        @if (item.Status == 0)
+                                        {
+                                            <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Chờ xử lý</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Đã giải quyết</span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <button class="btn btn-sm btn-outline-primary px-3 fw-bold" 
+                                                onclick="openResolveModal(@item.Id, @item.OrderId, '@item.Order?.Buyer?.FullName', '@item.Order?.Shop?.Name', '@item.Reason', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Detail))', '@item.ImageProof')">
+                                            @if (item.Status == 0)
+                                            {
+                                                <span><i class="fas fa-gavel me-1"></i>Giải quyết</span>
+                                            }
+                                            else
+                                            {
+                                                <span><i class="fas fa-eye me-1"></i>Chi tiết</span>
+                                            }
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BOOTSTRAP 5 RESOLVE MODAL -->
+<div class="modal fade" id="resolveModal" tabindex="-1" aria-labelledby="resolveModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold" id="resolveModalLabel"><i class="fas fa-gavel text-warning me-2"></i>Xử lý Khiếu nại</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary fw-bold">Khách hàng</label>
+                        <p class="form-control-plaintext fw-semibold fs-5" id="modalBuyer"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary fw-bold">Cửa hàng bị khiếu nại</label>
+                        <p class="form-control-plaintext fw-semibold fs-5 text-danger" id="modalShop"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary fw-bold">Lý do khiếu nại</label>
+                        <p class="form-control-plaintext text-warning fw-bold fs-5" id="modalReason"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary fw-bold">Mã đơn hàng</label>
+                        <p class="form-control-plaintext fw-semibold fs-5" id="modalOrderId"></p>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-secondary fw-bold">Nội dung chi tiết</label>
+                        <div class="p-3 bg-light rounded border text-dark" id="modalDetail" style="white-space: pre-wrap;"></div>
+                    </div>
+                    <div class="col-12" id="modalProofContainer">
+                        <label class="form-label text-secondary fw-bold">Bằng chứng hình ảnh</label>
+                        <div class="text-center p-2 bg-light rounded border">
+                            <img id="modalProofImage" src="" alt="Proof Image" class="img-fluid rounded" style="max-height: 300px; object-fit: contain; cursor: pointer;" onclick="window.open(this.src)" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Quyết định -->
+                <form id="resolveForm">
+                    <input type="hidden" name="complaintId" id="modalComplaintId" />
+                    
+                    <div class="mb-3">
+                        <label for="adminReply" class="form-label fw-bold text-dark">Phản hồi của Admin (Gửi cho cả 2 bên) <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="adminReply" id="adminReply" rows="3" placeholder="Nhập lý do xử phạt hoặc nội dung xử lý..." required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="penaltyAmount" class="form-label fw-bold text-dark">Số tiền Phạt Quán / Hoàn trả Sinh viên (VNĐ)</label>
+                        <div class="input-group">
+                            <span class="input-group-text fw-bold text-danger">₫</span>
+                            <input type="number" class="form-control fs-5 fw-bold text-danger" name="penaltyAmount" id="penaltyAmount" value="0" min="0" step="1000" />
+                        </div>
+                        <div class="form-text text-muted">Số tiền này sẽ được trừ trực tiếp từ ví của Quán và cộng vào ví của Sinh viên ngay lập tức.</div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <button type="button" class="btn btn-light border px-4 fw-bold" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" class="btn btn-danger px-4 fw-bold" id="btnSubmitResolve"><i class="fas fa-check-double me-2"></i>Quyết định & Khấu trừ</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        function openResolveModal(complaintId, orderId, buyer, shop, reason, detail, imageProof) {
+            $('#modalComplaintId').val(complaintId);
+            $('#modalOrderId').text('#' + orderId);
+            $('#modalBuyer').text(buyer);
+            $('#modalShop').text(shop);
+            $('#modalReason').text(reason);
+            $('#modalDetail').text(detail);
+
+            if (imageProof && imageProof !== 'null' && imageProof !== '') {
+                var fullUrl = imageProof;
+                if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
+                    if (fullUrl.startsWith('/')) {
+                        fullUrl = 'http://localhost:5289' + fullUrl;
+                    } else {
+                        fullUrl = 'http://localhost:5289/' + fullUrl;
+                    }
+                }
+                $('#modalProofImage').attr('src', fullUrl);
+                $('#modalProofContainer').show();
+            } else {
+                $('#modalProofContainer').hide();
+            }
+
+            // Đặt lại các giá trị form
+            $('#adminReply').val('');
+            $('#penaltyAmount').val('0');
+            $('#resolveForm').show();
+            $('#btnSubmitResolve').show();
+
+            // Nếu đã xử lý thì ẩn form
+            // (Chúng ta có thể kiểm tra trạng thái dòng đó từ UI)
+            var resolveModal = new bootstrap.Modal(document.getElementById('resolveModal'));
+            resolveModal.show();
+        }
+
+        $('#resolveForm').submit(function (e) {
+            e.preventDefault();
+            
+            var complaintId = $('#modalComplaintId').val();
+            var adminReply = $('#adminReply').val();
+            var penaltyAmount = $('#penaltyAmount').val();
+
+            if (!adminReply) {
+                alert('Vui lòng nhập phản hồi của Admin!');
+                return;
+            }
+
+            $('#btnSubmitResolve').prop('disabled', true).text('Đang xử lý & giao dịch...');
+
+            $.ajax({
+                url: '/Complaints/Resolve',
+                type: 'POST',
+                data: {
+                    complaintId: complaintId,
+                    adminReply: adminReply,
+                    penaltyAmount: penaltyAmount
+                },
+                success: function (res) {
+                    if (res.success) {
+                        alert(res.message);
+                        location.reload();
+                    } else {
+                        alert('Lỗi: ' + res.message);
+                        $('#btnSubmitResolve').prop('disabled', false).html('<i class="fas fa-check-double me-2"></i>Quyết định & Khấu trừ');
+                    }
+                },
+                error: function () {
+                    alert('Lỗi kết nối máy chủ!');
+                    $('#btnSubmitResolve').prop('disabled', false).html('<i class="fas fa-check-double me-2"></i>Quyết định & Khấu trừ');
+                }
+            });
+        });
+    </script>
+}

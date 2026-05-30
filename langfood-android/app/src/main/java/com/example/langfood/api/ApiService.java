@@ -15,6 +15,7 @@ import com.example.langfood.models.UsernameCheckResponse;
 import com.example.langfood.models.Wallet;
 import com.example.langfood.models.ShopStats;
 import com.example.langfood.models.WithdrawalRequest;
+import com.example.langfood.models.OrderStatusResponse;
 
 import java.util.List;
 
@@ -36,7 +37,7 @@ public interface ApiService {
 
     // --- PRODUCT API ---
     @GET("api/Products")
-    Call<List<Product>> getProducts(@Query("categoryId") Integer categoryId);
+    Call<List<Product>> getProducts(@Query("categoryId") Integer categoryId, @Query("search") String search);
 
     @GET("api/Products/shop/{shopId}")
     Call<List<Product>> getProductsByShop(@Path("shopId") int shopId);
@@ -129,6 +130,9 @@ public interface ApiService {
     @GET("api/Shops/user/{userId}")
     Call<Shop> getShopByUserId(@Path("userId") String userId);
 
+    @PUT("api/Shops/{id}/toggle-status")
+    Call<Shop> toggleShopStatus(@Path("id") int id);
+
     @GET("api/Shippers/user/{userId}")
     Call<Shipper> getShipperByUserId(@Path("userId") String userId);
 
@@ -172,6 +176,10 @@ public interface ApiService {
             @Query("startDate") String startDate,
             @Query("endDate") String endDate
     );
+
+    @GET("api/Orders/{id}/status")
+    Call<OrderStatusResponse> getOrderStatus(@Path("id") int id);
+
 
     // --- CART API ---
     @GET("api/Cart/{userId}")
@@ -224,4 +232,29 @@ public interface ApiService {
             @Query("oldPassword") String oldPassword,
             @Query("newPassword") String newPassword
     );
+
+    // --- COMPLAINTS & NOTIFICATIONS API ---
+    @Multipart
+    @POST("api/Complaints")
+    Call<okhttp3.ResponseBody> createComplaint(
+            @Part("orderId") okhttp3.RequestBody orderId,
+            @Part("reason") okhttp3.RequestBody reason,
+            @Part("detail") okhttp3.RequestBody detail,
+            @Part okhttp3.MultipartBody.Part imageProof
+    );
+
+    @GET("api/Complaints/notifications/{userId}")
+    Call<List<com.example.langfood.models.NotificationModel>> getNotifications(@Path("userId") String userId);
+
+    @POST("api/Complaints/notifications/read/{id}")
+    Call<Void> markNotificationAsRead(@Path("id") int id);
+
+    @GET("api/Complaints/by-order/{orderId}")
+    Call<com.example.langfood.models.ComplaintModel> getComplaintByOrderId(@Path("orderId") int orderId);
+
+    @GET("api/notifications/unread-count")
+    Call<Integer> getUnreadNotificationCount(@Query("userId") String userId);
+
+    @POST("api/notifications/mark-all-read")
+    Call<okhttp3.ResponseBody> markAllNotificationsAsRead(@Query("userId") String userId);
 }

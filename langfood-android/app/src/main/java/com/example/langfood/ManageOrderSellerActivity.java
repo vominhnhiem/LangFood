@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -28,8 +29,11 @@ public class ManageOrderSellerActivity extends AppCompatActivity {
     private List<Order> sellerOrders = new ArrayList<>();
     private ApiService apiService;
     private int shopId;
-    private ImageView btnBack, btnLogout;
+    private ImageView btnBack, btnLogout, btnNotification;
     private SwipeRefreshLayout swipeRefresh;
+
+    private androidx.appcompat.widget.SwitchCompat switchShopStatus;
+    private TextView tvShopStatusText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +48,10 @@ public class ManageOrderSellerActivity extends AppCompatActivity {
         
         btnBack.setOnClickListener(v -> finish());
         btnLogout.setOnClickListener(v -> showLogoutDialog());
+        btnNotification.setOnClickListener(v -> {
+            markNotificationsAsRead();
+            startActivity(new Intent(ManageOrderSellerActivity.this, NotificationActivity.class));
+        });
 
         setupSwipeRefresh();
         loadOrders();
@@ -75,7 +83,11 @@ public class ManageOrderSellerActivity extends AppCompatActivity {
         rvOrders = findViewById(R.id.rvOrders);
         btnBack = findViewById(R.id.btnBack);
         btnLogout = findViewById(R.id.btnLogout);
+        btnNotification = findViewById(R.id.btnNotification);
         swipeRefresh = findViewById(R.id.swipeRefresh);
+        
+        switchShopStatus = findViewById(R.id.switchShopStatus);
+        tvShopStatusText = findViewById(R.id.tvShopStatusText);
         
         adapter = new SellerOrderAdapter(this, sellerOrders, new SellerOrderAdapter.OnOrderActionListener() {
             @Override
@@ -170,5 +182,114 @@ public class ManageOrderSellerActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         loadOrders();
+        fetchUnreadNotificationCount();
+        fetchShopStatus();
+    }
+
+    private void updateNotificationBadge(int count) {
+        TextView tvBadge = findViewById(R.id.tvNotificationBadge);
+        if (tvBadge != null) {
+            if (count > 0) {
+                tvBadge.setText(String.valueOf(count));
+                tvBadge.setVisibility(android.view.View.VISIBLE);
+            } else {
+                tvBadge.setVisibility(android.view.View.GONE);
+            }
+        }
+    }
+
+    private void fetchUnreadNotificationCount() {
+        SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
+        String userId = prefs.getString("USER_ID", "");
+        if (userId.isEmpty() || apiService == null) return;
+
+        apiService.getUnreadNotificationCount(userId).enqueue(new Callback<Integer>() {
+            @Override
+            public void onResponse(Call<Integer> call, Response<Integer> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    updateNotificationBadge(response.body());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Integer> call, Throwable t) {}
+        });
+    }
+
+    private void markNotificationsAsRead() {
+        SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
+        String userId = prefs.getString("USER_ID", "");
+        if (userId.isEmpty() || apiService == null) return;
+
+        updateNotificationBadge(0);
+
+        apiService.markAllNotificationsAsRead(userId).enqueue(new Callback<okhttp3.ResponseBody>() {
+            @Override
+            public void onResponse(Call<okhttp3.ResponseBody> call, Response<okhttp3.ResponseBody> response) {}
+
+            @Override
+            public void onFailure(Call<okhttp3.ResponseBody> call, Throwable t) {}
+        });
+    }
+
+    private void fetchShopStatus() {
+        SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
+        String userId = prefs.getString("USER_ID", "");
+        if (userId.isEmpty() || apiService == null) return;
+
+        apiService.getShopByUserId(userId).enqueue(new Callback<com.example.langfood.models.Shop>() {
+            @Override
+            public void onResponse(Call<com.example.langfood.models.Shop> call, Response<com.example.langfood.models.Shop> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    com.example.langfood.models.Shop shop = response.body();
+                    setShopStatusUI(shop.isOpen());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<com.example.langfood.models.Shop> call, Throwable t) {}
+        });
+    }
+
+    private void setShopStatusUI(boolean isOpen) {
+        switchShopStatus.setOnCheckedChangeListener(null);
+        switchShopStatus.setChecked(isOpen);
+        if (isOpen) {
+            tvShopStatusText.setText("Mở cửa");
+            tvShopStatusText.setTextColor(android.graphics.Color.parseColor("#4CAF50"));
+        } else {
+            tvShopStatusText.setText("Đóng cửa");
+            tvShopStatusText.setTextColor(android.graphics.Color.parseColor("#F44336"));
+        }
+        setupSwitchListener();
+    }
+
+    private void setupSwitchListener() {
+        switchShopStatus.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (shopId == -1) {
+                Toast.makeText(ManageOrderSellerActivity.this, "Không tìm thấy thông tin cửa hàng", Toast.LENGTH_SHORT).show();
+                setShopStatusUI(!isChecked);
+                return;
+            }
+            apiService.toggleShopStatus(shopId).enqueue(new Callback<com.example.langfood.models.Shop>() {
+                @Override
+                public void onResponse(Call<com.example.langfood.models.Shop> call, Response<com.example.langfood.models.Shop> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        com.example.langfood.models.Shop updatedShop = response.body();
+                        Toast.makeText(ManageOrderSellerActivity.this, "Đã cập nhật trạng thái cửa hàng", Toast.LENGTH_SHORT).show();
+                        setShopStatusUI(updatedShop.isOpen());
+                    } else {
+                        Toast.makeText(ManageOrderSellerActivity.this, "Lỗi cập nhật trạng thái", Toast.LENGTH_SHORT).show();
+                        setShopStatusUI(!isChecked);
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<com.example.langfood.models.Shop> call, Throwable t) {
+                    Toast.makeText(ManageOrderSellerActivity.this, "Lỗi kết nối mạng", Toast.LENGTH_SHORT).show();
+                    setShopStatusUI(!isChecked);
+                }
+            });
+        });
     }
 }

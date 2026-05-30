@@ -21,9 +21,10 @@ namespace LangFood.Shared.Models
         public DbSet<Wallet> Wallets { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<WithdrawalRequest> WithdrawalRequests { get; set; }
-        // Thêm 2 dòng này vào trong class LangFoodDbContext
         public DbSet<ProductOptionGroup> ProductOptionGroups { get; set; }
         public DbSet<ProductOption> ProductOptions { get; set; }
+        public DbSet<Complaint> Complaints { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         // Thêm cấu hình decimal vào trong hàm OnModelCreating
       
@@ -42,6 +43,7 @@ namespace LangFood.Shared.Models
             modelBuilder.Entity<Order>().Property(o => o.ShippingFee).HasColumnType("decimal(18,2)");
             modelBuilder.Entity<OrderItem>().Property(oi => oi.UnitPrice).HasColumnType("decimal(18,2)");
             modelBuilder.Entity<WithdrawalRequest>().Property(w => w.Amount).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Complaint>().Property(c => c.PenaltyAmount).HasColumnType("decimal(18,2)");
 
             // 2. Query Filters (Xử lý xóa mềm)
             modelBuilder.Entity<Category>().HasQueryFilter(c => !c.IsDeleted);

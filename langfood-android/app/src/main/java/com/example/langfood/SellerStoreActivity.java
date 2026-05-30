@@ -90,7 +90,7 @@ public class SellerStoreActivity extends AppCompatActivity {
     }
 
     private void loadSellerProducts() {
-        apiService.getProducts(null).enqueue(new Callback<List<Product>>() {
+        apiService.getProducts(null, null).enqueue(new Callback<List<Product>>() {
             @Override
             public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
                 if (response.isSuccessful() && response.body() != null) {

@@ -1,4 +1,4 @@
-﻿using LangFood.Shared.Models;
+using LangFood.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +17,18 @@ namespace LangFoodBackend.Controllers
             {
                 var shop = await _context.Shops.FirstOrDefaultAsync(s => s.UserId == userId);
                 if (shop == null) return NotFound();
+                return Ok(shop);
+            }
+
+            [HttpPut("{id}/toggle-status")]
+            public async Task<IActionResult> ToggleShopStatus(int id)
+            {
+                var shop = await _context.Shops.FindAsync(id);
+                if (shop == null) return NotFound(new { message = "Không tìm thấy quán!" });
+
+                shop.IsOpen = !shop.IsOpen;
+                await _context.SaveChangesAsync();
+
                 return Ok(shop);
             }
         }

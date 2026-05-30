@@ -168,7 +168,7 @@ public class FoodDetailActivity extends AppCompatActivity implements OptionAdapt
 
     private void calculateTotalPrice() {
         if (currentProduct == null) return;
-        
+
         double totalPerItem = currentProduct.getPrice();
         if (currentProduct.getOptionGroups() != null) {
             for (ProductOptionGroup group : currentProduct.getOptionGroups()) {
@@ -179,9 +179,17 @@ public class FoodDetailActivity extends AppCompatActivity implements OptionAdapt
                 }
             }
         }
-        
+
         double finalTotal = totalPerItem * quantity;
-        btnAddToCart.setText(String.format(Locale.getDefault(), "THÊM VÀO GIỎ - %,.0fđ", finalTotal));
+        if (!currentProduct.isShopOpen()) {
+            btnAddToCart.setEnabled(false);
+            btnAddToCart.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.GRAY));
+            btnAddToCart.setText("Quán đang tạm nghỉ");
+        } else {
+            btnAddToCart.setEnabled(true);
+            btnAddToCart.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FF5722")));
+            btnAddToCart.setText(String.format(Locale.getDefault(), "THÊM VÀO GIỎ - %,.0fđ", finalTotal));
+        }
     }
 
     private void loadSellerInfo(String sellerId) {

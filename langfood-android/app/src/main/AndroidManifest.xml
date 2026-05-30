@@ -98,6 +98,28 @@
             android:label="Quản lý Topping"
             android:theme="@style/Theme.LangFood" />
 
+        <!-- ĐĂNG KÝ MÀN HÌNH KHIẾU NẠI VÀ THÔNG BÁO -->
+        <activity
+            android:name=".OrderDetailsActivity"
+            android:exported="false"
+            android:label="Chi tiết đơn hàng" />
+
+        <activity
+            android:name=".ComplaintActivity"
+            android:exported="false"
+            android:label="Khiếu nại đơn hàng"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".NotificationActivity"
+            android:exported="false"
+            android:label="Thông báo của tôi" />
+
+        <activity
+            android:name=".PenaltyDetailActivity"
+            android:exported="false"
+            android:label="Chi tiết xử phạt" />
+
         <activity
             android:name=".LoginActivity"
             android:exported="true"

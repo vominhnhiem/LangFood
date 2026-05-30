@@ -27,6 +27,17 @@ namespace LangFoodBackend.Controllers
         {
             try
             {
+                var shop = await _context.Shops.FindAsync(order.ShopId);
+                if (shop == null)
+                {
+                    return BadRequest(new { message = "Cửa hàng không tồn tại!" });
+                }
+
+                if (!shop.IsOpen)
+                {
+                    return BadRequest(new { message = "Quán hiện đang đóng cửa, không thể đặt món" });
+                }
+
                 order.CreatedAt = DateTime.Now;
                 order.Status = "Pending";
 
@@ -247,6 +258,15 @@ namespace LangFoodBackend.Controllers
             {
                 return BadRequest(new { message = "Lỗi lấy thống kê chi tiết: " + ex.Message });
             }
+        }
+
+        // --- 9. GET STATUS ONLY (SIÊU NHẸ ĐỂ POLLING) ---
+        [HttpGet("{id}/status")]
+        public async Task<IActionResult> GetOrderStatus(int id)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+            return Ok(new { status = order.Status });
         }
     }
 }

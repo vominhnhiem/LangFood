@@ -7,11 +7,12 @@
     android:orientation="vertical"
     android:fitsSystemWindows="true">
 
+    <!-- Header bar -->
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="56dp"
         android:background="@color/white"
-        android:elevation="4dp"
+        android:elevation="2dp"
         android:paddingHorizontal="15dp">
 
         <ImageView
@@ -27,43 +28,31 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="Lịch sử đơn hàng"
-            android:textColor="#333333"
+            android:text="Đơn hàng của tôi"
+            android:textColor="#212121"
             android:textSize="18sp"
             android:textStyle="bold" />
     </RelativeLayout>
 
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/swipeRefresh"
+    <!-- ShopeeFood Style Tabs -->
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        app:tabIndicatorColor="@color/shopee_orange"
+        app:tabIndicatorHeight="3dp"
+        app:tabSelectedTextColor="@color/shopee_orange"
+        app:tabTextColor="#666666"
+        app:tabMode="fixed"
+        app:tabGravity="fill"
+        app:tabRippleColor="@null"
+        android:elevation="1dp" />
 
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+    <!-- Fragment container -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvHistory"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:padding="12dp"
-                android:clipToPadding="false"/>
-
-            <ProgressBar
-                android:id="@+id/progressBar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:visibility="gone"/>
-
-            <TextView
-                android:id="@+id/tvEmpty"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="Chưa có đơn hàng nào"
-                android:textColor="#999999"
-                android:visibility="gone"/>
-        </FrameLayout>
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 </LinearLayout>

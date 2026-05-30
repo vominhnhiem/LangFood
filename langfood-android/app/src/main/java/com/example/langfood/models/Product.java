@@ -48,6 +48,9 @@ public class Product implements Serializable {
     @SerializedName("optionGroups")
     private List<ProductOptionGroup> optionGroups;
 
+    @SerializedName(value = "isShopOpen", alternate = {"IsShopOpen"})
+    private boolean isShopOpen = true;
+
     public Product() {}
 
     public int getId() { return id; }
@@ -98,6 +101,9 @@ public class Product implements Serializable {
 
     public List<ProductOptionGroup> getOptionGroups() { return optionGroups; }
     public void setOptionGroups(List<ProductOptionGroup> optionGroups) { this.optionGroups = optionGroups; }
+
+    public boolean isShopOpen() { return isShopOpen; }
+    public void setShopOpen(boolean shopOpen) { isShopOpen = shopOpen; }
 
     public static class ShopInfo implements Serializable {
         @SerializedName(value = "id", alternate = {"Id"})

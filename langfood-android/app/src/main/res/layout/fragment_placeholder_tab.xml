@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F5F5"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="32dp">
+
+    <ImageView
+        android:id="@+id/ivPlaceholderIcon"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:src="@drawable/ic_empty_order"
+        android:contentDescription="Placeholder icon" />
+
+    <TextView
+        android:id="@+id/tvPlaceholderTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Không tìm thấy thông tin"
+        android:textColor="#212121"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:gravity="center" />
+
+    <TextView
+        android:id="@+id/tvPlaceholderSubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Tính năng này sẽ sớm xuất hiện trên Làng Food!"
+        android:textColor="#757575"
+        android:textSize="13sp"
+        android:gravity="center"
+        android:lineSpacingMultiplier="1.2" />
+
+</LinearLayout>

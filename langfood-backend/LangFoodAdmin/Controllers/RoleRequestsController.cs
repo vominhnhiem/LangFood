@@ -46,6 +46,13 @@ namespace LangFoodAdmin.Controllers
             {
                 request.Status = 1; // Duyệt
                 
+                // Đồng bộ phê duyệt tài khoản User và gán vai trò Seller (RoleId = 2)
+                if (request.User != null)
+                {
+                    request.User.IsApproved = true;
+                    request.User.RoleId = 2;
+                }
+                
                 // Tạo cửa hàng mới nếu chưa có
                 var existingShop = await _context.Shops.FirstOrDefaultAsync(s => s.UserId == request.UserId);
                 if (existingShop == null)
@@ -59,6 +66,11 @@ namespace LangFoodAdmin.Controllers
                         IsOpen = true
                     };
                     _context.Shops.Add(shop);
+                }
+                else
+                {
+                    // Nếu đã có Shop nhưng bị khóa hoặc chưa kích hoạt, mở khóa lại Shop
+                    existingShop.IsActive = true;
                 }
 
                 await _context.SaveChangesAsync();
@@ -88,6 +100,17 @@ namespace LangFoodAdmin.Controllers
             if (shop != null)
             {
                 shop.IsActive = !shop.IsActive;
+                
+                // Đồng bộ duyệt tài khoản User nếu cửa hàng được mở khóa lại
+                if (shop.IsActive)
+                {
+                    var user = await _context.Users.FindAsync(shop.UserId);
+                    if (user != null)
+                    {
+                        user.IsApproved = true;
+                    }
+                }
+                
                 await _context.SaveChangesAsync();
                 TempData["Success"] = shop.IsActive ? "Đã mở khóa cửa hàng!" : "Đã khóa cửa hàng thành công!";
             }

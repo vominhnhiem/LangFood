@@ -23,14 +23,26 @@ namespace LangFoodBackend.Controllers
 
         // 1. LẤY TẤT CẢ MÓN ĂN (Trang chủ App - Đã thêm Topping)
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<object>>> GetProducts()
+        public async Task<ActionResult<IEnumerable<object>>> GetProducts([FromQuery] int? categoryId = null, [FromQuery] string? search = null)
         {
-            return await _context.Products
+            var query = _context.Products
                 .Include(p => p.Shop)
                     .ThenInclude(s => s.User)
                 .Include(p => p.OptionGroups)
                     .ThenInclude(g => g.Options)
-                .Where(p => p.IsAvailable && p.Status == 1 && !p.IsDeleted)
+                .Where(p => p.IsAvailable && p.Status == 1 && !p.IsDeleted);
+
+            if (categoryId.HasValue && categoryId.Value != -1)
+            {
+                query = query.Where(p => p.CategoryId == categoryId.Value);
+            }
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(p => p.Name.Contains(search));
+            }
+
+            return await query
                 .OrderByDescending(p => p.Id)
                 .Select(p => new {
                     p.Id,
@@ -44,6 +56,7 @@ namespace LangFoodBackend.Controllers
                     p.CategoryId,
                     SellerName = !string.IsNullOrEmpty(p.Shop.Name) ? p.Shop.Name :
                                  (p.Shop.User != null ? p.Shop.User.FullName : "Quán ăn Lang Food"),
+                    IsShopOpen = p.Shop.IsOpen,
                     // Trả về danh sách option groups để App có thể hiển thị sơ bộ hoặc tính giá
                     OptionGroups = p.OptionGroups.Select(g => new {
                         g.Id,
@@ -89,6 +102,7 @@ namespace LangFoodBackend.Controllers
                 SellerName = !string.IsNullOrEmpty(product.Shop?.Name) ? product.Shop.Name :
                              (product.Shop?.User?.FullName ?? "Quán ăn Lang Food"),
                 SellerPhone = product.Shop?.User?.PhoneNumber,
+                IsShopOpen = product.Shop != null ? product.Shop.IsOpen : true,
                 // Trả về cấu trúc Topping chi tiết
                 OptionGroups = product.OptionGroups.Select(g => new {
                     g.Id,

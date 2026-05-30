@@ -80,6 +80,13 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
                 .placeholder(R.drawable.lang_food_avt)
                 .error(R.drawable.lang_food_avt)
                 .into(holder.ivOrderThumb);
+
+        // Click mở màn hình chi tiết đơn hàng phía Sinh viên
+        holder.itemView.setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(v.getContext(), OrderDetailsActivity.class);
+            intent.putExtra("ORDER", order);
+            v.getContext().startActivity(intent);
+        });
     }
 
     private boolean isUnfinished(String status) {

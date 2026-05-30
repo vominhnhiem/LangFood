@@ -2,130 +2,283 @@
     ViewData["Title"] = "Tổng quan";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0 text-gray-800 fw-bold">Tổng quan hệ thống</h1>
-    <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
-        <i class="fas fa-download fa-sm text-white-50 me-1"></i> Xuất báo cáo
-    </a>
-</div>
-
-<!-- Thẻ Card thống kê -->
-<div class="row gap-4 mb-4" style="flex-wrap: nowrap; overflow-x: auto; padding-bottom: 10px;">
-    <!-- Card 1 -->
-    <div class="col-xl-3 col-md-6 mb-4 mb-xl-0" style="min-width: 280px;">
-        <div class="admin-card border-left-primary h-100 py-2">
-            <div class="stat-card">
-                <div class="stat-content flex-grow-1">
-                    <p class="text-xs font-weight-bold text-primary text-uppercase mb-1" style="font-size: 0.8rem;">Tổng đơn (Tháng)</p>
-                    <h3 class="h5 mb-0 font-weight-bold text-gray-800">1,245</h3>
-                </div>
-                <div class="stat-icon" style="color: #4e73df; background-color: rgba(78, 115, 223, 0.1);">
-                    <i class="fas fa-calendar"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Card 2 -->
-    <div class="col-xl-3 col-md-6 mb-4 mb-xl-0" style="min-width: 280px;">
-        <div class="admin-card border-left-success h-100 py-2">
-            <div class="stat-card">
-                <div class="stat-content flex-grow-1">
-                    <p class="text-xs font-weight-bold text-success text-uppercase mb-1" style="font-size: 0.8rem;">Doanh thu (Tháng)</p>
-                    <h3 class="h5 mb-0 font-weight-bold text-gray-800">145,000,000₫</h3>
-                </div>
-                <div class="stat-icon" style="color: #1cc88a; background-color: rgba(28, 200, 138, 0.1);">
-                    <i class="fas fa-dollar-sign"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Card 3 -->
-    <div class="col-xl-3 col-md-6 mb-4 mb-xl-0" style="min-width: 280px;">
-        <div class="admin-card border-left-info h-100 py-2">
-            <div class="stat-card">
-                <div class="stat-content flex-grow-1">
-                    <p class="text-xs font-weight-bold text-info text-uppercase mb-1" style="font-size: 0.8rem;">Người dùng mới</p>
-                    <h3 class="h5 mb-0 font-weight-bold text-gray-800">421</h3>
-                </div>
-                <div class="stat-icon" style="color: #36b9cc; background-color: rgba(54, 185, 204, 0.1);">
-                    <i class="fas fa-users"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Card 4 -->
-    <div class="col-xl-3 col-md-6 mb-4 mb-xl-0" style="min-width: 280px;">
-        <div class="admin-card border-left-warning h-100 py-2">
-            <div class="stat-card">
-                <div class="stat-content flex-grow-1">
-                    <p class="text-xs font-weight-bold text-warning text-uppercase mb-1" style="font-size: 0.8rem;">Shipper chờ duyệt</p>
-                    <h3 class="h5 mb-0 font-weight-bold text-gray-800">18</h3>
-                </div>
-                <div class="stat-icon" style="color: #f6c23e; background-color: rgba(246, 194, 62, 0.1);">
-                    <i class="fas fa-motorcycle"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Bảng Đơn hàng mới nhất -->
-<div class="row">
+<!-- Welcome Section -->
+<div class="row mb-4">
     <div class="col-12">
-        <div class="admin-card shadow mb-4">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h6 class="m-0 font-weight-bold" style="color: var(--accent-color);">Đơn hàng mới nhất</h6>
-                <a href="/Orders" class="btn btn-sm btn-outline-primary" style="color: var(--accent-color); border-color: var(--accent-color);">Xem tất cả</a>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover mb-0" width="100%" cellspacing="0">
-                    <thead>
-                        <tr>
-                            <th>Mã đơn</th>
-                            <th>Khách hàng</th>
-                            <th>Cửa hàng</th>
-                            <th>Tổng tiền</th>
-                            <th>Trạng thái</th>
-                            <th>Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td class="fw-bold">#LF-001</td>
-                            <td>Nguyễn Văn A</td>
-                            <td>Cơm Tấm Bà Ba</td>
-                            <td class="fw-bold text-danger">45,000₫</td>
-                            <td><span class="badge bg-warning text-dark">Chờ xác nhận</span></td>
-                            <td>
-                                <a href="#" class="btn btn-sm btn-info text-white"><i class="fas fa-eye"></i></a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="fw-bold">#LF-002</td>
-                            <td>Trần Thị B</td>
-                            <td>Trà Sữa KOI</td>
-                            <td class="fw-bold text-danger">120,000₫</td>
-                            <td><span class="badge bg-info text-dark">Đang giao</span></td>
-                            <td>
-                                <a href="#" class="btn btn-sm btn-info text-white"><i class="fas fa-eye"></i></a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="fw-bold">#LF-003</td>
-                            <td>Lê Văn C</td>
-                            <td>Bún Bò Huế 39</td>
-                            <td class="fw-bold text-danger">65,000₫</td>
-                            <td><span class="badge bg-success">Đã giao</span></td>
-                            <td>
-                                <a href="#" class="btn btn-sm btn-info text-white"><i class="fas fa-eye"></i></a>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+        <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: var(--border-radius);">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h2 id="greeting-text" class="fw-bold mb-1" style="color: var(--text-primary);">Đang tải lời chào...</h2>
+                    <p id="current-date-text" class="text-muted mb-0" style="font-size: 0.95rem;">Đang tải ngày tháng...</p>
+                </div>
+                <div class="d-none d-md-block">
+                    <span class="badge bg-light text-dark p-2" style="border: 1px solid var(--border-color); border-radius: 8px;">
+                        <i class="fa-solid fa-clock me-1 text-primary"></i> <span id="current-time-text">--:--</span>
+                    </span>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Stat Cards Section -->
+<div class="row mb-4 g-4">
+    <!-- Revenue Card -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="admin-card admin-card-hover bg-gradient-blue border-0 shadow-sm">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="text-white-50 text-uppercase mb-2" style="font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;">Doanh thu hệ thống</h6>
+                    <h3 class="text-white fw-bold mb-0">145,000,000₫</h3>
+                </div>
+                <div class="stat-icon bg-white bg-opacity-20 text-white" style="width: 50px; height: 50px;">
+                    <i class="fa-solid fa-money-bill-wave fs-4"></i>
+                </div>
+            </div>
+            <div class="mt-3 text-white-50" style="font-size: 0.8rem;">
+                <i class="fa-solid fa-arrow-trend-up me-1"></i> +12% so với tháng trước
+            </div>
+        </div>
+    </div>
+
+    <!-- Shop Requests Card -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <a href="/RoleRequests" class="text-decoration-none">
+            <div class="admin-card admin-card-hover bg-gradient-orange border-0 shadow-sm">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-white-50 text-uppercase mb-2" style="font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;">Duyệt cửa hàng</h6>
+                        <h3 class="text-white fw-bold mb-0">Cửa hàng mới</h3>
+                    </div>
+                    <div class="stat-icon bg-white bg-opacity-20 text-white" style="width: 50px; height: 50px;">
+                        <i class="fa-solid fa-store fs-4"></i>
+                    </div>
+                </div>
+                <div class="mt-3 text-white-50" style="font-size: 0.8rem;">
+                    Xem yêu cầu đối tác đang chờ duyệt
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Shipper Profiles Card -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <a href="/Shippers" class="text-decoration-none">
+            <div class="admin-card admin-card-hover bg-gradient-green border-0 shadow-sm">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-white-50 text-uppercase mb-2" style="font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;">Hồ sơ Shipper</h6>
+                        <h3 class="text-white fw-bold mb-0">Giao hàng</h3>
+                    </div>
+                    <div class="stat-icon bg-white bg-opacity-20 text-white" style="width: 50px; height: 50px;">
+                        <i class="fa-solid fa-motorcycle fs-4"></i>
+                    </div>
+                </div>
+                <div class="mt-3 text-white-50" style="font-size: 0.8rem;">
+                    Quản lý danh sách Shipper hoạt động
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Withdrawal Requests Card -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <a href="/Finance" class="text-decoration-none">
+            <div class="admin-card admin-card-hover bg-gradient-purple border-0 shadow-sm">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-white-50 text-uppercase mb-2" style="font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;">Yêu cầu rút tiền</h6>
+                        <h3 class="text-white fw-bold mb-0">Rút tiền ví</h3>
+                    </div>
+                    <div class="stat-icon bg-white bg-opacity-20 text-white" style="width: 50px; height: 50px;">
+                        <i class="fa-solid fa-wallet fs-4"></i>
+                    </div>
+                </div>
+                <div class="mt-3 text-white-50" style="font-size: 0.8rem;">
+                    Xử lý yêu cầu thanh toán/rút tiền
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Main Section: Quick Links & System Activity Pulse -->
+<div class="row g-4 mb-4">
+    <!-- Left Column: Quick Links (Lối tắt truy cập nhanh) -->
+    <div class="col-12 col-lg-5">
+        <div class="card border-0 shadow-sm p-4 bg-white h-100" style="border-radius: var(--border-radius);">
+            <h5 class="fw-bold mb-4" style="color: var(--text-primary);"><i class="fa-solid fa-bolt me-2 text-warning"></i>Lối tắt truy cập nhanh</h5>
+            
+            <div class="row g-3">
+                <div class="col-6">
+                    <a href="/Products" class="text-decoration-none">
+                        <div class="p-3 text-center border rounded admin-card-hover bg-light bg-opacity-50" style="border-radius: 8px;">
+                            <i class="fa-solid fa-burger fs-3 text-primary mb-2"></i>
+                            <div class="fw-bold text-dark" style="font-size: 0.9rem;">Duyệt món</div>
+                        </div>
+                    </a>
+                </div>
+                
+                <div class="col-6">
+                    <a href="/Orders" class="text-decoration-none">
+                        <div class="p-3 text-center border rounded admin-card-hover bg-light bg-opacity-50" style="border-radius: 8px;">
+                            <i class="fa-solid fa-receipt fs-3 text-success mb-2"></i>
+                            <div class="fw-bold text-dark" style="font-size: 0.9rem;">Đơn hàng</div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-6">
+                    <a href="/Categories" class="text-decoration-none">
+                        <div class="p-3 text-center border rounded admin-card-hover bg-light bg-opacity-50" style="border-radius: 8px;">
+                            <i class="fa-solid fa-tags fs-3 text-warning mb-2"></i>
+                            <div class="fw-bold text-dark" style="font-size: 0.9rem;">Danh mục</div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-6">
+                    <a href="/Buildings" class="text-decoration-none">
+                        <div class="p-3 text-center border rounded admin-card-hover bg-light bg-opacity-50" style="border-radius: 8px;">
+                            <i class="fa-solid fa-building fs-3 text-danger mb-2"></i>
+                            <div class="fw-bold text-dark" style="font-size: 0.9rem;">Tòa nhà KTX</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="mt-4 p-3 bg-light rounded text-muted" style="font-size: 0.85rem;">
+                <i class="fa-solid fa-circle-info me-1 text-primary"></i> Admin có thể quản lý, duyệt và kiểm duyệt hoạt động của toàn bộ thành viên trong khu ký túc xá.
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: System Pulse (Nhịp đập hệ thống) -->
+    <div class="col-12 col-lg-7">
+        <div class="card border-0 shadow-sm p-4 bg-white h-100" style="border-radius: var(--border-radius);">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <h5 class="fw-bold mb-0" style="color: var(--text-primary);">
+                    <i class="fa-solid fa-heart-pulse me-2 text-danger"></i>Nhịp đập hệ thống (Thời gian thực)
+                </h5>
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size: 0.8rem;">
+                    <i class="fa-solid fa-circle-check me-1"></i>Tự động cập nhật
+                </span>
+            </div>
+
+            <!-- Vertical Timeline container -->
+            <div id="timeline-container" style="max-height: 380px; overflow-y: auto; padding-right: 5px;">
+                <div class="d-flex justify-content-center my-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // 1. Thực hiện Lời chào thời gian thực phía Client
+            function updateGreeting() {
+                const now = new Date();
+                const hours = now.getHours();
+                let greeting = "";
+
+                if (hours >= 0 && hours < 12) {
+                    greeting = "Chào buổi sáng, Admin! 🌅";
+                } else if (hours >= 12 && hours < 18) {
+                    greeting = "Chào buổi chiều, Admin! ☀️";
+                } else {
+                    greeting = "Chào buổi tối, Admin! 🌙";
+                }
+
+                // Hiển thị ngày tháng năm hiện tại
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                const dateText = now.toLocaleDateString('vi-VN', options);
+
+                document.getElementById("greeting-text").textContent = greeting;
+                document.getElementById("current-date-text").textContent = dateText;
+                const timeElement = document.getElementById("current-time-text");
+                if (timeElement) {
+                    timeElement.textContent = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                }
+            }
+            updateGreeting();
+            setInterval(updateGreeting, 60000); // Cập nhật đồng hồ mỗi phút
+
+            // 2. Tải dữ liệu Nhịp đập hệ thống thời gian thực qua AJAX
+            function fetchSystemActivities() {
+                fetch('/Dashboard/GetRecentActivities')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error("Lỗi mạng khi gọi API");
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        const container = document.getElementById("timeline-container");
+                        if (!container) return;
+
+                        if (!data || data.length === 0) {
+                            container.innerHTML = `
+                                <div class="text-center py-5 text-muted">
+                                    <i class="fa-solid fa-circle-check fs-1 text-success mb-3"></i>
+                                    <p class="mb-0 fw-semibold">Hệ thống đang hoạt động ổn định</p>
+                                    <small class="text-muted">Không ghi nhận hoạt động mới nào</small>
+                                </div>
+                            `;
+                            return;
+                        }
+
+                        let html = '<ul class="timeline">';
+                        data.forEach(activity => {
+                            // Xác định màu sắc của badge
+                            let badgeClass = "badge-success";
+                            if (activity.type.toLowerCase() === "warning") {
+                                badgeClass = "badge-warning";
+                            } else if (activity.type.toLowerCase() === "danger") {
+                                badgeClass = "badge-danger";
+                            }
+
+                            // Định dạng thời gian
+                            const date = new Date(activity.createdAt);
+                            const formattedTime = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                            const formattedDate = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: '2-digit' });
+
+                            html += `
+                                <li class="timeline-item">
+                                    <div class="timeline-badge ${badgeClass}"></div>
+                                    <div class="timeline-content shadow-none">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="fw-semibold text-dark" style="font-size: 0.9rem;">${activity.message}</span>
+                                            <span class="timeline-time ms-2 text-nowrap">${formattedTime} - ${formattedDate}</span>
+                                        </div>
+                                    </div>
+                                </li>
+                            `;
+                        });
+                        html += '</ul>';
+                        container.innerHTML = html;
+                    })
+                    .catch(error => {
+                        console.error("Lỗi lấy hoạt động hệ thống:", error);
+                        const container = document.getElementById("timeline-container");
+                        if (container) {
+                            container.innerHTML = `
+                                <div class="text-center py-4 text-danger">
+                                    <i class="fa-solid fa-circle-exclamation fs-2 mb-2"></i>
+                                    <p class="mb-0 small">Không thể kết nối đến máy chủ để cập nhật hoạt động.</p>
+                                </div>
+                            `;
+                        }
+                    });
+            }
+
+            // Gọi tải lần đầu và định kỳ mỗi 30 giây
+            fetchSystemActivities();
+            setInterval(fetchSystemActivities, 30000);
+        });
+    </script>
+}

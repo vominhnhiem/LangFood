@@ -86,6 +86,22 @@ namespace LangFoodBackend.Controllers
                 .FirstOrDefaultAsync(u => u.Username == loginRequest.Username && u.PasswordHash == loginRequest.PasswordHash);
 
             if (user == null) return Unauthorized(new { message = "Sai tài khoản hoặc mật khẩu!" });
+
+            // Kiểm tra phê duyệt đăng nhập linh hoạt cho Seller (RoleId = 2)
+            if (user.RoleId == 2)
+            {
+                bool isShopApproved = user.Shop != null && user.Shop.IsActive;
+                if (user.IsApproved || isShopApproved)
+                {
+                    // Tự động đồng bộ IsApproved của User lên true nếu Shop đã được duyệt và lưu vào DB
+                    if (!user.IsApproved)
+                    {
+                        user.IsApproved = true;
+                        await _context.SaveChangesAsync();
+                    }
+                }
+            }
+
             return Ok(user);
         }
 

@@ -1,37 +1,17 @@
 package com.example.langfood;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.ProgressBar;
-import android.widget.TextView;
-import android.widget.Toast;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-import com.example.langfood.api.ApiClient;
-import com.example.langfood.api.ApiService;
-import com.example.langfood.models.Order;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import androidx.viewpager2.widget.ViewPager2;
+import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
 
 public class HistoryActivity extends AppCompatActivity {
 
-    private RecyclerView rvHistory;
-    private OrderHistoryAdapter adapter;
-    private final List<Order> orderList = new ArrayList<>();
-    private SwipeRefreshLayout swipeRefresh;
-    private ProgressBar progressBar;
-    private TextView tvEmpty;
-    private ApiService apiService;
-    private String userId;
+    private TabLayout tabLayout;
+    private ViewPager2 viewPager;
+    private OrderPagerAdapter pagerAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,36 +19,12 @@ public class HistoryActivity extends AppCompatActivity {
         setContentView(R.layout.activity_history);
 
         initViews();
-        setupRecyclerView();
-        setupSwipeRefresh();
-        
-        apiService = ApiClient.getClient().create(ApiService.class);
-        
-        // Lấy userId từ SharedPreferences
-        SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", Context.MODE_PRIVATE);
-        userId = prefs.getString("USER_ID", "");
-
-        if (userId.isEmpty()) {
-            Toast.makeText(this, "Vui lòng đăng nhập để xem lịch sử", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-
-        loadOrderHistory();
-    }
-
-    private void setupSwipeRefresh() {
-        if (swipeRefresh != null) {
-            swipeRefresh.setColorSchemeResources(R.color.shopee_orange);
-            swipeRefresh.setOnRefreshListener(this::loadOrderHistory);
-        }
+        setupViewPager();
     }
 
     private void initViews() {
-        rvHistory = findViewById(R.id.rvHistory);
-        swipeRefresh = findViewById(R.id.swipeRefresh);
-        progressBar = findViewById(R.id.progressBar);
-        tvEmpty = findViewById(R.id.tvEmpty);
+        tabLayout = findViewById(R.id.tabLayout);
+        viewPager = findViewById(R.id.viewPager);
         
         View btnBack = findViewById(R.id.btnBack);
         if (btnBack != null) {
@@ -76,65 +32,29 @@ public class HistoryActivity extends AppCompatActivity {
         }
     }
 
-    private void setupRecyclerView() {
-        if (rvHistory == null) return;
-        adapter = new OrderHistoryAdapter(orderList);
-        rvHistory.setLayoutManager(new LinearLayoutManager(this));
-        rvHistory.setAdapter(adapter);
-    }
+    private void setupViewPager() {
+        pagerAdapter = new OrderPagerAdapter(this);
+        viewPager.setAdapter(pagerAdapter);
+        
+        // Tránh tình trạng load lại Fragment khi chuyển tab liên tục (giữ trạng thái tốt hơn)
+        viewPager.setOffscreenPageLimit(3);
 
-    private void loadOrderHistory() {
-        if (userId == null || userId.isEmpty() || swipeRefresh == null || apiService == null) return;
-
-        swipeRefresh.setRefreshing(true);
-        if (tvEmpty != null) tvEmpty.setVisibility(View.GONE);
-
-        apiService.getOrdersByBuyer(userId).enqueue(new Callback<List<Order>>() {
-            @Override
-            public void onResponse(@NonNull Call<List<Order>> call, @NonNull Response<List<Order>> response) {
-                swipeRefresh.setRefreshing(false);
-                if (progressBar != null) progressBar.setVisibility(View.GONE);
-
-                if (response.isSuccessful() && response.body() != null) {
-                    orderList.clear();
-                    orderList.addAll(response.body());
-                    
-                    // Sắp xếp:
-                    // 1. Đơn chưa hoàn thành lên đầu
-                    // 2. Sau đó sắp xếp theo ID giảm dần (mới nhất lên đầu)
-                    Collections.sort(orderList, (o1, o2) -> {
-                        boolean completed1 = isCompleted(o1.getStatus());
-                        boolean completed2 = isCompleted(o2.getStatus());
-                        
-                        if (completed1 != completed2) {
-                            return completed1 ? 1 : -1; // Chưa hoàn thành lên trước
-                        }
-                        
-                        return Integer.compare(o2.getId(), o1.getId()); // ID lớn hơn lên trước
-                    });
-                    
-                    if (adapter != null) adapter.notifyDataSetChanged();
-
-                    if (orderList.isEmpty() && tvEmpty != null) {
-                        tvEmpty.setVisibility(View.VISIBLE);
-                    }
-                } else {
-                    Toast.makeText(HistoryActivity.this, "Không thể tải lịch sử đơn hàng", Toast.LENGTH_SHORT).show();
-                }
+        new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
+            switch (position) {
+                case 0:
+                    tab.setText("Đang đến");
+                    break;
+                case 1:
+                    tab.setText("Lịch sử");
+                    break;
+                case 2:
+                    tab.setText("Đánh giá");
+                    break;
+                case 3:
+                default:
+                    tab.setText("Đơn nháp");
+                    break;
             }
-
-            @Override
-            public void onFailure(@NonNull Call<List<Order>> call, @NonNull Throwable t) {
-                swipeRefresh.setRefreshing(false);
-                if (progressBar != null) progressBar.setVisibility(View.GONE);
-                Toast.makeText(HistoryActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private boolean isCompleted(String status) {
-        if (status == null) return false;
-        String s = status.toLowerCase().trim();
-        return s.equals("completed") || s.equals("delivered") || s.equals("cancelled");
+        }).attach();
     }
 }

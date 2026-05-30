@@ -6,6 +6,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -45,6 +46,8 @@ public class HomeActivity extends AppCompatActivity {
     private ViewPager2 vpBanners;
     private Handler bannerHandler = new Handler(Looper.getMainLooper());
     private Runnable bannerRunnable;
+    private Handler searchHandler = new Handler(Looper.getMainLooper());
+    private Runnable searchRunnable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,7 +103,7 @@ public class HomeActivity extends AppCompatActivity {
         // 1. Categories
         categoryAdapter = new CategoryHomeAdapter(categoryList, category -> {
             selectedCategoryId = category.getId();
-            applyFilters();
+            fetchAllProducts();
         });
         rcvCategories.setLayoutManager(new androidx.recyclerview.widget.GridLayoutManager(this, 2, androidx.recyclerview.widget.GridLayoutManager.HORIZONTAL, false));
         rcvCategories.setAdapter(categoryAdapter);
@@ -130,16 +133,19 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void fetchAllProducts() {
-        apiService.getProducts(null).enqueue(new Callback<List<Product>>() {
+        String searchQuery = editSearch != null ? editSearch.getText().toString().trim() : "";
+        Integer catId = (selectedCategoryId == -1) ? null : selectedCategoryId;
+
+        apiService.getProducts(catId, searchQuery.isEmpty() ? null : searchQuery).enqueue(new Callback<List<Product>>() {
             @Override
             public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
                 if (swipeRefreshLayout.isRefreshing()) {
                     swipeRefreshLayout.setRefreshing(false);
                 }
                 if (response.isSuccessful() && response.body() != null) {
-                    allProducts.clear();
-                    allProducts.addAll(response.body());
-                    applyFilters(); 
+                    filteredList.clear();
+                    filteredList.addAll(response.body());
+                    productAdapter.notifyDataSetChanged();
                 }
             }
             @Override
@@ -155,27 +161,80 @@ public class HomeActivity extends AppCompatActivity {
     private void setupSearch() {
         editSearch.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { applyFilters(); }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (searchRunnable != null) {
+                    searchHandler.removeCallbacks(searchRunnable);
+                }
+                searchRunnable = () -> fetchAllProducts();
+                searchHandler.postDelayed(searchRunnable, 500); // Debounce 500ms
+            }
             @Override public void afterTextChanged(Editable s) {}
         });
-    }
 
-    private void applyFilters() {
-        filteredList.clear();
-        String searchQuery = editSearch.getText().toString().toLowerCase().trim();
-        for (Product p : allProducts) {
-            boolean matchesCategory = (selectedCategoryId == -1) || (p.getCategoryId() == selectedCategoryId);
-            boolean matchesSearch = searchQuery.isEmpty() || p.getName().toLowerCase().contains(searchQuery);
-            if (matchesCategory && matchesSearch) filteredList.add(p);
-        }
-        productAdapter.notifyDataSetChanged();
+        editSearch.setOnEditorActionListener((v, actionId, event) -> {
+            if (searchRunnable != null) {
+                searchHandler.removeCallbacks(searchRunnable);
+            }
+            fetchAllProducts();
+            return true;
+        });
     }
 
     private void setupNavigation() {
         findViewById(R.id.iv_profile).setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
         findViewById(R.id.iv_cart).setOnClickListener(v -> startActivity(new Intent(this, CartActivity.class)));
         findViewById(R.id.btnNavOrder).setOnClickListener(v -> startActivity(new Intent(this, HistoryActivity.class)));
+        findViewById(R.id.btnNavNotification).setOnClickListener(v -> {
+            markNotificationsAsRead();
+            startActivity(new Intent(this, NotificationActivity.class));
+        });
         findViewById(R.id.btnNavSupport).setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
+    }
+
+    private void updateNotificationBadge(int count) {
+        TextView tvBadge = findViewById(R.id.tvNotificationBadge);
+        if (tvBadge != null) {
+            if (count > 0) {
+                tvBadge.setText(String.valueOf(count));
+                tvBadge.setVisibility(android.view.View.VISIBLE);
+            } else {
+                tvBadge.setVisibility(android.view.View.GONE);
+            }
+        }
+    }
+
+    private void fetchUnreadNotificationCount() {
+        android.content.SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
+        String userId = prefs.getString("USER_ID", "");
+        if (userId.isEmpty() || apiService == null) return;
+
+        apiService.getUnreadNotificationCount(userId).enqueue(new retrofit2.Callback<Integer>() {
+            @Override
+            public void onResponse(retrofit2.Call<Integer> call, retrofit2.Response<Integer> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    updateNotificationBadge(response.body());
+                }
+            }
+
+            @Override
+            public void onFailure(retrofit2.Call<Integer> call, Throwable t) {}
+        });
+    }
+
+    private void markNotificationsAsRead() {
+        android.content.SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
+        String userId = prefs.getString("USER_ID", "");
+        if (userId.isEmpty() || apiService == null) return;
+
+        updateNotificationBadge(0);
+
+        apiService.markAllNotificationsAsRead(userId).enqueue(new retrofit2.Callback<okhttp3.ResponseBody>() {
+            @Override
+            public void onResponse(retrofit2.Call<okhttp3.ResponseBody> call, retrofit2.Response<okhttp3.ResponseBody> response) {}
+
+            @Override
+            public void onFailure(retrofit2.Call<okhttp3.ResponseBody> call, Throwable t) {}
+        });
     }
 
     private void setupBanners() {
@@ -200,6 +259,7 @@ public class HomeActivity extends AppCompatActivity {
     @Override protected void onResume() { 
         super.onResume(); 
         fetchAllProducts(); 
+        fetchUnreadNotificationCount();
         bannerHandler.postDelayed(bannerRunnable, 3000); 
     }
     

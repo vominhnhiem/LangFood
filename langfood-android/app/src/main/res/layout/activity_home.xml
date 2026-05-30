@@ -243,11 +243,30 @@
             android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical">
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_popup_reminder"
-                app:tint="#757575" />
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@android:drawable/ic_popup_reminder"
+                    app:tint="#757575" />
+                <TextView
+                    android:id="@+id/tvNotificationBadge"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="-4dp"
+                    android:layout_marginEnd="-4dp"
+                    android:background="@android:color/holo_red_dark"
+                    android:textColor="@android:color/white"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:visibility="gone" />
+            </FrameLayout>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

@@ -47,6 +47,7 @@
             <li class="sidebar-item">
                 <a class="sidebar-link" asp-controller="RoleRequests" asp-action="Index" active-if-match="RoleRequests">
                     <i class="fa-solid fa-store"></i> Duyệt cửa hàng
+                    <span id="badge-pending-shops" class="badge bg-danger rounded-pill ms-auto" style="display: none;">0</span>
                 </a>
             </li>
             <li class="sidebar-item">
@@ -67,6 +68,12 @@
             <li class="sidebar-item">
                 <a class="sidebar-link" asp-controller="Finance" asp-action="Index" active-if-match="Finance">
                     <i class="fa-solid fa-money-bill-transfer"></i> Quản lý Tài chính
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" asp-controller="Complaints" asp-action="Index" active-if-match="Complaints">
+                    <i class="fa-solid fa-gavel"></i> Khiếu nại & Đánh giá
+                    <span id="badge-pending-complaints" class="badge bg-danger rounded-pill ms-auto" style="display: none;">0</span>
                 </a>
             </li>
         </ul>
@@ -132,6 +139,40 @@
                     }
                 });
             }
+
+            // Polling function for pending stats
+            function pollPendingStats() {
+                $.ajax({
+                    url: '/api/admin/pending-stats',
+                    type: 'GET',
+                    success: function (res) {
+                        // 1. Duyệt cửa hàng (Pending Shops)
+                        var pendingShops = res.pendingShops;
+                        var $shopBadge = $('#badge-pending-shops');
+                        if (pendingShops > 0) {
+                            $shopBadge.text(pendingShops).show();
+                        } else {
+                            $shopBadge.hide();
+                        }
+
+                        // 2. Khiếu nại & Đánh giá (Pending Complaints)
+                        var pendingComplaints = res.pendingComplaints;
+                        var $complaintBadge = $('#badge-pending-complaints');
+                        if (pendingComplaints > 0) {
+                            $complaintBadge.text(pendingComplaints).show();
+                        } else {
+                            $complaintBadge.hide();
+                        }
+                    },
+                    error: function() {
+                        // Fail silently
+                    }
+                });
+            }
+
+            // Poll immediately and then every 30 seconds
+            pollPendingStats();
+            setInterval(pollPendingStats, 30000);
         });
     </script>
     
