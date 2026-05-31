@@ -67,15 +67,15 @@ public class SellerProductAdapter extends RecyclerView.Adapter<SellerProductAdap
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivProduct;
         TextView tvName, tvPrice;
-        Button btnManageOptions, btnEditProduct;
+        View btnManageOptions, btnEditProduct;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            ivProduct = itemView.findViewById(R.id.ivProductImage);
-            tvName = itemView.findViewById(R.id.tvProductName);
-            tvPrice = itemView.findViewById(R.id.tvProductPrice);
-            btnManageOptions = itemView.findViewById(R.id.btnManageOptions);
-            btnEditProduct = itemView.findViewById(R.id.btnEditProduct);
+            ivProduct = itemView.findViewById(R.id.ivSellerProductImg);
+            tvName = itemView.findViewById(R.id.tvSellerProductName);
+            tvPrice = itemView.findViewById(R.id.tvSellerProductPrice);
+            btnManageOptions = itemView.findViewById(R.id.btnSellerProductOptions);
+            btnEditProduct = itemView.findViewById(R.id.btnSellerProductEdit);
         }
     }
 }

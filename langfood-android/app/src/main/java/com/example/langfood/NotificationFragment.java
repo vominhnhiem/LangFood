@@ -82,6 +82,15 @@ public class NotificationFragment extends Fragment {
         progressBar.setVisibility(notificationList.isEmpty() ? View.VISIBLE : View.GONE);
         layoutEmpty.setVisibility(View.GONE);
 
+        // Tự động đánh dấu đã đọc toàn bộ thông báo khi mở
+        apiService.markAllNotificationsAsRead(userId).enqueue(new Callback<okhttp3.ResponseBody>() {
+            @Override
+            public void onResponse(@NonNull Call<okhttp3.ResponseBody> call, @NonNull Response<okhttp3.ResponseBody> response) {}
+
+            @Override
+            public void onFailure(@NonNull Call<okhttp3.ResponseBody> call, @NonNull Throwable t) {}
+        });
+
         apiService.getNotifications(userId).enqueue(new Callback<List<NotificationModel>>() {
             @Override
             public void onResponse(@NonNull Call<List<NotificationModel>> call, @NonNull Response<List<NotificationModel>> response) {

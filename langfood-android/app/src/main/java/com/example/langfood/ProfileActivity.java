@@ -141,8 +141,8 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void setupClickListeners() {
         btnWalletDetail.setOnClickListener(v -> startActivity(new Intent(ProfileActivity.this, WalletActivity.class)));
-        btnManageFood.setOnClickListener(v -> startActivity(new Intent(ProfileActivity.this, ManageFoodActivity.class)));
-        btnManageOrder.setOnClickListener(v -> startActivity(new Intent(ProfileActivity.this, ManageOrderSellerActivity.class)));
+        btnManageFood.setOnClickListener(v -> startActivity(new Intent(ProfileActivity.this, MainActivity.class)));
+        btnManageOrder.setOnClickListener(v -> startActivity(new Intent(ProfileActivity.this, MainActivity.class)));
         btnEditProfile.setOnClickListener(v -> startActivity(new Intent(ProfileActivity.this, EditProfileActivity.class)));
         btnChangePassword.setOnClickListener(v -> startActivity(new Intent(ProfileActivity.this, ChangePasswordActivity.class)));
 

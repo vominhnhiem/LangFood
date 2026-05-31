@@ -85,11 +85,23 @@ public class LoginActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
         String userId = prefs.getString("USER_ID", null);
         if (userId != null) {
-            // Tất cả người dùng đã đăng nhập đều vào HomeActivity
-            Intent intent = new Intent(this, HomeActivity.class);
-            startActivity(intent);
-            finish();
+            int roleId = prefs.getInt("ROLE_ID", 1);
+            navigateBasedOnRole(roleId);
         }
+    }
+
+    private void navigateBasedOnRole(int roleId) {
+        Intent intent;
+        if (roleId == 2) {
+            intent = new Intent(this, MainActivity.class);
+        } else if (roleId == 3) {
+            intent = new Intent(this, ShipperManageActivity.class);
+        } else {
+            intent = new Intent(this, HomeActivity.class);
+        }
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     private void handleLogin(String user, String pass) {
@@ -114,11 +126,7 @@ public class LoginActivity extends AppCompatActivity {
                     
                     Toast.makeText(LoginActivity.this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
                     
-                    // Sau khi đăng nhập thành công, tất cả đều vào HomeActivity
-                    Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                    finish();
+                    navigateBasedOnRole(userResponse.getRoleId());
                 } else {
                     Toast.makeText(LoginActivity.this, "Sai tài khoản hoặc mật khẩu!", Toast.LENGTH_SHORT).show();
                 }

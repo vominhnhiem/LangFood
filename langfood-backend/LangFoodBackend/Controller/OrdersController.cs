@@ -268,5 +268,16 @@ namespace LangFoodBackend.Controllers
             if (order == null) return NotFound();
             return Ok(new { status = order.Status });
         }
+
+        // --- 10. QUÁN HỦY ĐƠN HÀNG ---
+        [HttpPut("shop-cancel/{id}")]
+        public async Task<IActionResult> ShopCancelOrder(int id)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+            order.Status = "Cancelled";
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
     }
 }

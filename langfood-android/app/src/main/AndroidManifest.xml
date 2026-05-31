@@ -32,7 +32,7 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
-            android:name=".ManageOrderSellerActivity"
+            android:name=".MainActivity"
             android:exported="false" />
 
         <activity
@@ -40,9 +40,6 @@
             android:exported="false" />
         <activity
             android:name=".ShipperManageActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ManageFoodActivity"
             android:exported="false" />
         <activity
             android:name=".AddFoodActivity"
@@ -79,8 +76,14 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".SellerStoreActivity"
-            android:exported="false" />
+            android:name=".ShopProfileEditActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ShopDetailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.LangFood" />
         <activity
             android:name=".OnboardingActivity"
             android:exported="false" />

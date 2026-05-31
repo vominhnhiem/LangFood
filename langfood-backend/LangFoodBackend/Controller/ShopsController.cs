@@ -20,6 +20,14 @@ namespace LangFoodBackend.Controllers
                 return Ok(shop);
             }
 
+            [HttpGet("{id}")]
+            public async Task<IActionResult> GetShop(int id)
+            {
+                var shop = await _context.Shops.FindAsync(id);
+                if (shop == null) return NotFound();
+                return Ok(shop);
+            }
+
             [HttpPut("{id}/toggle-status")]
             public async Task<IActionResult> ToggleShopStatus(int id)
             {
@@ -30,6 +38,41 @@ namespace LangFoodBackend.Controllers
                 await _context.SaveChangesAsync();
 
                 return Ok(shop);
+            }
+
+            [HttpPut("{id}")]
+            public async Task<IActionResult> UpdateShop(int id, [FromBody] Shop updatedShop)
+            {
+                var shop = await _context.Shops.FindAsync(id);
+                if (shop == null) return NotFound(new { message = "Không tìm thấy cửa hàng" });
+
+                shop.Name = updatedShop.Name;
+                shop.Address = updatedShop.Address;
+                shop.Description = updatedShop.Description;
+
+                await _context.SaveChangesAsync();
+                return Ok(shop);
+            }
+
+            [HttpPost("upload-image/{shopId}")]
+            public async Task<IActionResult> UploadShopImage(int shopId, IFormFile image)
+            {
+                var shop = await _context.Shops.FindAsync(shopId);
+                if (shop == null) return NotFound();
+
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "shops");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                var uniqueFileName = Guid.NewGuid().ToString() + "_" + image.FileName;
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await image.CopyToAsync(fileStream);
+                }
+
+                shop.ImageUrl = "/images/shops/" + uniqueFileName;
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Upload thành công", url = shop.ImageUrl });
             }
         }
 }

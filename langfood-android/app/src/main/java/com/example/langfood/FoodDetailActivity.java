@@ -90,9 +90,9 @@ public class FoodDetailActivity extends AppCompatActivity implements OptionAdapt
         });
 
         findViewById(R.id.cardSeller).setOnClickListener(v -> {
-            if (currentProduct != null && currentProduct.getSellerId() != null) {
-                Intent intent = new Intent(this, SellerStoreActivity.class);
-                intent.putExtra("SELLER_ID", currentProduct.getSellerId());
+            if (currentProduct != null) {
+                Intent intent = new Intent(this, ShopDetailActivity.class);
+                intent.putExtra("SHOP_ID", currentProduct.getShopId());
                 startActivity(intent);
             }
         });

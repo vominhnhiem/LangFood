@@ -62,6 +62,9 @@ public interface ApiService {
     @PUT("api/Products/{id}")
     Call<Void> updateProduct(@Path("id") int id, @Body Product product);
 
+    @PUT("api/Products/{id}/toggle-availability")
+    Call<Void> toggleProductAvailability(@Path("id") int id);
+
     // --- PRODUCT OPTIONS API ---
     @GET("api/ProductOptions/product/{productId}")
     Call<List<ProductOptionGroup>> getProductOptions(@Path("productId") int productId);
@@ -130,8 +133,18 @@ public interface ApiService {
     @GET("api/Shops/user/{userId}")
     Call<Shop> getShopByUserId(@Path("userId") String userId);
 
+    @GET("api/Shops/{id}")
+    Call<Shop> getShopById(@Path("id") int id);
+
     @PUT("api/Shops/{id}/toggle-status")
     Call<Shop> toggleShopStatus(@Path("id") int id);
+
+    @PUT("api/Shops/{id}")
+    Call<Shop> updateShop(@Path("id") int id, @Body Shop shop);
+
+    @Multipart
+    @POST("api/Shops/upload-image/{shopId}")
+    Call<ResponseBody> uploadShopImage(@Path("shopId") int shopId, @Part MultipartBody.Part image);
 
     @GET("api/Shippers/user/{userId}")
     Call<Shipper> getShipperByUserId(@Path("userId") String userId);
@@ -160,6 +173,9 @@ public interface ApiService {
 
     @PUT("api/Orders/shop-ready/{id}")
     Call<Void> shopReadyOrder(@Path("id") int id);
+
+    @PUT("api/Orders/shop-cancel/{id}")
+    Call<Void> shopCancelOrder(@Path("id") int id);
 
     @PUT("api/Orders/accept/{id}")
     Call<Void> acceptOrder(@Path("id") int id, @Query("shipperId") int shipperId);

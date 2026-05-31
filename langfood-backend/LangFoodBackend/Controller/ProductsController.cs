@@ -126,6 +126,7 @@ namespace LangFoodBackend.Controllers
         {
             return await _context.Products
                 .Include(p => p.OptionGroups) // Shop cũng cần xem món mình có những topping nào
+                .Include(p => p.Category)
                 .Where(p => p.ShopId == shopId && !p.IsDeleted)
                 .OrderByDescending(p => p.Id)
                 .Select(p => new {
@@ -138,6 +139,7 @@ namespace LangFoodBackend.Controllers
                     p.Status,
                     p.ShopId,
                     p.CategoryId,
+                    CategoryName = p.Category != null ? p.Category.Name : "Danh mục khác",
                     StatusText = p.Status == 1 ? "Approved" : (p.Status == 0 ? "Pending" : "Rejected")
                 })
                 .ToListAsync();
@@ -215,6 +217,19 @@ namespace LangFoodBackend.Controllers
 
             await _context.SaveChangesAsync();
             return Ok(new { success = true, message = "Cập nhật thành công! Đang chờ duyệt lại." });
+        }
+
+        // 5.1 BẬT TẮT TRẠNG THÁI CÒN HÀNG/HẾT HÀNG
+        [HttpPut("{id}/toggle-availability")]
+        public async Task<IActionResult> ToggleProductAvailability(int id)
+        {
+            var product = await _context.Products.FindAsync(id);
+            if (product == null) return NotFound(new { message = "Không tìm thấy món ăn!" });
+
+            product.IsAvailable = !product.IsAvailable;
+            await _context.SaveChangesAsync();
+
+            return Ok(product);
         }
 
         // 6. XÓA MỀM MÓN ĂN
