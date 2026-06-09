@@ -27,7 +27,7 @@ namespace LangFoodAdmin.Data
                     Username = "admin",
                     Email = "admin@langfood.com",
                     FullName = "Làng Food Administrator",
-                    RoleId = 1, // Admin
+                    RoleId = 0, // Admin
                     IsApproved = true
                 };
 

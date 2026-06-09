@@ -147,7 +147,7 @@ namespace LangFoodAdmin.Identity
         public Task<IList<string>> GetRolesAsync(User user, CancellationToken cancellationToken)
         {
             IList<string> roles = new List<string>();
-            if (user.RoleId == 1)
+            if (user.RoleId == 0)
             {
                 roles.Add("Admin");
             }
