@@ -17,6 +17,7 @@ import com.example.langfood.api.ApiService;
 import com.example.langfood.models.Product;
 import com.example.langfood.models.ProductOption;
 import com.example.langfood.models.ProductOptionGroup;
+import com.example.langfood.models.Shop;
 import com.example.langfood.models.User;
 import com.google.gson.Gson;
 import java.util.ArrayList;
@@ -137,7 +138,9 @@ public class FoodDetailActivity extends AppCompatActivity implements OptionAdapt
         txtFoodName.setText(currentProduct.getName());
         txtFoodDescription.setText(currentProduct.getDescription());
         txtFoodPrice.setText(String.format(Locale.getDefault(), "%,.0fđ", currentProduct.getPrice()));
-        tvSellerName.setText(currentProduct.getSellerName());
+        
+        // Hiển thị tên quán tạm thời và xóa bỏ phần trong ngoặc
+        tvSellerName.setText(stripOwnerName(currentProduct.getShopName()));
         
         Glide.with(this)
                 .load(ApiClient.BASE_URL + currentProduct.getImageUrl())
@@ -149,11 +152,37 @@ public class FoodDetailActivity extends AppCompatActivity implements OptionAdapt
             rvOptionGroups.setAdapter(groupAdapter);
         }
 
-        if (currentProduct.getSellerId() != null) {
-            loadSellerInfo(currentProduct.getSellerId());
-        }
+        // Tải thông tin Shop để lấy thông tin mới nhất
+        loadShopInfo(currentProduct.getShopId());
 
         updateQuantityUI();
+    }
+
+    private void loadShopInfo(int shopId) {
+        apiService.getShopById(shopId).enqueue(new Callback<Shop>() {
+            @Override
+            public void onResponse(Call<Shop> call, Response<Shop> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Shop shop = response.body();
+                    // CHỈ HIỂN THỊ TÊN TIỆM (Bỏ phần tên chủ quán bằng hàm stripOwnerName)
+                    tvSellerName.setText(stripOwnerName(shop.getName()));
+                    
+                    if (shop.getImageUrl() != null) {
+                        Glide.with(FoodDetailActivity.this)
+                                .load(ApiClient.BASE_URL + shop.getImageUrl())
+                                .placeholder(R.drawable.anhavt)
+                                .into(ivSellerAvatar);
+                    }
+                }
+            }
+            @Override public void onFailure(Call<Shop> call, Throwable t) {}
+        });
+    }
+
+    // Hàm dùng để xóa bỏ phần "(Chủ: ...)" khỏi tên tiệm nếu còn tồn tại trong chuỗi
+    private String stripOwnerName(String name) {
+        if (name == null) return "";
+        return name.replaceAll("\\s*\\(Chủ:.*\\)", "").trim();
     }
 
     private void updateQuantityUI() {
@@ -190,24 +219,5 @@ public class FoodDetailActivity extends AppCompatActivity implements OptionAdapt
             btnAddToCart.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FF5722")));
             btnAddToCart.setText(String.format(Locale.getDefault(), "THÊM VÀO GIỎ - %,.0fđ", finalTotal));
         }
-    }
-
-    private void loadSellerInfo(String sellerId) {
-        apiService.getUserById(sellerId).enqueue(new Callback<User>() {
-            @Override
-            public void onResponse(Call<User> call, Response<User> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    User user = response.body();
-                    tvSellerName.setText(user.getFullName());
-                    if (user.getAvatarUrl() != null) {
-                        Glide.with(FoodDetailActivity.this)
-                                .load(ApiClient.BASE_URL + user.getAvatarUrl())
-                                .placeholder(R.drawable.anhavt)
-                                .into(ivSellerAvatar);
-                    }
-                }
-            }
-            @Override public void onFailure(Call<User> call, Throwable t) {}
-        });
     }
 }

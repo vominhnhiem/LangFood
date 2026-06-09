@@ -20,15 +20,31 @@ namespace LangFoodBackend.Controllers
                 return Ok(shop);
             }
 
-            [HttpGet("{id}")]
-            public async Task<IActionResult> GetShop(int id)
-            {
-                var shop = await _context.Shops.FindAsync(id);
-                if (shop == null) return NotFound();
-                return Ok(shop);
-            }
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetShop(int id)
+        {
+            // Sử dụng Include để lấy thông tin User
+            var shop = await _context.Shops
+                .Include(s => s.User)
+                .FirstOrDefaultAsync(s => s.Id == id);
 
-            [HttpPut("{id}/toggle-status")]
+            if (shop == null) return NotFound();
+
+            // Bạn có thể trả về một Object mới chứa thêm trường OwnerName
+            return Ok(new
+            {
+                shop.Id,
+                shop.Name,
+                shop.Address,
+                shop.Description,
+                shop.ImageUrl,
+                shop.IsOpen,
+                shop.UserId,
+                OwnerName = shop.User?.FullName ?? "Chủ quán" // Lấy tên người bán ở đây
+            });
+        }
+
+        [HttpPut("{id}/toggle-status")]
             public async Task<IActionResult> ToggleShopStatus(int id)
             {
                 var shop = await _context.Shops.FindAsync(id);

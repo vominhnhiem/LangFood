@@ -28,6 +28,10 @@ public class Shop implements Serializable {
     @SerializedName(value = "isOpen", alternate = {"IsOpen"})
     private boolean isOpen;
 
+    // THÊM TRƯỜNG NÀY ĐỂ NHẬN TÊN CHỦ SHOP TỪ BACKEND
+    @SerializedName(value = "ownerName", alternate = {"OwnerName"})
+    private String ownerName;
+
     public Shop() {}
 
     public int getId() { return id; }
@@ -53,4 +57,7 @@ public class Shop implements Serializable {
 
     public boolean isOpen() { return isOpen; }
     public void setOpen(boolean open) { isOpen = open; }
+
+    public String getOwnerName() { return ownerName != null ? ownerName : "Chủ quán"; }
+    public void setOwnerName(String ownerName) { this.ownerName = ownerName; }
 }

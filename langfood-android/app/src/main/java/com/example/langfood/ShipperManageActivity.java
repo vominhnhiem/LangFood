@@ -29,7 +29,7 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
     private RecyclerView rvShipperOrders;
     private ShipperOrderAdapter adapter;
     private List<Order> orderList = new ArrayList<>();
-    private ImageView btnBack;
+    private ImageView btnBack, btnLogout;
     private ApiService apiService;
     private int shipperId;
     private String userId;
@@ -50,11 +50,13 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
 
         apiService = ApiClient.getClient().create(ApiService.class);
 
-        btnBack.setOnClickListener(v -> finish());
-        btnBack.setOnLongClickListener(v -> {
-            showLogoutDialog();
-            return true;
+        // Nút bên trái: Mở trang ví/doanh thu
+        btnBack.setOnClickListener(v -> {
+            startActivity(new Intent(this, WalletActivity.class));
         });
+
+        // Nút bên phải: Đăng xuất
+        btnLogout.setOnClickListener(v -> showLogoutDialog());
 
         loadAvailableOrders();
     }
@@ -81,6 +83,7 @@ public class ShipperManageActivity extends AppCompatActivity implements ShipperO
     private void initViews() {
         rvShipperOrders = findViewById(R.id.rvShipperOrders);
         btnBack = findViewById(R.id.btnBack);
+        btnLogout = findViewById(R.id.btnLogout);
         swipeRefresh = findViewById(R.id.swipeRefresh);
     }
 

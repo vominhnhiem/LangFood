@@ -15,7 +15,7 @@ import retrofit2.Response;
 
 public class CartManager {
     private static CartManager instance;
-    private List<CartItem> cartItems;
+    private final List<CartItem> cartItems;
     private ApiService apiService;
     private String userId;
 
@@ -46,11 +46,11 @@ public class CartManager {
             @Override
             public void onResponse(Call<List<CartItem>> call, Response<List<CartItem>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    cartItems = response.body();
-                    Log.d("CartManager", "Cart loaded from server: " + cartItems.size() + " items");
+                    cartItems.clear();
+                    cartItems.addAll(response.body());
+                    Log.d("CartManager", "Cart synced: " + cartItems.size() + " items");
                 }
             }
-
             @Override
             public void onFailure(Call<List<CartItem>> call, Throwable t) {
                 Log.e("CartManager", "Failed to load cart", t);
@@ -58,38 +58,34 @@ public class CartManager {
         });
     }
 
-    public void addToCart(Product product, int quantity, String note, String selectedOptionsJson) {
-        // Cập nhật local trước để UI mượt
-        // Chú ý: Cùng một món nhưng Topping khác nhau thì coi như 2 item khác nhau
-        boolean exists = false;
-        for (CartItem item : cartItems) {
-            boolean sameProduct = item.getProduct().getId() == product.getId();
-            boolean sameNote = (note == null && item.getNote() == null) || (note != null && note.equals(item.getNote()));
-            boolean sameOptions = (selectedOptionsJson == null && item.getSelectedOptionsJson() == null) || 
-                                 (selectedOptionsJson != null && selectedOptionsJson.equals(item.getSelectedOptionsJson()));
+    /**
+     * Xóa danh sách các món ăn cụ thể khỏi giỏ hàng (Local và Server)
+     */
+    public void removeItems(List<CartItem> itemsToRemove) {
+        if (itemsToRemove == null) return;
+        
+        for (CartItem toRemove : itemsToRemove) {
+            int productId = toRemove.getProduct().getId();
             
-            if (sameProduct && sameNote && sameOptions) {
-                item.setQuantity(item.getQuantity() + quantity);
-                exists = true;
-                break;
+            // 1. Xóa ở Local
+            cartItems.removeIf(item -> item.getProduct().getId() == productId);
+            
+            // 2. Xóa ở Server
+            if (userId != null && !userId.isEmpty()) {
+                apiService.removeFromCart(userId, productId).enqueue(new Callback<Void>() {
+                    @Override public void onResponse(Call<Void> call, Response<Void> response) {}
+                    @Override public void onFailure(Call<Void> call, Throwable t) {}
+                });
             }
         }
-        if (!exists) {
-            cartItems.add(new CartItem(product, quantity, note, selectedOptionsJson));
-        }
+    }
 
-        // Đồng bộ lên Server
+    public void removeItem(int productId) {
+        cartItems.removeIf(item -> item.getProduct().getId() == productId);
         if (userId != null && !userId.isEmpty()) {
-            apiService.addToCart(userId, product.getId(), quantity, note, selectedOptionsJson).enqueue(new Callback<Void>() {
-                @Override
-                public void onResponse(Call<Void> call, Response<Void> response) {
-                    Log.d("CartManager", "Added to server cart");
-                }
-
-                @Override
-                public void onFailure(Call<Void> call, Throwable t) {
-                    Log.e("CartManager", "Failed to add to server cart");
-                }
+            apiService.removeFromCart(userId, productId).enqueue(new Callback<Void>() {
+                @Override public void onResponse(Call<Void> call, Response<Void> response) {}
+                @Override public void onFailure(Call<Void> call, Throwable t) {}
             });
         }
     }
@@ -102,33 +98,31 @@ public class CartManager {
         cartItems.clear();
         if (userId != null && !userId.isEmpty()) {
             apiService.clearCart(userId).enqueue(new Callback<Void>() {
-                @Override
-                public void onResponse(Call<Void> call, Response<Void> response) {}
-                @Override
-                public void onFailure(Call<Void> call, Throwable t) {}
+                @Override public void onResponse(Call<Void> call, Response<Void> response) {}
+                @Override public void onFailure(Call<Void> call, Throwable t) {}
             });
         }
     }
 
-    public double getTotalPrice() {
-        double total = 0;
+    public void addToCart(Product product, int quantity, String note, String selectedOptionsJson) {
+        boolean exists = false;
         for (CartItem item : cartItems) {
-            total += item.getProduct().getPrice() * item.getQuantity();
-            // TODO: Cộng thêm giá topping nếu cần hiển thị ở CartActivity
+            if (item.getProduct().getId() == product.getId() && 
+                ((note == null && item.getNote() == null) || (note != null && note.equals(item.getNote()))) &&
+                ((selectedOptionsJson == null && item.getSelectedOptionsJson() == null) || (selectedOptionsJson != null && selectedOptionsJson.equals(item.getSelectedOptionsJson())))) {
+                item.setQuantity(item.getQuantity() + quantity);
+                exists = true;
+                break;
+            }
         }
-        return total;
-    }
+        if (!exists) {
+            cartItems.add(new CartItem(product, quantity, note, selectedOptionsJson));
+        }
 
-    public void removeItem(int productId) {
-        cartItems.removeIf(item -> item.getProduct().getId() == productId);
         if (userId != null && !userId.isEmpty()) {
-            apiService.clearCart(userId).enqueue(new Callback<Void>() { // Simple clear for now or implementation of remove specific
-                 @Override
-                public void onResponse(Call<Void> call, Response<Void> response) {
-                     loadCartFromServer(); // Reload to sync state accurately
-                }
-                @Override
-                public void onFailure(Call<Void> call, Throwable t) {}
+            apiService.addToCart(userId, product.getId(), quantity, note, selectedOptionsJson).enqueue(new Callback<Void>() {
+                @Override public void onResponse(Call<Void> call, Response<Void> response) {}
+                @Override public void onFailure(Call<Void> call, Throwable t) {}
             });
         }
     }

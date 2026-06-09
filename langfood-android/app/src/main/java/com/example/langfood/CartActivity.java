@@ -16,9 +16,6 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
     private RecyclerView rvCart;
     private CartAdapter adapter;
     private ImageView btnBack;
-    private ApiService apiService;
-    private String currentUserId;
-    private String currentFullName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,15 +23,27 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
         setContentView(R.layout.activity_cart);
 
         initViews();
-        apiService = ApiClient.getClient().create(ApiService.class);
         
-        SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
-        currentUserId = prefs.getString("USER_ID", "");
-        currentFullName = prefs.getString("FULL_NAME", "");
-
-        setupRecyclerView();
+        // Khởi tạo adapter với dữ liệu hiện tại từ CartManager
+        adapter = new CartAdapter(this, CartManager.getInstance().getCartItems(), this);
+        rvCart.setLayoutManager(new LinearLayoutManager(this));
+        rvCart.setAdapter(adapter);
 
         btnBack.setOnClickListener(v -> finish());
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Cập nhật lại UI từ dữ liệu local (đã được CheckoutActivity xóa khi đặt đơn thành công)
+        // Tuyệt đối không gọi loadCartFromServer() ở đây để tránh bị server ghi đè dữ liệu cũ
+        refreshCartUI();
+    }
+
+    private void refreshCartUI() {
+        if (adapter != null) {
+            adapter.setCartItems(CartManager.getInstance().getCartItems());
+        }
     }
 
     private void initViews() {
@@ -42,15 +51,8 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
         btnBack = findViewById(R.id.btnBack);
     }
 
-    private void setupRecyclerView() {
-        List<CartItem> cartItems = CartManager.getInstance().getCartItems();
-        adapter = new CartAdapter(this, cartItems, this);
-        rvCart.setLayoutManager(new LinearLayoutManager(this));
-        rvCart.setAdapter(adapter);
-    }
-
     @Override
     public void onQuantityChanged() {
-        // Có thể thêm logic cập nhật khác nếu cần
+        refreshCartUI();
     }
 }

@@ -10,7 +10,7 @@ public class ApiClient {
     /**
      * The base URL of the backend API.
      */
-    public static final String BASE_URL = "http://192.168.2.13:5289/";
+    public static final String BASE_URL = "http://192.168.100.192:5289/";
 
     /**
      * Static instance of Retrofit.

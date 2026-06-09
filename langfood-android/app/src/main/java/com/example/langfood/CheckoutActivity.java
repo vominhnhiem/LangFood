@@ -60,8 +60,7 @@ public class CheckoutActivity extends AppCompatActivity implements CheckoutAdapt
     private String userId;
     private String fullName;
 
-    // PHÂN TÁCH RÕ RÀNG CÁC LOẠI PHÍ THEO VÍ DỤ: Cơm 25k + Phí 3k
-    private final double SYSTEM_SERVICE_FEE = 3000; // Phí hệ thống khách trả
+    private final double SYSTEM_SERVICE_FEE = 3000; 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,7 +112,6 @@ public class CheckoutActivity extends AppCompatActivity implements CheckoutAdapt
             rvOrderItems.setAdapter(adapter);
 
             updatePriceSummary();
-            
             btnPlaceOrder.setEnabled(!cartGroup.items.isEmpty());
         }
         updateAddressDisplay();
@@ -121,18 +119,12 @@ public class CheckoutActivity extends AppCompatActivity implements CheckoutAdapt
 
     private void updatePriceSummary() {
         double subtotal = calculateTotal();
-        // Tổng tiền khách trả = Tiền món + 3.000đ phí dịch vụ
         double total = subtotal + SYSTEM_SERVICE_FEE;
 
         tvSubtotal.setText(String.format(Locale.getDefault(), "%,.0fđ", subtotal));
-        
-        // HIỂN THỊ FREESHIP ĐỂ KHÁCH HÀNG THẤY SƯỚNG
         tvShippingFee.setText("Miễn phí");
-        tvShippingFee.setTextColor(Color.parseColor("#4CAF50")); // Màu xanh lá cho Freeship
-        
-        // Phí dịch vụ hệ thống (3.000đ)
+        tvShippingFee.setTextColor(Color.parseColor("#4CAF50")); 
         tvServiceFee.setText(String.format(Locale.getDefault(), "%,.0fđ", SYSTEM_SERVICE_FEE));
-        
         tvTotalAmount.setText(String.format(Locale.getDefault(), "%,.0fđ", total));
     }
 
@@ -154,8 +146,6 @@ public class CheckoutActivity extends AppCompatActivity implements CheckoutAdapt
             Gson gson = new Gson();
             for (CartItem item : cartGroup.items) {
                 double itemPrice = item.getProduct().getPrice();
-                
-                // Cộng thêm giá Topping
                 if (item.getSelectedOptionsJson() != null && !item.getSelectedOptionsJson().isEmpty()) {
                     try {
                         List<Integer> selectedIds = gson.fromJson(item.getSelectedOptionsJson(), 
@@ -185,10 +175,7 @@ public class CheckoutActivity extends AppCompatActivity implements CheckoutAdapt
             cartGroup.items.remove(item);
             adapter.notifyDataSetChanged();
             updatePriceSummary();
-            
-            // Đồng bộ xóa với CartManager
             CartManager.getInstance().removeItem(item.getProduct().getId());
-            
             if (cartGroup.items.isEmpty()) {
                 btnPlaceOrder.setEnabled(false);
                 Toast.makeText(this, "Giỏ hàng trống", Toast.LENGTH_SHORT).show();
@@ -217,7 +204,6 @@ public class CheckoutActivity extends AppCompatActivity implements CheckoutAdapt
         order.setBuyerName(fullName);
         order.setShopId(cartGroup.shopId);
         
-        // Status logic
         if (selectedPaymentMethod.contains("Chuyển khoản")) {
             order.setStatus("PendingPayment");
         } else {
@@ -231,7 +217,6 @@ public class CheckoutActivity extends AppCompatActivity implements CheckoutAdapt
 
         double subtotal = calculateTotal();
         order.setTotalAmount(subtotal);
-        // ShippingFee là số tiền khách phải trả thêm ngoài tiền món (3.000đ)
         order.setShippingFee(SYSTEM_SERVICE_FEE);
 
         List<OrderItem> orderItems = new ArrayList<>();
@@ -240,11 +225,8 @@ public class CheckoutActivity extends AppCompatActivity implements CheckoutAdapt
             OrderItem orderItem = new OrderItem();
             orderItem.setProductId(cartItem.getProduct().getId());
             orderItem.setQuantity(cartItem.getQuantity());
-            
-            // Lấy ghi chú từ CartItem
             orderItem.setNote(cartItem.getNote());
             
-            // Tính UnitPrice và OptionsSummary đã bao gồm Topping cho Order
             StringBuilder optionsSummary = new StringBuilder();
             double finalUnitPrice = cartItem.getProduct().getPrice();
             
@@ -281,9 +263,9 @@ public class CheckoutActivity extends AppCompatActivity implements CheckoutAdapt
             @Override
             public void onResponse(Call<Order> call, Response<Order> response) {
                 if (response.isSuccessful()) {
-                    for (CartItem item : cartGroup.items) {
-                        CartManager.getInstance().removeItem(item.getProduct().getId());
-                    }
+                    // XÓA CHÍNH XÁC CÁC MÓN VỪA ĐẶT KHỎI GIỎ HÀNG (Local & Server)
+                    CartManager.getInstance().removeItems(cartGroup.items);
+                    
                     if (order.getPaymentMethod() == 1) {
                         showOrderQrDialog(response.body());
                     } else {
@@ -315,12 +297,10 @@ public class CheckoutActivity extends AppCompatActivity implements CheckoutAdapt
 
         double totalToPay = order.getTotalAmount() + order.getShippingFee();
         
-        // Khóa không cho nhập, chỉ hiển thị số tiền cố định
         etAmount.setText(String.format(Locale.getDefault(), "%,.0f", totalToPay));
         etAmount.setEnabled(false);
         etAmount.setFocusable(false);
         
-        // Hiện khối hướng dẫn và mã QR
         if (llSteps != null) {
             llSteps.setVisibility(View.VISIBLE);
         }
@@ -332,8 +312,8 @@ public class CheckoutActivity extends AppCompatActivity implements CheckoutAdapt
         Glide.with(this).load(qrUrl).into(ivQrCode);
         builder.setView(view);
         
-        builder.setPositiveButton("Nạp ngay", (dialog, which) -> notifyAdminPayment(order, totalToPay));
-        builder.setNegativeButton("Hủy", (dialog, which) -> finish());
+        builder.setPositiveButton("Xác nhận đã chuyển", (dialog, which) -> notifyAdminPayment(order, totalToPay));
+        builder.setNegativeButton("Đóng", (dialog, which) -> finish());
         
         builder.setCancelable(false);
         builder.show();

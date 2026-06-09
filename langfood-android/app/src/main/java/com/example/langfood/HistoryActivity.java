@@ -36,8 +36,8 @@ public class HistoryActivity extends AppCompatActivity {
         pagerAdapter = new OrderPagerAdapter(this);
         viewPager.setAdapter(pagerAdapter);
         
-        // Tránh tình trạng load lại Fragment khi chuyển tab liên tục (giữ trạng thái tốt hơn)
-        viewPager.setOffscreenPageLimit(3);
+        // Giảm số lượng trang giữ lại trong bộ nhớ vì chỉ còn 2 tab
+        viewPager.setOffscreenPageLimit(1);
 
         new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
             switch (position) {
@@ -46,13 +46,6 @@ public class HistoryActivity extends AppCompatActivity {
                     break;
                 case 1:
                     tab.setText("Lịch sử");
-                    break;
-                case 2:
-                    tab.setText("Đánh giá");
-                    break;
-                case 3:
-                default:
-                    tab.setText("Đơn nháp");
                     break;
             }
         }).attach();

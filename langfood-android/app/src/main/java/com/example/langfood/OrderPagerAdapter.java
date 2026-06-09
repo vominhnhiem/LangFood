@@ -18,23 +18,13 @@ public class OrderPagerAdapter extends FragmentStateAdapter {
             case 0:
                 return new ActiveOrdersFragment();
             case 1:
-                return new OrderHistoryFragment();
-            case 2:
-                return PlaceholderTabFragment.newInstance(
-                        "Chưa có đánh giá nào",
-                        "Sau khi nhận món ăn, bạn hãy chia sẻ trải nghiệm đánh giá tại đây nhé!"
-                );
-            case 3:
             default:
-                return PlaceholderTabFragment.newInstance(
-                        "Chưa có đơn nháp nào",
-                        "Các đơn nháp bạn chưa hoàn thành đặt món sẽ lưu giữ tại đây."
-                );
+                return new OrderHistoryFragment();
         }
     }
 
     @Override
     public int getItemCount() {
-        return 4;
+        return 2;
     }
 }
