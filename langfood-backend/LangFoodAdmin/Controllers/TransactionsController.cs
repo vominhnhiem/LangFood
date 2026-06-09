@@ -1,12 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LangFood.Shared.Models;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace LangFoodAdmin.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class TransactionsController : Controller
     {
         private readonly LangFoodDbContext _context;
@@ -72,11 +75,13 @@ namespace LangFoodAdmin.Controllers
 
                     await _context.SaveChangesAsync();
                     await dbTransaction.CommitAsync();
+                    TempData["SuccessMessage"] = "Đã duyệt giao dịch thành công!";
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 await dbTransaction.RollbackAsync();
+                TempData["ErrorMessage"] = "Duyệt giao dịch thất bại: " + ex.Message;
             }
 
             return RedirectToAction(nameof(Index));

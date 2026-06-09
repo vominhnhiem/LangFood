@@ -1,0 +1,20 @@
+@{
+    ViewData["Title"] = "Từ chối truy cập";
+}
+
+<div class="container py-5 text-center">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="p-5 bg-white shadow-sm rounded-4 border">
+                <i class="fa-solid fa-circle-exclamation fa-5x text-danger mb-4"></i>
+                <h2 class="fw-bold text-dark mb-3">Từ chối truy cập!</h2>
+                <p class="text-muted mb-4">Bạn không có quyền truy cập vào chức năng này của hệ thống.</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a asp-controller="Dashboard" asp-action="Index" class="btn btn-primary px-4 fw-bold text-white rounded-3 shadow-sm">
+                        <i class="fa-solid fa-house me-2"></i> Quay về Trang chủ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

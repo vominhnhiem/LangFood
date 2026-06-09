@@ -17,6 +17,7 @@
             public string Status { get; set; } = "Pending";
             public decimal TotalAmount { get; set; }
             public decimal ShippingFee { get; set; }
+            public decimal CommissionFee { get; set; }
             public DateTime CreatedAt { get; set; } = DateTime.Now;
             public DateTime? DeliveredAt { get; set; }
 

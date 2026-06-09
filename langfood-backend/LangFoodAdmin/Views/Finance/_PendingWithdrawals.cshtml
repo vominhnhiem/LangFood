@@ -53,7 +53,7 @@
                                 <i class="fa-solid fa-check"></i> Đã Chuyển
                             </button>
 
-                            <form asp-action="RejectWithdrawal" asp-route-id="@item.WithdrawalId" method="post" class="w-100" onsubmit="var reason = prompt('Lý do từ chối (Vd: Sai STK):'); if(!reason) return false; this.reason.value = reason; return true;">
+                            <form asp-action="RejectWithdrawal" asp-route-id="@item.WithdrawalId" method="post" class="w-100 form-reject-withdrawal" data-amount='@item.Amount.ToString("N0")' data-user="@item.UserFullName">
                                 <input type="hidden" name="reason" value="" />
                                 <button type="submit" class="btn btn-sm btn-outline-danger w-100">
                                     <i class="fa-solid fa-xmark"></i> Từ chối

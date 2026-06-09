@@ -6,12 +6,35 @@
     var shops = ViewBag.Shops as IEnumerable<LangFood.Shared.Models.Shop>;
 }
 
+<style>
+    /* Styling for custom complaint tabs targeting brand color #F24E1E */
+    #complaintTabs .nav-link {
+        color: #495057 !important; /* Inactive: dark gray text */
+        background-color: #f8f9fa !important; /* Inactive: light background */
+        border: 2px solid transparent !important;
+        transition: all 0.2s ease-in-out;
+    }
+
+    #complaintTabs .nav-link:hover {
+        border-color: #F24E1E !important; /* Hover: border turns orange */
+        color: #F24E1E !important;
+    }
+
+    #complaintTabs .nav-link.active {
+        background-color: #F24E1E !important; /* Active: Brand orange background */
+        color: #ffffff !important; /* Active: bold white text */
+        font-weight: bold !important;
+        border-color: #F24E1E !important;
+        box-shadow: 0 4px 10px rgba(242, 78, 30, 0.25);
+    }
+</style>
+
 <div class="container-fluid px-4 py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-dark"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Quản lý Khiếu nại Đơn hàng</h2>
+        <h2 class="fw-bold text-dark"><i class="fas fa-gavel text-warning me-2"></i>Quản lý Khiếu nại</h2>
     </div>
 
-    <!-- BỘ LỌC -->
+    <!-- BỘ LỌC TOÀN CỤC -->
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body">
             <form method="get" class="row g-3 align-items-end">
@@ -57,87 +80,204 @@
         </div>
     </div>
 
-    <!-- DANH SÁCH BẢNG -->
-    <div class="card border-0 shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="ps-4">Mã KN</th>
-                            <th>Đơn hàng</th>
-                            <th>Ngày gửi</th>
-                            <th>Khách hàng</th>
-                            <th>Cửa hàng</th>
-                            <th>Lý do</th>
-                            <th>Trạng thái</th>
-                            <th class="text-end pe-4">Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (!Model.Any())
-                        {
-                            <tr>
-                                <td colspan="8" class="text-center py-5 text-muted">
-                                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                                    <p class="mb-0">Không có đơn khiếu nại nào cần xử lý!</p>
-                                </td>
-                            </tr>
-                        }
-                        else
-                        {
-                            foreach (var item in Model)
-                            {
+    <!-- TABS NAVIGATION -->
+    <ul class="nav nav-pills mb-4 gap-2 bg-light p-2 rounded-3 shadow-sm border" id="complaintTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold px-4 rounded-3" id="shop-complaints-tab" data-bs-toggle="tab" data-bs-target="#shop-complaints" type="button" role="tab" aria-controls="shop-complaints" aria-selected="true">
+                <i class="fas fa-store me-2"></i>Khiếu nại Quán ăn
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold px-4 rounded-3" id="shipper-complaints-tab" data-bs-toggle="tab" data-bs-target="#shipper-complaints" type="button" role="tab" aria-controls="shipper-complaints" aria-selected="false">
+                <i class="fas fa-motorcycle me-2"></i>Khiếu nại Shipper
+            </button>
+        </li>
+    </ul>
+
+    <!-- TABS CONTENT -->
+    <div class="tab-content" id="complaintTabsContent">
+        
+        <!-- TAB 1: KHIẾU NẠI QUÁN ĂN -->
+        <div class="tab-pane fade show active" id="shop-complaints" role="tabpanel" aria-labelledby="shop-complaints-tab">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
                                 <tr>
-                                    <td class="ps-4 fw-bold">#@item.Id</td>
-                                    <td>
-                                        <span class="badge bg-secondary">#@item.OrderId</span>
-                                    </td>
-                                    <td class="text-muted">@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
-                                    <td>@item.Order?.Buyer?.FullName</td>
-                                    <td class="fw-semibold">@item.Order?.Shop?.Name</td>
-                                    <td>
-                                        <span class="text-danger fw-medium">@item.Reason</span>
-                                    </td>
-                                    <td>
-                                        @if (item.Status == 0)
-                                        {
-                                            <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Chờ xử lý</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Đã giải quyết</span>
-                                        }
-                                    </td>
-                                    <td class="text-end pe-4">
-                                        <button class="btn btn-sm btn-outline-primary px-3 fw-bold" 
-                                                onclick="openResolveModal(@item.Id, @item.OrderId, '@item.Order?.Buyer?.FullName', '@item.Order?.Shop?.Name', '@item.Reason', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Detail))', '@item.ImageProof')">
-                                            @if (item.Status == 0)
-                                            {
-                                                <span><i class="fas fa-gavel me-1"></i>Giải quyết</span>
-                                            }
-                                            else
-                                            {
-                                                <span><i class="fas fa-eye me-1"></i>Chi tiết</span>
-                                            }
-                                        </button>
-                                    </td>
+                                    <th class="ps-4">Mã KN</th>
+                                    <th>Đơn hàng</th>
+                                    <th>Ngày gửi</th>
+                                    <th>Khách hàng</th>
+                                    <th>Cửa hàng</th>
+                                    <th>Lý do</th>
+                                    <th>Trạng thái</th>
+                                    <th class="text-center">Bằng chứng</th>
+                                    <th class="text-end pe-4">Hành động</th>
                                 </tr>
-                            }
-                        }
-                    </tbody>
-                </table>
+                            </thead>
+                            <tbody>
+                                @if (ViewBag.ShopComplaints == null || !((IEnumerable<LangFood.Shared.Models.Complaint>)ViewBag.ShopComplaints).Any())
+                                {
+                                    <tr>
+                                        <td colspan="9" class="text-center py-5 text-muted">
+                                            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                            <p class="mb-0">Không có đơn khiếu nại quán ăn nào cần xử lý!</p>
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    foreach (var item in (IEnumerable<LangFood.Shared.Models.Complaint>)ViewBag.ShopComplaints)
+                                    {
+                                        <tr>
+                                            <td class="ps-4 fw-bold">#@item.Id</td>
+                                            <td><span class="badge bg-secondary">#@item.OrderId</span></td>
+                                            <td class="text-muted">@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                            <td>@item.Order?.Buyer?.FullName</td>
+                                            <td class="fw-semibold text-danger">@item.Order?.Shop?.Name</td>
+                                            <td><span class="text-danger fw-medium">@item.Reason</span></td>
+                                            <td>
+                                                @if (item.Status == 0)
+                                                {
+                                                    <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Chờ xử lý</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Đã giải quyết</span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                @if (!string.IsNullOrEmpty(item.ImageProof))
+                                                {
+                                                    <button class="btn btn-sm btn-outline-info rounded-pill px-3" onclick="showSwalProof('@item.ImageProof')">
+                                                        <i class="fas fa-image me-1"></i>Xem ảnh
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted small">Không có</span>
+                                                }
+                                            </td>
+                                            <td class="text-end pe-4">
+                                                <button class="btn btn-sm btn-outline-primary px-3 fw-bold" 
+                                                        onclick="openResolveModal(@item.Id, @item.OrderId, '@item.Order?.Buyer?.FullName', '@item.Order?.Shop?.Name', '@item.Reason', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Detail))', '@item.ImageProof')">
+                                                    @if (item.Status == 0)
+                                                    {
+                                                        <span><i class="fas fa-gavel me-1"></i>Giải quyết</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span><i class="fas fa-eye me-1"></i>Chi tiết</span>
+                                                    }
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
+
+        <!-- TAB 2: KHIẾU NẠI SHIPPER -->
+        <div class="tab-pane fade" id="shipper-complaints" role="tabpanel" aria-labelledby="shipper-complaints-tab">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Mã KN</th>
+                                    <th>Đơn hàng</th>
+                                    <th>Ngày gửi</th>
+                                    <th>Khách hàng</th>
+                                    <th>Shipper</th>
+                                    <th>Lý do</th>
+                                    <th>Trạng thái</th>
+                                    <th class="text-center">Bằng chứng</th>
+                                    <th class="text-end pe-4">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (ViewBag.ShipperComplaints == null || !((IEnumerable<LangFood.Shared.Models.Complaint>)ViewBag.ShipperComplaints).Any())
+                                {
+                                    <tr>
+                                        <td colspan="9" class="text-center py-5 text-muted">
+                                            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                            <p class="mb-0">Không có đơn khiếu nại shipper nào cần xử lý!</p>
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    foreach (var item in (IEnumerable<LangFood.Shared.Models.Complaint>)ViewBag.ShipperComplaints)
+                                    {
+                                        <tr>
+                                            <td class="ps-4 fw-bold">#@item.Id</td>
+                                            <td><span class="badge bg-secondary">#@item.OrderId</span></td>
+                                            <td class="text-muted">@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                            <td>@item.Order?.Buyer?.FullName</td>
+                                            <td class="fw-semibold text-primary">@(item.Order?.Shipper?.User?.FullName ?? item.Order?.ShipperId.ToString() ?? "Shipper ẩn danh")</td>
+                                            <td><span class="text-danger fw-medium">@item.Reason</span></td>
+                                            <td>
+                                                @if (item.Status == 0)
+                                                {
+                                                    <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Chờ xử lý</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Đã giải quyết</span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                @if (!string.IsNullOrEmpty(item.ImageProof))
+                                                {
+                                                    <button class="btn btn-sm btn-outline-info rounded-pill px-3" onclick="showSwalProof('@item.ImageProof')">
+                                                        <i class="fas fa-image me-1"></i>Xem ảnh
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted small">Không có</span>
+                                                }
+                                            </td>
+                                            <td class="text-end pe-4">
+                                                @if (item.Status == 0)
+                                                {
+                                                    <button class="btn btn-sm btn-danger px-3 fw-bold" 
+                                                            onclick="openResolveShipperModal(@item.Id, @item.OrderId, '@item.Order?.Buyer?.FullName', '@(item.Order?.Shipper?.User?.FullName ?? "Shipper")')">
+                                                        <i class="fas fa-gavel me-1"></i>Xử phạt
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <button class="btn btn-sm btn-outline-secondary px-3 fw-bold" disabled>
+                                                        <i class="fas fa-check me-1"></i>Đã phạt
+                                                    </button>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 
-<!-- BOOTSTRAP 5 RESOLVE MODAL -->
+<!-- BOOTSTRAP 5 RESOLVE MODAL (QUÁN ĂN) -->
 <div class="modal fade" id="resolveModal" tabindex="-1" aria-labelledby="resolveModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title fw-bold" id="resolveModalLabel"><i class="fas fa-gavel text-warning me-2"></i>Xử lý Khiếu nại</h5>
+                <h5 class="modal-title fw-bold" id="resolveModalLabel"><i class="fas fa-gavel text-warning me-2"></i>Xử lý Khiếu nại Quán ăn</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -165,7 +305,7 @@
                     <div class="col-12" id="modalProofContainer">
                         <label class="form-label text-secondary fw-bold">Bằng chứng hình ảnh</label>
                         <div class="text-center p-2 bg-light rounded border">
-                            <img id="modalProofImage" src="" alt="Proof Image" class="img-fluid rounded" style="max-height: 300px; object-fit: contain; cursor: pointer;" onclick="window.open(this.src)" />
+                            <img id="modalProofImage" src="" alt="Proof Image" class="img-fluid rounded" style="max-height: 300px; object-fit: contain; cursor: pointer;" />
                         </div>
                     </div>
                 </div>
@@ -201,6 +341,32 @@
 @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script>
+        // Phóng to ảnh bằng chứng qua SweetAlert2
+        function showSwalProof(imageProof) {
+            if (!imageProof) return;
+            var fullUrl = imageProof;
+            if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
+                if (fullUrl.startsWith('/')) {
+                    fullUrl = 'http://localhost:5289' + fullUrl;
+                } else {
+                    fullUrl = 'http://localhost:5289/' + fullUrl;
+                }
+            }
+            Swal.fire({
+                title: 'Bằng chứng hình ảnh',
+                imageUrl: fullUrl,
+                imageAlt: 'Bằng chứng khiếu nại',
+                imageWidth: '100%',
+                imageHeight: 'auto',
+                confirmButtonText: 'Đóng',
+                confirmButtonColor: '#fd7e14',
+                customClass: {
+                    popup: 'rounded-4'
+                }
+            });
+        }
+
+        // Mở modal xử lý khiếu nại quán ăn
         function openResolveModal(complaintId, orderId, buyer, shop, reason, detail, imageProof) {
             $('#modalComplaintId').val(complaintId);
             $('#modalOrderId').text('#' + orderId);
@@ -224,18 +390,14 @@
                 $('#modalProofContainer').hide();
             }
 
-            // Đặt lại các giá trị form
             $('#adminReply').val('');
             $('#penaltyAmount').val('0');
-            $('#resolveForm').show();
-            $('#btnSubmitResolve').show();
 
-            // Nếu đã xử lý thì ẩn form
-            // (Chúng ta có thể kiểm tra trạng thái dòng đó từ UI)
             var resolveModal = new bootstrap.Modal(document.getElementById('resolveModal'));
             resolveModal.show();
         }
 
+        // Xử lý submit xử phạt quán ăn
         $('#resolveForm').submit(function (e) {
             e.preventDefault();
             
@@ -244,11 +406,17 @@
             var penaltyAmount = $('#penaltyAmount').val();
 
             if (!adminReply) {
-                alert('Vui lòng nhập phản hồi của Admin!');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Thông báo',
+                    text: 'Vui lòng nhập lý do xử phạt!',
+                    confirmButtonColor: '#fd7e14',
+                    customClass: { popup: 'rounded-4' }
+                });
                 return;
             }
 
-            $('#btnSubmitResolve').prop('disabled', true).text('Đang xử lý & giao dịch...');
+            $('#btnSubmitResolve').prop('disabled', true).text('Đang xử lý & khấu trừ...');
 
             $.ajax({
                 url: '/Complaints/Resolve',
@@ -260,18 +428,130 @@
                 },
                 success: function (res) {
                     if (res.success) {
-                        alert(res.message);
-                        location.reload();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Thành công',
+                            text: res.message,
+                            confirmButtonColor: '#fd7e14',
+                            customClass: { popup: 'rounded-4' }
+                        }).then(() => {
+                            location.reload();
+                        });
                     } else {
-                        alert('Lỗi: ' + res.message);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Thất bại',
+                            text: res.message,
+                            confirmButtonColor: '#fd7e14',
+                            customClass: { popup: 'rounded-4' }
+                        });
                         $('#btnSubmitResolve').prop('disabled', false).html('<i class="fas fa-check-double me-2"></i>Quyết định & Khấu trừ');
                     }
                 },
                 error: function () {
-                    alert('Lỗi kết nối máy chủ!');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Lỗi',
+                        text: 'Lỗi kết nối máy chủ!',
+                        confirmButtonColor: '#fd7e14',
+                        customClass: { popup: 'rounded-4' }
+                    });
                     $('#btnSubmitResolve').prop('disabled', false).html('<i class="fas fa-check-double me-2"></i>Quyết định & Khấu trừ');
                 }
             });
         });
+
+        // Xử lý xử phạt Shipper (SweetAlert2 Popup & Fetch)
+        function openResolveShipperModal(complaintId, orderId, buyerName, shipperName) {
+            Swal.fire({
+                title: 'Xử phạt Shipper',
+                html: `
+                    <div class="text-start mb-3">
+                        <label class="form-label fw-bold text-dark">Shipper bị khiếu nại</label>
+                        <input type="text" class="form-control" value="${shipperName}" readonly disabled />
+                    </div>
+                    <div class="text-start mb-3">
+                        <label class="form-label fw-bold text-dark">Khách hàng khiếu nại</label>
+                        <input type="text" class="form-control" value="${buyerName}" readonly disabled />
+                    </div>
+                    <div class="text-start mb-3">
+                        <label for="swalPenaltyAmount" class="form-label fw-bold text-dark">Số tiền phạt Shipper (VNĐ)</label>
+                        <input type="number" id="swalPenaltyAmount" class="form-control fw-bold text-danger fs-5" value="20000" min="0" step="5000" />
+                    </div>
+                    <div class="text-start mb-3">
+                        <label for="swalAdminReply" class="form-label fw-bold text-dark">Lý do xử phạt <span class="text-danger">*</span></label>
+                        <textarea id="swalAdminReply" class="form-control" rows="3" placeholder="Nhập lý do phạt (ví dụ: giao sai sảnh, thái độ thiếu chuyên nghiệp...)"></textarea>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Xác nhận phạt',
+                cancelButtonText: 'Hủy bỏ',
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                customClass: {
+                    popup: 'rounded-4'
+                },
+                preConfirm: () => {
+                    const penaltyAmount = document.getElementById('swalPenaltyAmount').value;
+                    const adminReply = document.getElementById('swalAdminReply').value;
+                    if (!adminReply) {
+                        Swal.showValidationMessage('Vui lòng nhập lý do xử phạt!');
+                        return false;
+                    }
+                    return { penaltyAmount: penaltyAmount, adminReply: adminReply };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Đang xử lý giao dịch...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    var formData = new FormData();
+                    formData.append('complaintId', complaintId);
+                    formData.append('adminReply', result.value.adminReply);
+                    formData.append('penaltyAmount', result.value.penaltyAmount);
+
+                    fetch('/Complaints/ResolveShipper', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Thành công',
+                                text: data.message,
+                                confirmButtonColor: '#fd7e14',
+                                customClass: { popup: 'rounded-4' }
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Thất bại',
+                                text: data.message,
+                                confirmButtonColor: '#fd7e14',
+                                customClass: { popup: 'rounded-4' }
+                            });
+                        }
+                    })
+                    .catch(() => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Lỗi',
+                            text: 'Có lỗi xảy ra khi kết nối máy chủ!',
+                            confirmButtonColor: '#fd7e14',
+                            customClass: { popup: 'rounded-4' }
+                        });
+                    });
+                }
+            });
+        }
     </script>
 }

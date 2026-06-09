@@ -7,8 +7,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace LangFoodAdmin.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class DashboardController : Controller
     {
         private readonly LangFoodDbContext _context;
@@ -18,9 +21,53 @@ namespace LangFoodAdmin.Controllers
             _context = context;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            var model = await CalculateRevenue();
+            return View(model);
+        }
+
+        private async Task<DashboardViewModel> CalculateRevenue()
+        {
+            var now = DateTime.Now;
+            var currentYear = now.Year;
+            var currentMonth = now.Month;
+
+            // Xác định năm và tháng của tháng trước
+            int prevYear = currentYear;
+            int prevMonth = currentMonth - 1;
+            if (prevMonth == 0)
+            {
+                prevMonth = 12;
+                prevYear = currentYear - 1;
+            }
+
+            // Tính doanh thu tháng hiện tại: tổng CommissionFee của các đơn hàng Completed
+            decimal currentMonthRevenue = await _context.Orders
+                .Where(o => o.Status == "Completed" && o.CreatedAt.Month == currentMonth && o.CreatedAt.Year == currentYear)
+                .SumAsync(o => o.CommissionFee);
+
+            // Tính doanh thu tháng trước
+            decimal prevMonthRevenue = await _context.Orders
+                .Where(o => o.Status == "Completed" && o.CreatedAt.Month == prevMonth && o.CreatedAt.Year == prevYear)
+                .SumAsync(o => o.CommissionFee);
+
+            // Tính tỉ lệ tăng trưởng (%)
+            decimal growthPercentage = 0;
+            if (prevMonthRevenue > 0)
+            {
+                growthPercentage = ((currentMonthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100;
+            }
+            else if (currentMonthRevenue > 0)
+            {
+                growthPercentage = 100;
+            }
+
+            return new DashboardViewModel
+            {
+                CurrentMonthRevenue = currentMonthRevenue,
+                GrowthPercentage = Math.Round(growthPercentage, 1)
+            };
         }
 
         [HttpGet]

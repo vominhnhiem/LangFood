@@ -7,12 +7,7 @@
     <h1 class="h3 mb-0 text-gray-800 fw-bold">Quản lý Món ăn</h1>
 </div>
 
-@if (TempData["Msg"] != null)
-{
-    <div class="alert alert-success border-0 shadow-sm rounded-3 mb-4">
-        <i class="fas fa-check-circle me-2"></i>@TempData["Msg"]
-    </div>
-}
+
 
 <!-- Tabs Control -->
 <ul class="nav nav-tabs border-bottom-0 mb-3" id="productTabs" role="tablist">
@@ -293,11 +288,23 @@
                             
                             new bootstrap.Modal('#productDetailsModal').show();
                         } else {
-                            toastr.error(res.message);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Lỗi',
+                                text: res.message,
+                                confirmButtonColor: '#fd7e14',
+                                customClass: { popup: 'rounded-4' }
+                            });
                         }
                     },
                     error: function() {
-                        toastr.error("Có lỗi xảy ra khi tải dữ liệu.");
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Lỗi',
+                            text: 'Có lỗi xảy ra khi tải dữ liệu.',
+                            confirmButtonColor: '#fd7e14',
+                            customClass: { popup: 'rounded-4' }
+                        });
                     }
                 });
             });
@@ -305,23 +312,54 @@
             // AJAX Khóa/Mở khóa món
             $('.btn-toggle-status').click(function() {
                 var id = $(this).data('id');
-                if (confirm('Bạn có chắc chắn muốn thay đổi trạng thái hiển thị của món ăn này không?')) {
-                    $.ajax({
-                        url: '/Products/ToggleStatus/' + id,
-                        type: 'POST',
-                        success: function(res) {
-                            if (res.success) {
-                                alert(res.message);
-                                location.reload();
-                            } else {
-                                toastr.error(res.message);
+                Swal.fire({
+                    title: 'Xác nhận?',
+                    text: 'Bạn có chắc chắn muốn thay đổi trạng thái hiển thị của món ăn này không?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#fd7e14',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Đồng ý',
+                    cancelButtonText: 'Hủy',
+                    customClass: { popup: 'rounded-4' }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/Products/ToggleStatus/' + id,
+                            type: 'POST',
+                            success: function(res) {
+                                if (res.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Thành công',
+                                        text: res.message,
+                                        confirmButtonColor: '#fd7e14',
+                                        customClass: { popup: 'rounded-4' }
+                                    }).then(() => {
+                                        location.reload();
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Lỗi',
+                                        text: res.message,
+                                        confirmButtonColor: '#fd7e14',
+                                        customClass: { popup: 'rounded-4' }
+                                    });
+                                }
+                            },
+                            error: function() {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Lỗi',
+                                    text: 'Có lỗi xảy ra.',
+                                    confirmButtonColor: '#fd7e14',
+                                    customClass: { popup: 'rounded-4' }
+                                });
                             }
-                        },
-                        error: function() {
-                            toastr.error("Có lỗi xảy ra.");
-                        }
-                    });
-                }
+                        });
+                    }
+                });
             });
 
             // Lọc sản phẩm ở frontend

@@ -5,8 +5,11 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace LangFoodAdmin.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class RoleRequestsController : Controller
     {
         private readonly LangFoodDbContext _context;
@@ -74,7 +77,7 @@ namespace LangFoodAdmin.Controllers
                 }
 
                 await _context.SaveChangesAsync();
-                TempData["Success"] = "Đã duyệt yêu cầu mở quán thành công!";
+                TempData["SuccessMessage"] = "Đã duyệt yêu cầu mở quán thành công!";
             }
             return RedirectToAction(nameof(Index));
         }
@@ -88,7 +91,7 @@ namespace LangFoodAdmin.Controllers
             {
                 request.Status = 2; // Từ chối
                 await _context.SaveChangesAsync();
-                TempData["Success"] = "Đã từ chối yêu cầu mở quán.";
+                TempData["SuccessMessage"] = "Đã từ chối yêu cầu mở quán.";
             }
             return RedirectToAction(nameof(Index));
         }
@@ -112,7 +115,7 @@ namespace LangFoodAdmin.Controllers
                 }
                 
                 await _context.SaveChangesAsync();
-                TempData["Success"] = shop.IsActive ? "Đã mở khóa cửa hàng!" : "Đã khóa cửa hàng thành công!";
+                TempData["SuccessMessage"] = shop.IsActive ? "Đã mở khóa cửa hàng!" : "Đã khóa cửa hàng thành công!";
             }
             return RedirectToAction(nameof(Index));
         }

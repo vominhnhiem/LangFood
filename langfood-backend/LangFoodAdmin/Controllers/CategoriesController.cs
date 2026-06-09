@@ -5,8 +5,11 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace LangFoodAdmin.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class CategoriesController : Controller
     {
         private readonly LangFoodDbContext _context;
@@ -50,6 +53,7 @@ namespace LangFoodAdmin.Controllers
 
             _context.Categories.Add(category);
             await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Thêm danh mục mới thành công!";
             return RedirectToAction(nameof(Index));
         }
 
@@ -91,7 +95,7 @@ namespace LangFoodAdmin.Controllers
                     }
 
                     await _context.SaveChangesAsync();
-                    TempData["Success"] = "Cập nhật danh mục thành công!";
+                    TempData["SuccessMessage"] = "Cập nhật danh mục thành công!";
                     return RedirectToAction(nameof(Index));
                 }
                 catch (DbUpdateConcurrencyException)
@@ -111,6 +115,7 @@ namespace LangFoodAdmin.Controllers
             {
                 category.IsDeleted = true;
                 await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Đã xóa danh mục thành công!";
             }
             return RedirectToAction(nameof(Index));
         }

@@ -41,6 +41,7 @@ namespace LangFood.Shared.Models
             modelBuilder.Entity<Product>().Property(p => p.Price).HasColumnType("decimal(18,2)");
             modelBuilder.Entity<Order>().Property(o => o.TotalAmount).HasColumnType("decimal(18,2)");
             modelBuilder.Entity<Order>().Property(o => o.ShippingFee).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Order>().Property(o => o.CommissionFee).HasColumnType("decimal(18,2)");
             modelBuilder.Entity<OrderItem>().Property(oi => oi.UnitPrice).HasColumnType("decimal(18,2)");
             modelBuilder.Entity<WithdrawalRequest>().Property(w => w.Amount).HasColumnType("decimal(18,2)");
             modelBuilder.Entity<Complaint>().Property(c => c.PenaltyAmount).HasColumnType("decimal(18,2)");

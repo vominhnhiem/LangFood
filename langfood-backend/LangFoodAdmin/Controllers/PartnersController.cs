@@ -4,8 +4,11 @@ using LangFood.Shared.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace LangFoodAdmin.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class PartnersController : Controller
     {
         private readonly LangFoodDbContext _context;

@@ -7,8 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace LangFoodAdmin.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class OrdersController : Controller
     {
         private readonly LangFoodDbContext _context;
@@ -42,7 +45,7 @@ namespace LangFoodAdmin.Controllers
             }
             catch (Exception ex)
             {
-                TempData["Error"] = "Lỗi kết nối cơ sở dữ liệu: " + ex.Message;
+                TempData["ErrorMessage"] = "Lỗi kết nối cơ sở dữ liệu: " + ex.Message;
                 return View(new List<Order>());
             }
         }
@@ -74,7 +77,7 @@ namespace LangFoodAdmin.Controllers
 
             order.Status = "Preparing";
             await _context.SaveChangesAsync();
-            TempData["Success"] = $"Shop đã nhận đơn #{id}. Đang chuẩn bị món!";
+            TempData["SuccessMessage"] = $"Shop đã nhận đơn #{id}. Đang chuẩn bị món!";
             return RedirectToAction(nameof(Details), new { id = id });
         }
 
@@ -88,7 +91,7 @@ namespace LangFoodAdmin.Controllers
 
             order.Status = "Ready";
             await _context.SaveChangesAsync();
-            TempData["Success"] = $"Đơn hàng #{id} đã nấu xong. Đang tìm Shipper!";
+            TempData["SuccessMessage"] = $"Đơn hàng #{id} đã nấu xong. Đang tìm Shipper!";
             return RedirectToAction(nameof(Details), new { id = id });
         }
 
@@ -182,12 +185,12 @@ namespace LangFoodAdmin.Controllers
 
                 await _context.SaveChangesAsync();
                 await dbTransaction.CommitAsync();
-                TempData["Success"] = $"Đơn hàng #{id} thành công. Shipper đã nhận tiền hoàn cọc và thưởng.";
+                TempData["SuccessMessage"] = $"Đơn hàng #{id} thành công. Shipper đã nhận tiền hoàn cọc và thưởng.";
             }
             catch (Exception ex)
             {
                 await dbTransaction.RollbackAsync();
-                TempData["Error"] = "Lỗi xử lý: " + ex.Message;
+                TempData["ErrorMessage"] = "Lỗi xử lý: " + ex.Message;
             }
             return RedirectToAction(nameof(Index));
         }

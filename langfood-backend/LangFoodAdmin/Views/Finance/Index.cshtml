@@ -116,14 +116,106 @@
         }
 
         function showBillModal(imgUrl) {
-            if (!imgUrl) {
-                alert("Người dùng chưa upload ảnh hóa đơn.");
+            if (!imgUrl || imgUrl === '' || imgUrl === 'null' || imgUrl === 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Thông báo',
+                    text: 'Người dùng chưa upload ảnh hóa đơn.',
+                    confirmButtonColor: '#fd7e14',
+                    customClass: { popup: 'rounded-4' }
+                });
                 return;
             }
             document.getElementById('billImagePreview').src = imgUrl;
             var modal = new bootstrap.Modal(document.getElementById('billModal'));
             modal.show();
         }
+
+        $(document).ready(function() {
+            // Duyệt nạp tiền
+            $('.form-approve-deposit').submit(function(e) {
+                e.preventDefault();
+                var form = this;
+                var amount = $(this).data('amount');
+                var user = $(this).data('user');
+                Swal.fire({
+                    title: 'Xác nhận duyệt nạp tiền?',
+                    text: 'Bạn có chắc chắn muốn duyệt +' + amount + ' ₫ cho ' + user + '?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#fd7e14',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Đồng ý',
+                    cancelButtonText: 'Hủy',
+                    customClass: { popup: 'rounded-4' }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+
+            // Từ chối nạp tiền
+            $('.form-reject-deposit').submit(function(e) {
+                e.preventDefault();
+                var form = this;
+                var user = $(this).data('user');
+                Swal.fire({
+                    title: 'Từ chối nạp tiền?',
+                    text: 'Nhập lý do từ chối nạp tiền cho ' + user + ':',
+                    input: 'text',
+                    inputPlaceholder: 'Lý do từ chối...',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#fd7e14',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Đồng ý',
+                    cancelButtonText: 'Hủy',
+                    inputValidator: (value) => {
+                        if (!value) {
+                            return 'Vui lòng nhập lý do từ chối!';
+                        }
+                    },
+                    customClass: { popup: 'rounded-4' }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $(form).find('input[name="reason"]').val(result.value);
+                        form.submit();
+                    }
+                });
+            });
+
+            // Từ chối rút tiền
+            $('.form-reject-withdrawal').submit(function(e) {
+                e.preventDefault();
+                var form = this;
+                var user = $(this).data('user');
+                var amount = $(this).data('amount');
+                Swal.fire({
+                    title: 'Từ chối rút tiền?',
+                    text: 'Nhập lý do từ chối yêu cầu rút ' + amount + ' ₫ của ' + user + ' (VD: Sai số tài khoản):',
+                    input: 'text',
+                    inputPlaceholder: 'Lý do từ chối...',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#fd7e14',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Đồng ý',
+                    cancelButtonText: 'Hủy',
+                    inputValidator: (value) => {
+                        if (!value) {
+                            return 'Vui lòng nhập lý do từ chối!';
+                        }
+                    },
+                    customClass: { popup: 'rounded-4' }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $(form).find('input[name="reason"]').val(result.value);
+                        form.submit();
+                    }
+                });
+            });
+        });
     </script>
 }
 

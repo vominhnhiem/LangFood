@@ -10,12 +10,7 @@
     </a>
 </div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success border-0 shadow-sm rounded-3 mb-4">
-        <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
-    </div>
-}
+
 
 <div class="admin-card shadow-sm border-0" style="border-radius: 12px;">
     <div class="table-responsive">
@@ -58,7 +53,7 @@
                                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-light rounded-circle p-2 text-warning shadow-sm" title="Chỉnh sửa">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-light rounded-circle p-2 text-danger shadow-sm" title="Xóa" onclick="return confirm('Bạn có chắc chắn muốn xóa danh mục này? Các sản phẩm thuộc danh mục cũng sẽ bị ẩn.')">
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-light rounded-circle p-2 text-danger shadow-sm btn-delete-category" title="Xóa">
                                         <i class="fas fa-trash"></i>
                                     </a>
                                 </div>
@@ -92,7 +87,30 @@
         padding-top: 15px;
         padding-bottom: 15px;
     }
-    .table tbody tr:hover {
-        background-color: #fafafa;
-    }
 </style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('.btn-delete-category').click(function(e) {
+                e.preventDefault();
+                var deleteUrl = $(this).attr('href');
+                Swal.fire({
+                    title: 'Xác nhận xóa?',
+                    text: 'Bạn có chắc chắn muốn xóa danh mục này? Các sản phẩm thuộc danh mục cũng sẽ bị ẩn.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#fd7e14',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Đồng ý',
+                    cancelButtonText: 'Hủy',
+                    customClass: { popup: 'rounded-4' }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = deleteUrl;
+                    }
+                });
+            });
+        });
+    </script>
+}

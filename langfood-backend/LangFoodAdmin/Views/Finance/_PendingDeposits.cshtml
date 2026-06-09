@@ -33,13 +33,13 @@
                                 <i class="fa-solid fa-eye"></i> Xem Bill
                             </button>
 
-                            <form asp-action="ApproveDeposit" asp-route-id="@item.TransactionId" method="post" style="display:inline;" onsubmit="return confirm('Bạn có chắc chắn duyệt +@item.Amount.ToString("N0")₫ cho @item.UserFullName?');">
+                            <form asp-action="ApproveDeposit" asp-route-id="@item.TransactionId" method="post" style="display:inline;" class="form-approve-deposit" data-amount='@item.Amount.ToString("N0")' data-user="@item.UserFullName">
                                 <button type="submit" class="btn btn-sm btn-success">
                                     <i class="fa-solid fa-check"></i> Duyệt
                                 </button>
                             </form>
 
-                            <form asp-action="RejectDeposit" asp-route-id="@item.TransactionId" method="post" style="display:inline;" onsubmit="var reason = prompt('Lý do từ chối:'); if(reason === null) return false; this.reason.value = reason; return true;">
+                            <form asp-action="RejectDeposit" asp-route-id="@item.TransactionId" method="post" style="display:inline;" class="form-reject-deposit" data-amount='@item.Amount.ToString("N0")' data-user="@item.UserFullName">
                                 <input type="hidden" name="reason" value="" />
                                 <button type="submit" class="btn btn-sm btn-danger">
                                     <i class="fa-solid fa-xmark"></i> Từ chối

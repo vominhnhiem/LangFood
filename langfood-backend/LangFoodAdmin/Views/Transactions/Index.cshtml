@@ -1,4 +1,4 @@
-﻿@model IEnumerable<LangFoodAdmin.Controllers.DepositViewModel>
+@model IEnumerable<LangFoodAdmin.Controllers.DepositViewModel>
 
 @{
     ViewData["Title"] = "Duyệt Nạp Tiền & Thanh Toán";
@@ -41,10 +41,10 @@
                                 <span class="text-info">@item.Description</span>
                             </td>
                             <td>
-                                <form asp-action="Approve" asp-route-id="@item.TransactionId" method="post" onsubmit="return confirm('Xác nhận đã nhận đủ @item.Amount.ToString("N0") đ vào ngân hàng?')">
-                                    <button type="submit" class="btn btn-success btn-sm">
-                                        <i class="fas fa-check"></i> Duyệt & Xác nhận đơn
-                                    </button>
+                                <form asp-action="Approve" asp-route-id="@item.TransactionId" method="post" class="form-approve-transaction" data-amount='@item.Amount.ToString("N0")'>
+                                     <button type="submit" class="btn btn-success btn-sm">
+                                         <i class="fas fa-check"></i> Duyệt & Xác nhận đơn
+                                     </button>
                                 </form>
                             </td>
                         </tr>
@@ -60,3 +60,30 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('.form-approve-transaction').submit(function(e) {
+                e.preventDefault();
+                var form = this;
+                var amount = $(this).data('amount');
+                Swal.fire({
+                    title: 'Xác nhận duyệt?',
+                    text: 'Xác nhận đã nhận đủ ' + amount + ' đ vào tài khoản ngân hàng?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#fd7e14',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Đồng ý',
+                    cancelButtonText: 'Hủy',
+                    customClass: { popup: 'rounded-4' }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+    </script>
+}

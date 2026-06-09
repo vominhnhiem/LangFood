@@ -10,8 +10,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace LangFoodAdmin.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class FinanceController : Controller
     {
         private readonly LangFoodDbContext _context;
@@ -137,7 +140,7 @@ namespace LangFoodAdmin.Controllers
             trans.Wallet.UpdatedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
-            TempData["Success"] = "Đã duyệt nạp tiền thành công!";
+            TempData["SuccessMessage"] = "Đã duyệt nạp tiền thành công!";
             return RedirectToAction(nameof(Index));
         }
 
@@ -182,12 +185,12 @@ namespace LangFoodAdmin.Controllers
 
                 await _context.SaveChangesAsync();
                 await dbTx.CommitAsync();
-                TempData["Success"] = "Xác nhận rút tiền thành công!";
+                TempData["SuccessMessage"] = "Xác nhận rút tiền thành công!";
             }
             catch (Exception ex)
             {
                 await dbTx.RollbackAsync();
-                TempData["Error"] = "Lỗi: " + ex.Message;
+                TempData["ErrorMessage"] = "Lỗi: " + ex.Message;
             }
             return RedirectToAction(nameof(Index));
         }
@@ -227,12 +230,12 @@ namespace LangFoodAdmin.Controllers
 
                 await _context.SaveChangesAsync();
                 await dbTx.CommitAsync();
-                TempData["Success"] = "Đã từ chối và hoàn tiền.";
+                TempData["SuccessMessage"] = "Đã từ chối và hoàn tiền.";
             }
             catch (Exception ex)
             {
                 await dbTx.RollbackAsync();
-                TempData["Error"] = "Lỗi: " + ex.Message;
+                TempData["ErrorMessage"] = "Lỗi: " + ex.Message;
             }
             return RedirectToAction(nameof(Index));
         }

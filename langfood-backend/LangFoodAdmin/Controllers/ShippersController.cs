@@ -6,8 +6,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using System;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace LangFoodAdmin.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class ShippersController : Controller
     {
         private readonly LangFoodDbContext _context;
@@ -64,7 +67,7 @@ namespace LangFoodAdmin.Controllers
                     }
                 }
                 await _context.SaveChangesAsync();
-                TempData["Success"] = "Đã duyệt Shipper thành công!";
+                TempData["SuccessMessage"] = "Đã duyệt Shipper thành công!";
             }
             return RedirectToAction(nameof(Index));
         }
@@ -77,7 +80,7 @@ namespace LangFoodAdmin.Controllers
             {
                 request.Status = 2; // Từ chối
                 await _context.SaveChangesAsync();
-                TempData["Success"] = "Đã từ chối yêu cầu.";
+                TempData["SuccessMessage"] = "Đã từ chối yêu cầu.";
             }
             return RedirectToAction(nameof(Index));
         }

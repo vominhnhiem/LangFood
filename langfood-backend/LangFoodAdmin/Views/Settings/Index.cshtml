@@ -1,0 +1,63 @@
+@model LangFoodAdmin.Models.SettingsViewModel
+@{
+    ViewData["Title"] = "Cài đặt Hệ thống";
+}
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 py-3 d-flex align-items-center">
+                    <h4 class="fw-bold mb-0 text-dark">
+                        <i class="fa-solid fa-gears text-primary me-2"></i> Cấu hình Cài đặt Hệ thống
+                    </h4>
+                </div>
+                <div class="card-body px-4 pb-4 pt-2">
+                    <p class="text-muted small mb-4">
+                        Thiết lập các thông số tài chính và truyền thông cơ bản cho toàn bộ nền tảng Làng Food (bao gồm cả ứng dụng của Sinh viên và Đối tác).
+                    </p>
+
+                    <form asp-action="Save" method="post" id="settingsForm">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Commission Rate -->
+                        <div class="mb-4">
+                            <label asp-for="CommissionRate" class="form-label fw-bold text-secondary">Tỉ lệ chiết khấu hệ thống (%)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="fa-solid fa-percent text-muted"></i></span>
+                                <input asp-for="CommissionRate" type="number" class="form-control fw-bold" min="0" max="100" step="0.1" required />
+                            </div>
+                            <div class="form-text text-muted">Phần trăm hoa hồng Admin thu trên mỗi đơn hàng thành công của quán ăn. (Ví dụ: 10%).</div>
+                        </div>
+
+                        <!-- Base Shipping Fee -->
+                        <div class="mb-4">
+                            <label asp-for="BaseShippingFee" class="form-label fw-bold text-secondary">Phí giao hàng cơ bản</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="fa-solid fa-motorcycle text-muted"></i></span>
+                                <input asp-for="BaseShippingFee" type="number" class="form-control fw-bold" min="0" step="500" required />
+                                <span class="input-group-text bg-light fw-bold text-danger">₫</span>
+                            </div>
+                            <div class="form-text text-muted">Phí vận chuyển mặc định áp dụng khi sinh viên đặt món (Ví dụ: 15.000₫).</div>
+                        </div>
+
+                        <!-- System Announcement -->
+                        <div class="mb-4">
+                            <label asp-for="SystemAnnouncement" class="form-label fw-bold text-secondary">Thông báo toàn hệ thống</label>
+                            <textarea asp-for="SystemAnnouncement" class="form-control border-1" rows="5" placeholder="Nhập nội dung thông báo hiển thị trên banner trang chủ của ứng dụng..." required></textarea>
+                            <div class="form-text text-muted">Nội dung này sẽ hiển thị trực tiếp trên đầu ứng dụng của Sinh viên và Cửa hàng.</div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
+                            <a asp-controller="Dashboard" asp-action="Index" class="btn btn-light border px-4 fw-bold rounded-3">Hủy bỏ</a>
+                            <button type="submit" class="btn btn-primary px-5 fw-bold text-white rounded-3 shadow-sm">
+                                <i class="fa-solid fa-floppy-disk me-2"></i> Lưu cài đặt
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
