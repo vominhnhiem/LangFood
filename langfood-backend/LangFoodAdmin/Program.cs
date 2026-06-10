@@ -5,6 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // 1. Thêm dịch vụ cho giao diện MVC (Controllers và Views)
 builder.Services.AddControllersWithViews();
+builder.Services.AddSignalR();
 
 // 2. CẤU HÌNH HTTPCLIENT: Đây là "số điện thoại" để Admin gọi sang Backend
 builder.Services.AddHttpClient("BackendApi", client =>
@@ -43,6 +44,8 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapHub<LangFoodAdmin.Hubs.OrderHub>("/orderHub");
 
 // 6. Chạy ứng dụng
 Console.WriteLine("LangFood Admin is starting...");
