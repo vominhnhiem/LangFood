@@ -41,12 +41,21 @@ namespace LangFoodAdmin.Controllers
         // 2. Duyệt yêu cầu mở quán
         public async Task<IActionResult> Approve(int id)
         {
+            // Include thêm User để có thể cập nhật trạng thái phê duyệt của tài khoản
             var request = await _context.RoleRequests.Include(r => r.User).FirstOrDefaultAsync(r => r.Id == id);
+
             if (request != null)
             {
-                request.Status = 1; // Duyệt
-                
-                // Tạo cửa hàng mới nếu chưa có
+                // Bước 1: Cập nhật trạng thái yêu cầu thành "Đã duyệt"
+                request.Status = 1;
+
+                // Bước 2: QUAN TRỌNG - Kích hoạt tài khoản người dùng
+                if (request.User != null)
+                {
+                    request.User.IsApproved = true;
+                }
+
+                // Bước 3: Tạo cửa hàng mới nếu chưa có
                 var existingShop = await _context.Shops.FirstOrDefaultAsync(s => s.UserId == request.UserId);
                 if (existingShop == null)
                 {
@@ -61,6 +70,7 @@ namespace LangFoodAdmin.Controllers
                     _context.Shops.Add(shop);
                 }
 
+                // Lưu tất cả thay đổi vào Database
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Đã duyệt yêu cầu mở quán thành công!";
             }
@@ -81,13 +91,20 @@ namespace LangFoodAdmin.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // 4. Khóa/Mở khóa cửa hàng (AJAX hoặc Link)
+        // 4. Khóa/Mở khóa cửa hàng
         public async Task<IActionResult> ToggleStatus(int id)
         {
-            var shop = await _context.Shops.FindAsync(id);
+            var shop = await _context.Shops.Include(s => s.User).FirstOrDefaultAsync(s => s.Id == id);
             if (shop != null)
             {
                 shop.IsActive = !shop.IsActive;
+
+                // Đồng bộ trạng thái phê duyệt của User theo trạng thái khóa của cửa hàng
+                if (shop.User != null)
+                {
+                    shop.User.IsApproved = shop.IsActive;
+                }
+
                 await _context.SaveChangesAsync();
                 TempData["Success"] = shop.IsActive ? "Đã mở khóa cửa hàng!" : "Đã khóa cửa hàng thành công!";
             }
