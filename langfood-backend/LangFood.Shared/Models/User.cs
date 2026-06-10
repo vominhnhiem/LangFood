@@ -44,6 +44,10 @@ namespace LangFood.Shared.Models
         [JsonIgnore]
         public virtual ICollection<RoleRequest> RoleRequests { get; set; } = new List<RoleRequest>();
 
+        public bool CanManageOrders { get; set; } = false;
+        public bool CanManageFinance { get; set; } = false;
+        public bool CanManageShops { get; set; } = false;
+
         // KHÔNG DÙNG JsonIgnore ở đây để Android nhận được dữ liệu
         public virtual Shop? Shop { get; set; }
 

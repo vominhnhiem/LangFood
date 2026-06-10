@@ -5,10 +5,21 @@
 
 <div class="container-fluid py-4">
     <!-- Phần 1: Lời chào & Thông tin nhanh -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2 class="fw-bold text-dark">Chào buổi sáng, <span style="color: var(--accent-color);">Admin!</span></h2>
-            <p class="text-muted"><i class="far fa-calendar-alt me-2"></i> Thứ Ba, 12 Tháng 5, 2026 | Hệ thống đang hoạt động ổn định.</p>
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8 col-12">
+            <h2 class="fw-bold text-dark" id="welcome-text">Chào buổi sáng, <span style="color: var(--accent-color);">Admin!</span></h2>
+            <p class="text-muted mb-0"><i class="far fa-calendar-alt me-2"></i> <span id="current-date">Thứ Ba, 12 Tháng 5, 2026</span> | Hệ thống đang hoạt động ổn định.</p>
+        </div>
+        <div class="col-md-4 col-12 text-md-end text-start mt-3 mt-md-0">
+            <div class="d-inline-flex align-items-center bg-white shadow-sm px-3 py-2 border" style="border-radius: 12px;">
+                <div class="me-3 bg-light p-2 rounded-3 text-primary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; color: var(--accent-color) !important;">
+                    <i class="far fa-clock fs-5"></i>
+                </div>
+                <div class="text-start">
+                    <span class="d-block small text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Giờ hệ thống</span>
+                    <span class="fs-5 fw-bold text-dark" id="current-time" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">00:00:00</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -18,12 +29,22 @@
             <div class="card border-0 shadow-sm" style="background-color: #FFF9E6; border-left: 5px solid #FFC107 !important; border-radius: 12px;">
                 <div class="card-body d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="fw-bold mb-1 text-warning-emphasis">Hồ sơ Shipper</h6>
-                        <p class="small mb-2 text-muted">Có <strong>@Model.PendingShipperCount hồ sơ</strong> đang chờ duyệt danh tính.</p>
+                        <div class="d-flex align-items-center mb-1">
+                            <h6 class="fw-bold mb-0 text-warning-emphasis">Hồ sơ Shipper</h6>
+                            @if (Model.PendingShipperCount > 0)
+                            {
+                                <span class="ms-2 badge rounded-pill text-white fw-bold pending-count-badge" style="background-color: #FFC107; font-size: 0.75rem;">@Model.PendingShipperCount mới</span>
+                            }
+                        </div>
+                        <p class="small mb-2 text-muted">Đang chờ duyệt danh tính.</p>
                         <a asp-controller="Shippers" asp-action="Index" class="btn btn-sm btn-warning text-white fw-bold px-3" style="border-radius: 8px;">Xử lý ngay</a>
                     </div>
-                    <div class="ms-3">
+                    <div class="ms-3 position-relative">
                         <i class="fas fa-id-card fa-2x text-warning opacity-50"></i>
+                        @if (Model.PendingShipperCount > 0)
+                        {
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger blink-dot" style="font-size: 0.6rem; padding: 4px 5px;">!</span>
+                        }
                     </div>
                 </div>
             </div>
@@ -32,12 +53,22 @@
             <div class="card border-0 shadow-sm" style="background-color: #EBFBEE; border-left: 5px solid #28A745 !important; border-radius: 12px;">
                 <div class="card-body d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="fw-bold mb-1 text-success-emphasis">Yêu cầu rút tiền</h6>
-                        <p class="small mb-2 text-muted">Có <strong>@Model.PendingWithdrawalCount yêu cầu</strong> từ Shipper đã sẵn sàng.</p>
+                        <div class="d-flex align-items-center mb-1">
+                            <h6 class="fw-bold mb-0 text-success-emphasis">Yêu cầu rút tiền</h6>
+                            @if (Model.PendingWithdrawalCount > 0)
+                            {
+                                <span class="ms-2 badge rounded-pill text-white fw-bold pending-count-badge" style="background-color: #28A745; font-size: 0.75rem;">@Model.PendingWithdrawalCount mới</span>
+                            }
+                        </div>
+                        <p class="small mb-2 text-muted">Từ người dùng đã sẵn sàng.</p>
                         <a asp-controller="Finance" asp-action="Index" class="btn btn-sm btn-success fw-bold px-3" style="border-radius: 8px;">Duyệt lệnh</a>
                     </div>
-                    <div class="ms-3">
+                    <div class="ms-3 position-relative">
                         <i class="fas fa-wallet fa-2x text-success opacity-50"></i>
+                        @if (Model.PendingWithdrawalCount > 0)
+                        {
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger blink-dot" style="font-size: 0.6rem; padding: 4px 5px;">!</span>
+                        }
                     </div>
                 </div>
             </div>
@@ -56,13 +87,13 @@
                     </a>
                 </div>
                 <div class="col-6 col-md-4">
-                    <a href="#" class="quick-tile shadow-sm">
+                    <a href="/Settings#broadcast-section" class="quick-tile shadow-sm">
                         <i class="fas fa-bullhorn"></i>
                         <span>Gửi Thông Báo Toàn Sàn</span>
                     </a>
                 </div>
                 <div class="col-6 col-md-4">
-                    <a href="#" class="quick-tile shadow-sm">
+                    <a asp-controller="Settings" asp-action="Index" class="quick-tile shadow-sm">
                         <i class="fas fa-cog"></i>
                         <span>Cài Đặt Hệ Thống</span>
                     </a>
@@ -74,13 +105,13 @@
                     </a>
                 </div>
                 <div class="col-6 col-md-4">
-                    <a href="#" class="quick-tile shadow-sm">
+                    <a asp-controller="FinancialReport" asp-action="Index" class="quick-tile shadow-sm">
                         <i class="fas fa-chart-line"></i>
                         <span>Xem Báo Cáo Tài Chính</span>
                     </a>
                 </div>
                 <div class="col-6 col-md-4">
-                    <a href="#" class="quick-tile shadow-sm">
+                    <a asp-controller="Permission" asp-action="Index" class="quick-tile shadow-sm">
                         <i class="fas fa-user-shield"></i>
                         <span>Phân Quyền Admin</span>
                     </a>
@@ -284,6 +315,44 @@
                     }
                 });
             });
+
+            // Cập nhật lời chào, ngày tháng và giờ thực hiển thị
+            function updateWelcomeDateTime() {
+                var now = new Date();
+                var hours = now.getHours();
+                
+                // 1. Tối ưu lời chào động theo buổi
+                var greeting = "Chào ngày mới"; // Mặc định từ 0h - 3h sáng
+                if (hours >= 4 && hours < 12) {
+                    greeting = "Chào buổi sáng"; // Từ 4h - 11h
+                } else if (hours >= 12 && hours < 18) {
+                    greeting = "Chào buổi chiều"; // Từ 12h - 17h
+                } else if (hours >= 18 && hours <= 23) {
+                    greeting = "Chào buổi tối"; // Từ 18h - 23h
+                }
+                $('#welcome-text').html(greeting + ', <span style="color: var(--accent-color);">Admin!</span>');
+                
+                // 2. Định dạng ngày tháng tiếng Việt
+                var days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+                var dayName = days[now.getDay()];
+                var dd = String(now.getDate()).padStart(2, '0');
+                var mm = String(now.getMonth() + 1).padStart(2, '0');
+                var yyyy = now.getFullYear();
+                var dateStr = dayName + ", Ngày " + dd + " Tháng " + mm + " Năm " + yyyy;
+                $('#current-date').text(dateStr);
+
+                // 3. Định dạng giờ hiển thị (HH:mm:ss) ở phía bên phải
+                var hh = String(hours).padStart(2, '0');
+                var min = String(now.getMinutes()).padStart(2, '0');
+                var ss = String(now.getSeconds()).padStart(2, '0');
+                $('#current-time').text(hh + ":" + min + ":" + ss);
+            }
+
+            // Chạy ngay lập tức khi tải trang
+            updateWelcomeDateTime();
+
+            // Cập nhật lại sau mỗi 1 giây (1000ms) để đồng hồ chạy mượt mà
+            setInterval(updateWelcomeDateTime, 1000);
         });
     </script>
 }
@@ -364,5 +433,24 @@
 
     .timeline-item.last {
         padding-bottom: 0;
+    }
+
+    /* ===== Pending Badge Animations ===== */
+    @@keyframes blinkDot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    .blink-dot {
+        animation: blinkDot 1.2s ease-in-out infinite;
+    }
+
+    @@keyframes badgePop {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.12); }
+    }
+
+    .pending-count-badge {
+        animation: badgePop 2s ease-in-out infinite;
     }
 </style>

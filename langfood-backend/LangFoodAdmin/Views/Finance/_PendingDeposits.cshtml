@@ -29,10 +29,6 @@
                     <td>@item.Description</td>
                     <td class="text-center">
                         <div class="d-flex justify-content-center gap-2">
-                            <button class="btn btn-sm btn-outline-info" onclick="showBillModal('@item.BillImageUrl')">
-                                <i class="fa-solid fa-eye"></i> Xem Bill
-                            </button>
-
                             <form asp-action="ApproveDeposit" asp-route-id="@item.TransactionId" method="post" style="display:inline;" onsubmit="return confirm('Bạn có chắc chắn duyệt +@item.Amount.ToString("N0")₫ cho @item.UserFullName?');">
                                 <button type="submit" class="btn btn-sm btn-success">
                                     <i class="fa-solid fa-check"></i> Duyệt

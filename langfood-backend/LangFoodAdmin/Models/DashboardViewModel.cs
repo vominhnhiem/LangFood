@@ -8,6 +8,8 @@ namespace LangFoodAdmin.Models
     {
         public int PendingWithdrawalCount { get; set; }
         public int PendingShipperCount { get; set; }
+        public int PendingShopCount { get; set; }
+        public int PendingAdminCount { get; set; }
         public List<SystemLog> LatestLogs { get; set; } = new();
 
         // New properties for dynamic database stats

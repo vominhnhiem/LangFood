@@ -1,10 +1,30 @@
 using LangFood.Shared;
 using LangFood.Shared.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Authorization;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Thêm dịch vụ cho giao diện MVC (Controllers và Views)
-builder.Services.AddControllersWithViews();
+// 1. Thêm dịch vụ cho giao diện MVC (Controllers và Views) kèm bộ lọc xác thực toàn cục
+builder.Services.AddControllersWithViews(options =>
+{
+    var policy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+    options.Filters.Add(new AuthorizeFilter(policy));
+});
+
+// Thêm dịch vụ xác thực bằng Cookie
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.AccessDeniedPath = "/Account/Login";
+        options.ExpireTimeSpan = TimeSpan.FromHours(2);
+    });
+
 builder.Services.AddSignalR();
 
 // 2. CẤU HÌNH HTTPCLIENT: Đây là "số điện thoại" để Admin gọi sang Backend
@@ -23,6 +43,54 @@ builder.Services.AddDbContext<LangFoodDbContext>(options =>
 
 var app = builder.Build();
 
+// Tự động seed tài khoản Admin gốc (Super Admin) nếu chưa tồn tại
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<LangFoodDbContext>();
+    try
+    {
+        var rootAdminEmail = "admin@langfood.vn";
+        var rootAdmin = context.Users.FirstOrDefault(u => u.Email == rootAdminEmail || u.Username == "admin");
+        if (rootAdmin == null)
+        {
+            using (var sha256 = System.Security.Cryptography.SHA256.Create())
+            {
+                var bytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes("admin"));
+                var passwordHash = Convert.ToHexString(bytes).ToLower();
+
+                var newRoot = new User
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Username = "admin",
+                    Email = rootAdminEmail,
+                    FullName = "Super Admin tổng",
+                    PasswordHash = passwordHash,
+                    RoleId = 0, // Admin
+                    IsApproved = true,
+                    CanManageOrders = true,
+                    CanManageFinance = true,
+                    CanManageShops = true
+                };
+                context.Users.Add(newRoot);
+
+                var wallet = new Wallet
+                {
+                    UserId = newRoot.Id,
+                    Balance = 0,
+                    UpdatedAt = DateTime.Now
+                };
+                context.Wallets.Add(wallet);
+                context.SaveChanges();
+                Console.WriteLine("Seeded default Super Admin: admin@langfood.vn / admin");
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error seeding database: {ex.Message}");
+    }
+}
+
 // 4. Cấu hình HTTP request pipeline (Middleware)
 if (!app.Environment.IsDevelopment())
 {
@@ -38,6 +106,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 // 5. Cấu hình Route mặc định: Khi chạy Web sẽ vào trang Home trước

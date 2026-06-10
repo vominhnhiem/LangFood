@@ -1,0 +1,175 @@
+@model LangFoodAdmin.Models.SettingsViewModel
+@{
+    ViewData["Title"] = "Cài đặt hệ thống";
+}
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+                <div class="card-header bg-white border-0 pt-4 pb-0">
+                    <h4 class="fw-bold text-dark mb-0">
+                        <i class="fa-solid fa-sliders me-2" style="color: #f24e1e;"></i> Cài đặt vận hành hệ thống
+                    </h4>
+                    <p class="text-muted small mt-1">Cấu hình các chế độ vận hành chung cho phân hệ LangFood.</p>
+                </div>
+                <div class="card-body p-4">
+                    <form id="settingsForm">
+                        <!-- Cấu hình 1: Trạng thái bảo trì -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded-3">
+                                <div>
+                                    <label class="form-label fw-bold text-dark mb-0 small" style="cursor: pointer;" for="IsMaintenanceMode">Trạng thái bảo trì hệ thống</label>
+                                    <div class="form-text small text-muted mt-0">Tạm thời ngừng nhận đơn hàng trên app khi hệ thống nâng cấp.</div>
+                                </div>
+                                <div class="form-check form-switch fs-4">
+                                    <input type="checkbox" name="IsMaintenanceMode" id="IsMaintenanceMode" class="form-check-input" value="true" @(Model.IsMaintenanceMode ? "checked" : "") style="cursor: pointer;" />
+                                    <!-- Hidden input to send false value when unchecked in standard ASP.NET MVC -->
+                                    <input type="hidden" name="IsMaintenanceMode" value="false" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cấu hình 2: Thông báo chạy chữ -->
+                        <div class="mb-4" id="broadcast-section">
+                            <label class="form-label fw-bold text-secondary small">
+                                <i class="fa-solid fa-bullhorn me-1" style="color: #f24e1e;"></i>
+                                Thông báo chạy chữ trên toàn hệ thống
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-bullhorn"></i></span>
+                                <textarea id="broadcastTextarea" name="BroadcastMessage" class="form-control" rows="3" placeholder="Nhập thông báo hiển thị cho khách hàng và đối tác..." required>@Model.BroadcastMessage</textarea>
+                            </div>
+                            <div class="form-text small text-muted">Dòng thông báo chạy ngang trên đầu trang chủ ứng dụng khách hàng và đối tác.</div>
+                        </div>
+
+                        <!-- Cấu hình 3: Số đơn shipper nhận cùng lúc -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-secondary small">Số đơn hàng tối đa Shipper được nhận cùng lúc</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-motorcycle"></i></span>
+                                <input type="number" name="MaxOrderPerShipper" class="form-control" value="@Model.MaxOrderPerShipper" min="1" max="10" placeholder="Ví dụ: 3" required />
+                                <span class="input-group-text bg-light text-muted fw-bold">đơn</span>
+                            </div>
+                            <div class="form-text small text-muted">Giới hạn số đơn giao hàng đồng thời để đảm bảo chất lượng vận chuyển.</div>
+                        </div>
+
+                        <div class="d-grid mt-5">
+                            <button type="submit" class="btn fw-bold py-2 shadow-sm text-white" style="background-color: #f24e1e; border-color: #f24e1e; border-radius: 8px;">
+                                <i class="fa-solid fa-floppy-disk me-2"></i> Lưu cấu hình
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function () {
+            // ===== Auto-scroll & highlight broadcast section nếu được gọi từ Dashboard =====
+            if (window.location.hash === '#broadcast-section') {
+                var $section = $('#broadcast-section');
+                var $textarea = $('#broadcastTextarea');
+
+                // Scroll mượt đến section
+                $('html, body').animate({
+                    scrollTop: $section.offset().top - 80
+                }, 600, function () {
+                    // Highlight section bằng border cam nổi bật
+                    $section.css({
+                        'border': '2px solid #f24e1e',
+                        'border-radius': '12px',
+                        'padding': '16px',
+                        'box-shadow': '0 0 0 4px rgba(242, 78, 30, 0.15)',
+                        'transition': 'all 0.4s ease'
+                    });
+
+                    // Focus vào textarea và select toàn bộ text
+                    $textarea.focus().select();
+
+                    // Xóa highlight sau 3 giây
+                    setTimeout(function () {
+                        $section.css({
+                            'border': '',
+                            'border-radius': '',
+                            'padding': '',
+                            'box-shadow': ''
+                        });
+                    }, 3000);
+                });
+            }
+
+            $('#settingsForm').on('submit', function (e) {
+                e.preventDefault();
+                
+                var btnSubmit = $(this).find('button[type="submit"]');
+                var originalText = btnSubmit.html();
+                btnSubmit.html('<span class="spinner-border spinner-border-sm me-2"></span> Đang lưu...').attr('disabled', true);
+
+                // Lọc bỏ checkbox ẩn khi gửi để tránh trùng lặp tham số IsMaintenanceMode
+                var formData = $(this).serializeArray();
+                var cleanedData = [];
+                var maintenanceModeChecked = false;
+                
+                // Kiểm tra xem checkbox có được tick hay không
+                $('#IsMaintenanceMode').each(function() {
+                    if (this.checked) {
+                        maintenanceModeChecked = true;
+                    }
+                });
+
+                $.each(formData, function(i, field) {
+                    if (field.name === "IsMaintenanceMode") {
+                        if (field.value === "true" && maintenanceModeChecked) {
+                            cleanedData.push(field);
+                        } else if (field.value === "false" && !maintenanceModeChecked) {
+                            cleanedData.push(field);
+                        }
+                    } else {
+                        cleanedData.push(field);
+                    }
+                });
+
+                $.ajax({
+                    url: '/Settings/SaveSettings',
+                    type: 'POST',
+                    data: $.param(cleanedData),
+                    success: function (res) {
+                        if (res.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Thành công!',
+                                text: res.message,
+                                confirmButtonColor: '#f24e1e',
+                                timer: 3000
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Thất bại!',
+                                text: res.message,
+                                confirmButtonColor: '#f24e1e'
+                            });
+                        }
+                    },
+                    error: function () {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Lỗi kết nối!',
+                            text: 'Không thể kết nối đến máy chủ. Vui lòng thử lại.',
+                            confirmButtonColor: '#f24e1e'
+                        });
+                    },
+                    complete: function () {
+                        btnSubmit.html(originalText).attr('disabled', false);
+                    }
+                });
+            });
+        });
+    </script>
+}

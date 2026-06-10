@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LangFood.Shared.Models;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace LangFoodAdmin.Controllers
 {
@@ -34,10 +35,24 @@ namespace LangFoodAdmin.Controllers
                 await _context.SaveChangesAsync();
             }
 
+            var pendingShipperCount = await _context.RoleRequests.CountAsync(r => r.RequestType == 2 && r.Status == 0);
+            var pendingWithdrawalCount = await _context.WithdrawalRequests.CountAsync(w => w.Status == 0);
+            var pendingShopCount = await _context.RoleRequests.CountAsync(r => r.RequestType != 2 && r.Status == 0);
+            var pendingAdminCount = await _context.Users.CountAsync(u => u.RoleId == 0 && !u.IsApproved);
+
+            // ViewBag cho _Layout sidebar badges (toàn bộ trang đều dùng được)
+            ViewBag.PendingShipperCount = pendingShipperCount;
+            ViewBag.PendingWithdrawalCount = pendingWithdrawalCount;
+            ViewBag.PendingShopCount = pendingShopCount;
+            ViewBag.PendingAdminCount = pendingAdminCount;
+            ViewBag.TotalPendingCount = pendingShipperCount + pendingWithdrawalCount + pendingShopCount + pendingAdminCount;
+
             var viewModel = new DashboardViewModel
             {
-                PendingWithdrawalCount = await _context.WithdrawalRequests.CountAsync(w => w.Status == 0),
-                PendingShipperCount = await _context.RoleRequests.CountAsync(r => r.RequestType == 2 && r.Status == 0),
+                PendingWithdrawalCount = pendingWithdrawalCount,
+                PendingShipperCount = pendingShipperCount,
+                PendingShopCount = pendingShopCount,
+                PendingAdminCount = pendingAdminCount,
                 LatestLogs = await _context.SystemLogs
                     .OrderByDescending(l => l.CreatedAt)
                     .Take(5)
@@ -46,11 +61,13 @@ namespace LangFoodAdmin.Controllers
             return View(viewModel);
         }
 
+        [AllowAnonymous]
         public IActionResult Privacy()
         {
             return View();
         }
 
+        [AllowAnonymous]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
