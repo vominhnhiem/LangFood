@@ -30,8 +30,6 @@ namespace LangFoodBackend.Controllers
                 order.CreatedAt = DateTime.Now;
                 order.Status = "Pending";
 
-                // Khi Android gửi Order kèm danh sách OrderItems (có sẵn Note, OptionsSummary, OptionsPrice),
-                // EF Core sẽ tự động lưu toàn bộ vào Database.
                 _context.Orders.Add(order);
                 await _context.SaveChangesAsync();
 
@@ -43,7 +41,7 @@ namespace LangFoodBackend.Controllers
             }
         }
 
-        // --- 2. LẤY LỊCH SỬ CHO NGƯỜI MUA (Hiển thị cả Topping & Ghi chú) ---
+        // --- 2. LẤY LỊCH SỬ CHO NGƯỜI MUA ---
         [HttpGet("buyer/{buyerId}")]
         public async Task<ActionResult<IEnumerable<Order>>> GetOrdersByBuyer(string buyerId)
         {
@@ -57,7 +55,7 @@ namespace LangFoodBackend.Controllers
             return Ok(orders);
         }
 
-        // --- 3. QUÁN XÁC NHẬN ĐƠN (Chế biến) ---
+        // --- 3. QUÁN XÁC NHẬN ĐƠN ---
         [HttpPut("shop-accept/{id}")]
         public async Task<IActionResult> ShopAcceptOrder(int id)
         {
@@ -79,7 +77,7 @@ namespace LangFoodBackend.Controllers
             return Ok();
         }
 
-        // --- 5. LẤY ĐƠN CHO SHIPPER (Bao gồm đơn chờ và đơn shipper đó đang giao) ---
+        // --- 5. LẤY ĐƠN CHO SHIPPER ---
         [HttpGet("available-for-shipper/{shipperId}")]
         public async Task<ActionResult<IEnumerable<Order>>> GetOrdersForShipper(int shipperId)
         {
@@ -93,7 +91,7 @@ namespace LangFoodBackend.Controllers
                 .ToListAsync();
         }
 
-        // --- 6. SHIPPER NHẬN ĐƠN (GIỮ NGUYÊN LOGIC TIỀN/GIAM TIỀN) ---
+        // --- 6. SHIPPER NHẬN ĐƠN (ĐÃ BỔ SUNG LOGIC CHẶN GIỚI HẠN) ---
         [HttpPut("accept/{id}")]
         public async Task<IActionResult> AcceptOrder(int id, [FromQuery] int shipperId)
         {
@@ -101,21 +99,34 @@ namespace LangFoodBackend.Controllers
             if (order == null) return NotFound();
 
             if (order.ShipperId != null && order.ShipperId != shipperId)
-                return BadRequest("Đơn hàng đã có người khác nhận.");
+                return BadRequest(new { message = "Đơn hàng đã có người khác nhận." });
 
             if (order.Status != "Ready" && order.Status != "Confirmed" && order.Status != "Accepted")
-                return BadRequest("Đơn hàng không ở trạng thái có thể nhận.");
+                return BadRequest(new { message = "Đơn hàng không ở trạng thái có thể nhận." });
+
+            // --- BẮT ĐẦU: KIỂM TRA GIỚI HẠN ĐƠN HÀNG TẠI SERVER ---
+            var settings = await _context.SystemSettings.FirstOrDefaultAsync();
+            int maxLimit = settings?.MaxOrderPerShipper ?? 3;
+
+            // Đếm số đơn mà Shipper này đang đi giao
+            var deliveringCount = await _context.Orders
+                .CountAsync(o => o.ShipperId == shipperId && o.Status == "Delivering");
+
+            if (deliveringCount >= maxLimit)
+            {
+                return BadRequest(new { message = $"Bạn đã đạt giới hạn nhận tối đa {maxLimit} đơn hàng cùng lúc." });
+            }
+            // --- KẾT THÚC KIỂM TRA ---
 
             var shipper = await _context.Shippers.FindAsync(shipperId);
             var wallet = await _context.Wallets.FirstOrDefaultAsync(w => w.UserId == shipper.UserId);
 
-            // Số tiền cần giam (TotalAmount lúc này đã bao gồm tiền món + tiền topping nếu Android tính toán đúng)
             decimal amountToHold = (decimal)(order.TotalAmount + order.ShippingFee);
 
             if (wallet == null || wallet.Balance < amountToHold)
-                return BadRequest("Số dư ví không đủ để nhận đơn.");
+                return BadRequest(new { message = "Số dư ví không đủ để nhận đơn." });
 
-            // LOGIC TIỀN: GIỮ NGUYÊN
+            // LOGIC TIỀN: Tạm giữ tiền
             wallet.Balance -= amountToHold;
             _context.Transactions.Add(new Transaction
             {
@@ -134,7 +145,7 @@ namespace LangFoodBackend.Controllers
             return Ok();
         }
 
-        // --- 7. HOÀN THÀNH ĐƠN HÀNG (GIỮ NGUYÊN LOGIC CHIA TIỀN) ---
+        // --- 7. HOÀN THÀNH ĐƠN HÀNG ---
         [HttpPut("complete/{id}")]
         public async Task<IActionResult> CompleteOrder(int id)
         {
@@ -146,9 +157,9 @@ namespace LangFoodBackend.Controllers
 
             decimal foodAmount = (decimal)order.TotalAmount;
             decimal systemFee = (decimal)order.ShippingFee;
-            decimal shipperPay = 10000; // Tiền công 10k mặc định
+            decimal shipperPay = 10000;
 
-            // LOGIC TIỀN QUÁN: GIỮ NGUYÊN
+            // Tiền cho quán
             var shop = await _context.Shops.FindAsync(order.ShopId);
             if (shop != null)
             {
@@ -160,7 +171,7 @@ namespace LangFoodBackend.Controllers
                 }
             }
 
-            // LOGIC TIỀN SHIPPER: GIỮ NGUYÊN
+            // Tiền trả lại Shipper + Công
             if (order.ShipperId.HasValue)
             {
                 var shipper = await _context.Shippers.FindAsync(order.ShipperId.Value);
@@ -178,7 +189,7 @@ namespace LangFoodBackend.Controllers
             return Ok(new { message = "Thành công" });
         }
 
-        // --- 8. DASHBOARD & SHOP OPS (Hiển thị thông tin món kèm Topping) ---
+        // --- 8. THỐNG KÊ & DASHBOARD ---
         [HttpGet("shop-stats/{shopId}")]
         public async Task<ActionResult<DetailedShopStatsDto>> GetShopStats(int shopId)
         {
@@ -211,7 +222,6 @@ namespace LangFoodBackend.Controllers
                 DateTime start = DateTime.Parse(startDate).Date;
                 DateTime end = DateTime.Parse(endDate).Date.AddDays(1).AddTicks(-1);
 
-                // Lấy đơn hàng kèm OrderItems và Product trong khoảng thời gian
                 var filtered = await _context.Orders
                     .Include(o => o.OrderItems)
                         .ThenInclude(oi => oi.Product)
@@ -220,7 +230,6 @@ namespace LangFoodBackend.Controllers
 
                 var successOrders = filtered.Where(o => o.Status == "Completed").ToList();
 
-                // Logic tính Top món ăn bán chạy
                 var productStats = successOrders
                     .SelectMany(o => o.OrderItems)
                     .GroupBy(oi => oi.Product.Name)
@@ -231,7 +240,7 @@ namespace LangFoodBackend.Controllers
                         TotalRevenue = (decimal)g.Sum(oi => (double)oi.UnitPrice * oi.Quantity)
                     })
                     .OrderByDescending(ps => ps.TotalQuantity)
-                    .Take(10) // Lấy Top 10 món bán chạy nhất
+                    .Take(10)
                     .ToList();
 
                 return Ok(new DetailedShopStatsDto
@@ -240,7 +249,7 @@ namespace LangFoodBackend.Controllers
                     SuccessOrders = successOrders.Count,
                     FailedOrders = filtered.Count(o => o.Status == "Cancelled" || o.Status == "Rejected"),
                     TotalRevenue = successOrders.Sum(o => (decimal)o.TotalAmount),
-                    ProductStats = productStats // Gán dữ liệu vào đây để Android hiển thị biểu đồ
+                    ProductStats = productStats
                 });
             }
             catch (Exception ex)
