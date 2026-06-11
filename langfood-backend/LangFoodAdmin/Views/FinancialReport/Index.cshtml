@@ -8,6 +8,32 @@
         <h1 class="h3 mb-0 text-gray-800 fw-bold">Báo cáo tài chính</h1>
     </div>
 
+    <!-- Bộ lọc thời gian -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+        <div class="card-body py-3">
+            <form method="get" class="row g-3 align-items-center">
+                <div class="col-auto">
+                    <label class="col-form-label fw-bold text-secondary" for="timePeriod">
+                        <i class="fa-solid fa-filter me-1" style="color: var(--accent-color, #F24E1E);"></i> Lọc theo thời gian:
+                    </label>
+                </div>
+                <div class="col-auto">
+                    <select class="form-select border-2" id="timePeriod" name="timePeriod" style="border-radius: 8px; border-color: #E2E8F0; min-width: 180px;">
+                        <option value="all" selected="@(ViewBag.CurrentTimePeriod == "all")">Tất cả thời gian</option>
+                        <option value="today" selected="@(ViewBag.CurrentTimePeriod == "today")">Hôm nay</option>
+                        <option value="month" selected="@(ViewBag.CurrentTimePeriod == "month")">Tháng này</option>
+                        <option value="year" selected="@(ViewBag.CurrentTimePeriod == "year")">Năm nay</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn text-white fw-bold px-3 d-flex align-items-center" style="background-color: var(--accent-color, #F24E1E); border-color: var(--accent-color, #F24E1E); border-radius: 8px; height: 38px;">
+                        <i class="fa-solid fa-magnifying-glass me-2"></i> Lọc dữ liệu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- 2 Thẻ Card thống kê -->
     <div class="row mb-4">
         <!-- Card 1: Tổng doanh thu hệ thống -->
