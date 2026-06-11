@@ -4,6 +4,7 @@ using LangFood.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LangFoodBackend.Migrations
 {
     [DbContext(typeof(LangFoodDbContext))]
-    partial class LangFoodDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260610200818_AddAdminPermissionFlags")]
+    partial class AddAdminPermissionFlags
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -410,29 +413,6 @@ namespace LangFoodBackend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("SystemLogs");
-                });
-
-            modelBuilder.Entity("LangFood.Shared.Models.SystemSetting", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("BroadcastMessage")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsMaintenanceMode")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("MaxOrderPerShipper")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("SystemSettings");
                 });
 
             modelBuilder.Entity("LangFood.Shared.Models.Transaction", b =>

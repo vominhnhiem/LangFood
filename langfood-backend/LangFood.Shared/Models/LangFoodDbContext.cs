@@ -21,6 +21,8 @@ namespace LangFood.Shared.Models
         public DbSet<Wallet> Wallets { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<WithdrawalRequest> WithdrawalRequests { get; set; }
+        public DbSet<SystemLog> SystemLogs { get; set; }
+        public DbSet<SystemSetting> SystemSettings { get; set; }
         // Thêm 2 dòng này vào trong class LangFoodDbContext
         public DbSet<ProductOptionGroup> ProductOptionGroups { get; set; }
         public DbSet<ProductOption> ProductOptions { get; set; }

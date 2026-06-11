@@ -40,13 +40,21 @@
                 </a>
             </li>
             <li class="sidebar-item">
-                <a class="sidebar-link" asp-controller="Shippers" asp-action="Index" active-if-match="Shippers">
+                <a class="sidebar-link position-relative" asp-controller="Shippers" asp-action="Index" active-if-match="Shippers">
                     <i class="fa-solid fa-motorcycle"></i> Người giao hàng
+                    @if (ViewBag.PendingShipperCount != null && (int)ViewBag.PendingShipperCount > 0)
+                    {
+                        <span class="sidebar-badge pulse-badge">@ViewBag.PendingShipperCount</span>
+                    }
                 </a>
             </li>
             <li class="sidebar-item">
-                <a class="sidebar-link" asp-controller="RoleRequests" asp-action="Index" active-if-match="RoleRequests">
+                <a class="sidebar-link position-relative" asp-controller="RoleRequests" asp-action="Index" active-if-match="RoleRequests">
                     <i class="fa-solid fa-store"></i> Duyệt cửa hàng
+                    @if (ViewBag.PendingShopCount != null && (int)ViewBag.PendingShopCount > 0)
+                    {
+                        <span class="sidebar-badge pulse-badge">@ViewBag.PendingShopCount</span>
+                    }
                 </a>
             </li>
             <li class="sidebar-item">
@@ -65,8 +73,12 @@
                 </a>
             </li>
             <li class="sidebar-item">
-                <a class="sidebar-link" asp-controller="Finance" asp-action="Index" active-if-match="Finance">
+                <a class="sidebar-link position-relative" asp-controller="Finance" asp-action="Index" active-if-match="Finance">
                     <i class="fa-solid fa-money-bill-transfer"></i> Quản lý Tài chính
+                    @if (ViewBag.PendingWithdrawalCount != null && (int)ViewBag.PendingWithdrawalCount > 0)
+                    {
+                        <span class="sidebar-badge pulse-badge">@ViewBag.PendingWithdrawalCount</span>
+                    }
                 </a>
             </li>
         </ul>
@@ -79,23 +91,44 @@
             <div class="header-actions">
                 <div class="notification-bell" id="notificationBell">
                     <i class="fa-regular fa-bell"></i>
-                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                    @{
+                        int totalPending = ViewBag.TotalPendingCount != null ? (int)ViewBag.TotalPendingCount : 0;
+                    }
+                    @if (totalPending > 0)
+                    {
+                        <span class="notification-badge bell-pulse" id="notificationBadge">@totalPending</span>
+                    }
+                    else
+                    {
+                        <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                    }
                 </div>
                 
                 <div class="dropdown">
+                    @{
+                        var name = User.Identity?.Name ?? "Administrator";
+                        var role = "Admin con";
+                        // Kiểm tra nếu tất cả các quyền đều được bật hoặc nếu email là super admin
+                        var canManageFinance = User.HasClaim("CanManageFinance", "True");
+                        var canManageOrders = User.HasClaim("CanManageOrders", "True");
+                        var canManageShops = User.HasClaim("CanManageShops", "True");
+                        if (canManageFinance && canManageOrders && canManageShops)
+                        {
+                            role = "Super Admin";
+                        }
+                    }
                     <div class="user-profile" data-bs-toggle="dropdown" aria-expanded="false">
-                        <img src="https://ui-avatars.com/api/?name=Admin&background=F24E1E&color=fff" alt="Admin" class="user-avatar" />
+                        <img src="https://ui-avatars.com/api/?name=@(System.Net.WebUtility.UrlEncode(name))&background=F24E1E&color=fff" alt="@name" class="user-avatar" />
                         <div class="user-info">
-                            <span class="user-name">Administrator</span>
-                            <span class="user-role">Super Admin</span>
+                            <span class="user-name">@name</span>
+                            <span class="user-role">@role</span>
                         </div>
                         <i class="fa-solid fa-chevron-down ms-1" style="font-size: 0.8rem; color: var(--text-secondary);"></i>
                     </div>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border-radius: var(--border-radius);">
-                        <li><a class="dropdown-item py-2" href="#"><i class="fa-regular fa-user me-2"></i> Hồ sơ</a></li>
-                        <li><a class="dropdown-item py-2" href="#"><i class="fa-solid fa-gear me-2"></i> Cài đặt</a></li>
+                        <li><a class="dropdown-item py-2" asp-controller="Settings" asp-action="Index"><i class="fa-solid fa-gear me-2"></i> Cài đặt</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item py-2 text-danger" href="#"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i> Đăng xuất</a></li>
+                        <li><a class="dropdown-item py-2 text-danger" asp-controller="Account" asp-action="Logout"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i> Đăng xuất</a></li>
                     </ul>
                 </div>
             </div>

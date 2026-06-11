@@ -4,16 +4,21 @@ using LangFood.Shared.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR;
+using LangFoodAdmin.Hubs;
+using System;
 
 namespace LangFoodAdmin.Controllers
 {
     public class RoleRequestsController : Controller
     {
         private readonly LangFoodDbContext _context;
+        private readonly IHubContext<OrderHub> _hubContext;
 
-        public RoleRequestsController(LangFoodDbContext context)
+        public RoleRequestsController(LangFoodDbContext context, IHubContext<OrderHub> hubContext)
         {
             _context = context;
+            _hubContext = hubContext;
         }
 
         // 1. Trang Quản lý Cửa hàng
@@ -57,9 +62,10 @@ namespace LangFoodAdmin.Controllers
 
                 // Bước 3: Tạo cửa hàng mới nếu chưa có
                 var existingShop = await _context.Shops.FirstOrDefaultAsync(s => s.UserId == request.UserId);
+                Shop? shop = null;
                 if (existingShop == null)
                 {
-                    var shop = new Shop
+                    shop = new Shop
                     {
                         UserId = request.UserId,
                         Name = request.ShopName ?? "Cửa hàng mới",
@@ -72,6 +78,21 @@ namespace LangFoodAdmin.Controllers
 
                 // Lưu tất cả thay đổi vào Database
                 await _context.SaveChangesAsync();
+
+                // Tạo SystemLog lưu vào Database
+                var shopName = shop?.Name ?? existingShop?.Name ?? "Cửa hàng mới";
+                var log = new SystemLog
+                {
+                    Content = $"Quán {shopName} vừa gia nhập hệ thống",
+                    LogType = LogType.Shop,
+                    CreatedAt = DateTime.Now
+                };
+                _context.SystemLogs.Add(log);
+                await _context.SaveChangesAsync();
+
+                // Phát tín hiệu SignalR qua Hub
+                await _hubContext.Clients.All.SendAsync("ReceiveNewLog", new { content = log.Content, type = "Shop", time = "Vừa xong" });
+
                 TempData["Success"] = "Đã duyệt yêu cầu mở quán thành công!";
             }
             return RedirectToAction(nameof(Index));

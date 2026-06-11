@@ -4,6 +4,7 @@ using LangFood.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LangFoodBackend.Migrations
 {
     [DbContext(typeof(LangFoodDbContext))]
-    partial class LangFoodDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260610183848_AddSystemLogs")]
+    partial class AddSystemLogs
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -412,29 +415,6 @@ namespace LangFoodBackend.Migrations
                     b.ToTable("SystemLogs");
                 });
 
-            modelBuilder.Entity("LangFood.Shared.Models.SystemSetting", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("BroadcastMessage")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsMaintenanceMode")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("MaxOrderPerShipper")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("SystemSettings");
-                });
-
             modelBuilder.Entity("LangFood.Shared.Models.Transaction", b =>
                 {
                     b.Property<int>("Id")
@@ -485,15 +465,6 @@ namespace LangFoodBackend.Migrations
 
                     b.Property<int?>("BuildingId")
                         .HasColumnType("int");
-
-                    b.Property<bool>("CanManageFinance")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("CanManageOrders")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("CanManageShops")
-                        .HasColumnType("bit");
 
                     b.Property<string>("CccdNumber")
                         .HasMaxLength(20)

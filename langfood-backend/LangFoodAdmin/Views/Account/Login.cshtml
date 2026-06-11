@@ -1,0 +1,242 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Đăng nhập hệ thống - Làng Food Admin";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" />
+    
+    <style>
+        :root {
+            --accent-color: #F24E1E;
+            --accent-light: #FFF0EB;
+            --accent-hover: #D93B0F;
+            --bg-gradient: linear-gradient(135deg, #FFF6F4 0%, #FFEBE6 100%);
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --text-main: #2D3748;
+            --text-muted: #718096;
+            --border-radius: 16px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Decorative background elements */
+        body::before, body::after {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            opacity: 0.08;
+            z-index: -1;
+            filter: blur(80px);
+        }
+
+        body::before {
+            top: 10%;
+            left: 10%;
+        }
+
+        body::after {
+            bottom: 10%;
+            right: 10%;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 460px;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: var(--border-radius);
+            box-shadow: 0 15px 35px rgba(242, 78, 30, 0.08);
+            padding: 40px 30px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .login-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(242, 78, 30, 0.12);
+        }
+
+        .brand-logo {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .brand-logo i {
+            font-size: 2rem;
+        }
+
+        .form-floating > .form-control:focus ~ label,
+        .form-floating > .form-control:not(:placeholder-shown) ~ label {
+            color: var(--accent-color);
+            transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.25rem rgba(242, 78, 30, 0.15);
+        }
+
+        .btn-accent {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            color: white;
+            font-weight: 600;
+            padding: 12px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-accent:hover {
+            background-color: var(--accent-hover);
+            border-color: var(--accent-hover);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(242, 78, 30, 0.3);
+        }
+
+        .btn-accent:active {
+            transform: translateY(0);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: var(--text-muted);
+            margin: 25px 0;
+            font-size: 0.85rem;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #E2E8F0;
+        }
+
+        .divider:not(:empty)::before {
+            margin-right: .5em;
+        }
+
+        .divider:not(:empty)::after {
+            margin-left: .5em;
+        }
+
+        .alert {
+            border-radius: 12px;
+            font-size: 0.9rem;
+            border: none;
+        }
+
+        .alert-danger {
+            background-color: #FFF5F5;
+            color: #C53030;
+            border-left: 4px solid #E53E3E;
+        }
+
+        .alert-success {
+            background-color: #F0FFF4;
+            color: #2F855A;
+            border-left: 4px solid #38A169;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="login-card">
+            <div class="text-center mb-4">
+                <a href="#" class="brand-logo" id="loginLogo">
+                    <i class="fa-solid fa-utensils"></i> Làng Food
+                </a>
+                <p class="text-muted small">Cổng điều hành nội bộ - LangFoodAdmin</p>
+            </div>
+
+            <!-- Hiển thị lỗi từ Controller (Đăng nhập sai / Tài khoản chưa được duyệt) -->
+            @if (ViewBag.Error != null)
+            {
+                <div class="alert alert-danger shadow-sm d-flex align-items-center mb-3" role="alert">
+                    <i class="fa-solid fa-triangle-exclamation me-2 fs-5"></i>
+                    <div>@ViewBag.Error</div>
+                </div>
+            }
+
+            <!-- Hiển thị thông báo thành công (ví dụ sau khi đăng ký thành công) -->
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success shadow-sm d-flex align-items-center mb-3" role="alert">
+                    <i class="fa-solid fa-circle-check me-2 fs-5"></i>
+                    <div>@TempData["SuccessMessage"]</div>
+                </div>
+            }
+
+            <form asp-controller="Account" asp-action="Login" method="post" id="loginForm">
+                <div class="form-floating mb-3">
+                    <input type="text" name="email" class="form-control" id="floatingInputEmail" placeholder="name@example.com" required>
+                    <label for="floatingInputEmail"><i class="fa-regular fa-envelope me-1"></i> Email hoặc Tên đăng nhập</label>
+                </div>
+                
+                <div class="form-floating mb-4">
+                    <input type="password" name="password" class="form-control" id="floatingPassword" placeholder="Mật khẩu" required>
+                    <label for="floatingPassword"><i class="fa-solid fa-lock me-1"></i> Mật khẩu</label>
+                </div>
+
+                <button type="submit" class="btn btn-accent w-100 mb-3" id="btnLoginSubmit">
+                    <i class="fa-solid fa-arrow-right-to-bracket me-2"></i> Đăng nhập hệ thống
+                </button>
+            </form>
+
+            <div class="divider">Chưa có tài khoản?</div>
+
+            <a asp-controller="Account" asp-action="Register" class="btn btn-outline-secondary w-100 py-2" style="border-radius: 12px; font-weight: 500; border-color: #CBD5E0;" id="btnRegisterLink">
+                <i class="fa-solid fa-user-plus me-2"></i> Đăng ký Admin con
+            </a>
+        </div>
+        
+        <div class="text-center mt-3 small text-muted">
+            &copy; 2026 Làng Food. Tất cả các quyền được bảo lưu.
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

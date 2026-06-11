@@ -3,6 +3,10 @@ using LangFood.Shared.Models;
 using LangFood.Shared.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
+using System;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR;
+using LangFoodAdmin.Hubs;
 
 namespace LangFoodAdmin.Controllers
 {
@@ -10,11 +14,13 @@ namespace LangFoodAdmin.Controllers
     {
         private readonly LangFoodDbContext _context;
         private readonly IWebHostEnvironment _hostEnvironment;
+        private readonly IHubContext<OrderHub> _hubContext;
 
-        public PartnersController(LangFoodDbContext context, IWebHostEnvironment hostEnvironment)
+        public PartnersController(LangFoodDbContext context, IWebHostEnvironment hostEnvironment, IHubContext<OrderHub> hubContext)
         {
             _context = context;
             _hostEnvironment = hostEnvironment;
+            _hubContext = hubContext;
         }
 
         [HttpPost]
@@ -87,8 +93,21 @@ namespace LangFoodAdmin.Controllers
                     _context.Shops.Add(shop);
                     await _context.SaveChangesAsync();
 
+                    // 4. Tạo SystemLog lưu vào Database
+                    var log = new SystemLog
+                    {
+                        Content = $"Quán {shop.Name} vừa gia nhập hệ thống",
+                        LogType = LogType.Shop,
+                        CreatedAt = DateTime.Now
+                    };
+                    _context.SystemLogs.Add(log);
+                    await _context.SaveChangesAsync();
+
                     // Nếu mọi thứ OK thì Commit
                     await transaction.CommitAsync();
+
+                    // 5. Phát tín hiệu SignalR qua Hub
+                    await _hubContext.Clients.All.SendAsync("ReceiveNewLog", new { content = log.Content, type = "Shop", time = "Vừa xong" });
 
                     return Json(new { success = true, message = "Đã tạo tài khoản đối tác và gian hàng thành công!" });
                 }
