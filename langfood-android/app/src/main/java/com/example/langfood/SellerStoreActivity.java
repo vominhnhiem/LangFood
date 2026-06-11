@@ -28,7 +28,7 @@ public class SellerStoreActivity extends AppCompatActivity {
     private TextView tvSellerName;
     private RecyclerView rvSellerProducts;
     private View layoutEmpty;
-    private SellerProductAdapter adapter; // Dùng adapter mới
+    private SellerProductBuyerAdapter adapter; // Đã đổi sang BuyerAdapter
     private List<Product> productList = new ArrayList<>();
     private ApiService apiService;
 
@@ -58,7 +58,8 @@ public class SellerStoreActivity extends AppCompatActivity {
         rvSellerProducts = findViewById(R.id.rvSellerProducts);
         layoutEmpty = findViewById(R.id.layoutEmpty);
 
-        adapter = new SellerProductAdapter(productList);
+        // Sử dụng giao diện Buyer với 2 cột
+        adapter = new SellerProductBuyerAdapter(productList);
         rvSellerProducts.setLayoutManager(new GridLayoutManager(this, 2));
         rvSellerProducts.setAdapter(adapter);
     }
@@ -77,6 +78,7 @@ public class SellerStoreActivity extends AppCompatActivity {
                         Glide.with(SellerStoreActivity.this)
                                 .load(fullAvatarUrl)
                                 .placeholder(R.drawable.anhavt)
+                                .error(R.drawable.anhavt)
                                 .into(ivSellerAvatar);
                     }
                 }
@@ -96,6 +98,7 @@ public class SellerStoreActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     productList.clear();
                     for (Product p : response.body()) {
+                        // Lọc sản phẩm thuộc về seller này
                         if (p.getSellerId() != null && p.getSellerId().equals(sellerId)) {
                             productList.add(p);
                         }

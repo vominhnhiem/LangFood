@@ -21,7 +21,7 @@ namespace LangFoodBackend.Controllers
             _context = context;
         }
 
-        // 1. LẤY TẤT CẢ MÓN ĂN (Trang chủ App - Đã thêm Topping)
+        // 1. LẤY TẤT CẢ MÓN ĂN (Trang chủ App - Đã thêm Topping và SellerId)
         [HttpGet]
         public async Task<ActionResult<IEnumerable<object>>> GetProducts()
         {
@@ -42,9 +42,10 @@ namespace LangFoodBackend.Controllers
                     p.Status,
                     p.ShopId,
                     p.CategoryId,
+                    // THÊM SellerId để Android có thể load thông tin Shop
+                    SellerId = p.Shop != null ? p.Shop.UserId : null,
                     SellerName = !string.IsNullOrEmpty(p.Shop.Name) ? p.Shop.Name :
                                  (p.Shop.User != null ? p.Shop.User.FullName : "Quán ăn Lang Food"),
-                    // Trả về danh sách option groups để App có thể hiển thị sơ bộ hoặc tính giá
                     OptionGroups = p.OptionGroups.Select(g => new {
                         g.Id,
                         g.Name,
@@ -62,7 +63,7 @@ namespace LangFoodBackend.Controllers
                 .ToListAsync();
         }
 
-        // 2. LẤY CHI TIẾT MỘT MÓN ĂN (Dùng để hiển thị màn hình chọn Topping như Grab)
+        // 2. LẤY CHI TIẾT MỘT MÓN ĂN (Đã thêm SellerId)
         [HttpGet("{id}")]
         public async Task<ActionResult<object>> GetProduct(int id)
         {
@@ -86,10 +87,11 @@ namespace LangFoodBackend.Controllers
                 product.Status,
                 product.ShopId,
                 product.CategoryId,
+                // THÊM SellerId ở đây
+                SellerId = product.Shop?.UserId,
                 SellerName = !string.IsNullOrEmpty(product.Shop?.Name) ? product.Shop.Name :
                              (product.Shop?.User?.FullName ?? "Quán ăn Lang Food"),
                 SellerPhone = product.Shop?.User?.PhoneNumber,
-                // Trả về cấu trúc Topping chi tiết
                 OptionGroups = product.OptionGroups.Select(g => new {
                     g.Id,
                     g.Name,
@@ -111,7 +113,7 @@ namespace LangFoodBackend.Controllers
         public async Task<ActionResult<IEnumerable<object>>> GetProductsByShop(int shopId)
         {
             return await _context.Products
-                .Include(p => p.OptionGroups) // Shop cũng cần xem món mình có những topping nào
+                .Include(p => p.OptionGroups)
                 .Where(p => p.ShopId == shopId && !p.IsDeleted)
                 .OrderByDescending(p => p.Id)
                 .Select(p => new {

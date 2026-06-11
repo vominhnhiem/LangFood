@@ -1,6 +1,7 @@
 package com.example.langfood;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
@@ -17,6 +18,7 @@ import com.example.langfood.api.ApiService;
 import com.example.langfood.models.Product;
 import com.example.langfood.models.ProductOption;
 import com.example.langfood.models.ProductOptionGroup;
+import com.example.langfood.models.Shop;
 import com.example.langfood.models.User;
 import com.google.gson.Gson;
 import java.util.ArrayList;
@@ -36,8 +38,11 @@ public class FoodDetailActivity extends AppCompatActivity implements OptionAdapt
     private OptionGroupAdapter groupAdapter;
     
     private Product currentProduct;
+    private Shop currentShop;
     private int quantity = 1;
     private ApiService apiService;
+    private int userRoleId; 
+    private String mSellerId; // Lưu sellerId để dùng cho intent
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +50,10 @@ public class FoodDetailActivity extends AppCompatActivity implements OptionAdapt
         setContentView(R.layout.activity_food_detail);
 
         apiService = ApiClient.getClient().create(ApiService.class);
+        
+        SharedPreferences prefs = getSharedPreferences("LangFoodPrefs", MODE_PRIVATE);
+        userRoleId = prefs.getInt("ROLE_ID", 1); 
+
         initViews();
         
         int productId = getIntent().getIntExtra("PRODUCT_ID", -1);
@@ -69,6 +78,12 @@ public class FoodDetailActivity extends AppCompatActivity implements OptionAdapt
         });
 
         btnAddToCart.setOnClickListener(v -> {
+            if (userRoleId == 2 || userRoleId == 3) {
+                String roleName = (userRoleId == 2) ? "Người bán" : "Người giao hàng";
+                Toast.makeText(this, "Tài khoản " + roleName + " không thể đặt đơn hàng!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             if (currentProduct != null) {
                 String note = etNote.getText().toString().trim();
                 List<Integer> selectedOptionIds = new ArrayList<>();
@@ -90,10 +105,12 @@ public class FoodDetailActivity extends AppCompatActivity implements OptionAdapt
         });
 
         findViewById(R.id.cardSeller).setOnClickListener(v -> {
-            if (currentProduct != null && currentProduct.getSellerId() != null) {
+            if (mSellerId != null && !mSellerId.isEmpty()) {
                 Intent intent = new Intent(this, SellerStoreActivity.class);
-                intent.putExtra("SELLER_ID", currentProduct.getSellerId());
+                intent.putExtra("SELLER_ID", mSellerId);
                 startActivity(intent);
+            } else {
+                Toast.makeText(this, "Không tìm thấy thông tin người bán", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -137,7 +154,9 @@ public class FoodDetailActivity extends AppCompatActivity implements OptionAdapt
         txtFoodName.setText(currentProduct.getName());
         txtFoodDescription.setText(currentProduct.getDescription());
         txtFoodPrice.setText(String.format(Locale.getDefault(), "%,.0fđ", currentProduct.getPrice()));
-        tvSellerName.setText(currentProduct.getSellerName());
+        
+        // Hiển thị tên tạm thời từ Product
+        tvSellerName.setText(stripOwnerName(currentProduct.getShopName()));
         
         Glide.with(this)
                 .load(ApiClient.BASE_URL + currentProduct.getImageUrl())
@@ -149,11 +168,58 @@ public class FoodDetailActivity extends AppCompatActivity implements OptionAdapt
             rvOptionGroups.setAdapter(groupAdapter);
         }
 
-        if (currentProduct.getSellerId() != null) {
-            loadSellerInfo(currentProduct.getSellerId());
+        // Lấy sellerId: Ưu tiên từ Product trả về, fallback là Intent
+        mSellerId = currentProduct.getSellerId();
+        if (mSellerId == null || mSellerId.isEmpty()) {
+            mSellerId = getIntent().getStringExtra("SELLER_ID");
         }
 
+        if (mSellerId != null && !mSellerId.isEmpty()) {
+            loadShopInfo(mSellerId);
+        } else {
+            Log.e("FoodDetail", "SellerId is null, check Product model alternates or Backend response");
+        }
         updateQuantityUI();
+    }
+
+    private void loadShopInfo(String sellerId) {
+        apiService.getShopByUserId(sellerId).enqueue(new Callback<Shop>() {
+            @Override
+            public void onResponse(Call<Shop> call, Response<Shop> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    currentShop = response.body();
+                    
+                    // Ghi đè tên shop thật từ database
+                    if (currentShop.getName() != null && !currentShop.getName().isEmpty()) {
+                        tvSellerName.setText(stripOwnerName(currentShop.getName()));
+                    }
+                    
+                    // Cập nhật ảnh đại diện shop
+                    if (currentShop.getImageUrl() != null && !currentShop.getImageUrl().isEmpty()) {
+                        String imageUrl = currentShop.getImageUrl();
+                        String fullUrl = imageUrl.startsWith("http") ? imageUrl : ApiClient.BASE_URL + (imageUrl.startsWith("/") ? imageUrl.substring(1) : imageUrl);
+                        
+                        Glide.with(FoodDetailActivity.this)
+                                .load(fullUrl)
+                                .placeholder(R.drawable.anhavt)
+                                .error(R.drawable.anhavt)
+                                .into(ivSellerAvatar);
+                    }
+                    calculateTotalPrice();
+                } else {
+                    Log.e("FoodDetail", "Load shop info failed code: " + response.code());
+                }
+            }
+            @Override 
+            public void onFailure(Call<Shop> call, Throwable t) {
+                Log.e("FoodDetail", "Load shop info error: " + t.getMessage());
+            }
+        });
+    }
+
+    private String stripOwnerName(String name) {
+        if (name == null) return "";
+        return name.replaceAll("\\s*\\(Chủ:.*\\)", "").trim();
     }
 
     private void updateQuantityUI() {
@@ -168,7 +234,7 @@ public class FoodDetailActivity extends AppCompatActivity implements OptionAdapt
 
     private void calculateTotalPrice() {
         if (currentProduct == null) return;
-        
+
         double totalPerItem = currentProduct.getPrice();
         if (currentProduct.getOptionGroups() != null) {
             for (ProductOptionGroup group : currentProduct.getOptionGroups()) {
@@ -179,27 +245,21 @@ public class FoodDetailActivity extends AppCompatActivity implements OptionAdapt
                 }
             }
         }
-        
-        double finalTotal = totalPerItem * quantity;
-        btnAddToCart.setText(String.format(Locale.getDefault(), "THÊM VÀO GIỎ - %,.0fđ", finalTotal));
-    }
 
-    private void loadSellerInfo(String sellerId) {
-        apiService.getUserById(sellerId).enqueue(new Callback<User>() {
-            @Override
-            public void onResponse(Call<User> call, Response<User> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    User user = response.body();
-                    tvSellerName.setText(user.getFullName());
-                    if (user.getAvatarUrl() != null) {
-                        Glide.with(FoodDetailActivity.this)
-                                .load(ApiClient.BASE_URL + user.getAvatarUrl())
-                                .placeholder(R.drawable.anhavt)
-                                .into(ivSellerAvatar);
-                    }
-                }
-            }
-            @Override public void onFailure(Call<User> call, Throwable t) {}
-        });
+        double finalTotal = totalPerItem * quantity;
+
+        if (userRoleId == 2 || userRoleId == 3) {
+            btnAddToCart.setEnabled(false);
+            btnAddToCart.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.GRAY));
+            btnAddToCart.setText("Chỉ dành cho Khách hàng");
+        } else if (currentShop != null && !currentShop.isOpen()) {
+            btnAddToCart.setEnabled(false);
+            btnAddToCart.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.GRAY));
+            btnAddToCart.setText("Quán đang tạm nghỉ");
+        } else {
+            btnAddToCart.setEnabled(true);
+            btnAddToCart.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FF5722")));
+            btnAddToCart.setText(String.format(Locale.getDefault(), "THÊM VÀO GIỎ - %,.0fđ", finalTotal));
+        }
     }
 }
