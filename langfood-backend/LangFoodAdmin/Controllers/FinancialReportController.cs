@@ -18,25 +18,53 @@ namespace LangFoodAdmin.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string timePeriod = "all")
         {
+            ViewBag.CurrentTimePeriod = timePeriod;
+
             // 1. Tổng doanh thu hệ thống (từ transactions có Type = "FEE" hoặc "ADMIN_FEE" và Status = 1)
-            var totalRevenue = await _context.Transactions
-                .Where(t => (t.Type == "FEE" || t.Type == "ADMIN_FEE") && t.Status == 1)
-                .SumAsync(t => t.Amount);
+            var totalRevenueQuery = _context.Transactions
+                .Where(t => (t.Type == "FEE" || t.Type == "ADMIN_FEE") && t.Status == 1);
 
             // 3. Số đơn hàng hoàn thành (Status = "Delivered")
-            var completedOrdersCount = await _context.Orders
-                .CountAsync(o => o.Status == "Delivered");
+            var completedOrdersQuery = _context.Orders
+                .Where(o => o.Status == "Delivered");
+
+            switch (timePeriod)
+            {
+                case "today":
+                    var today = DateTime.Today;
+                    var tomorrow = today.AddDays(1);
+                    totalRevenueQuery = totalRevenueQuery.Where(t => t.CreatedAt >= today && t.CreatedAt < tomorrow);
+                    completedOrdersQuery = completedOrdersQuery.Where(o => o.CreatedAt >= today && o.CreatedAt < tomorrow);
+                    break;
+                case "month":
+                    var todayMonth = DateTime.Today;
+                    var startOfMonth = new DateTime(todayMonth.Year, todayMonth.Month, 1);
+                    var startOfNextMonth = startOfMonth.AddMonths(1);
+                    totalRevenueQuery = totalRevenueQuery.Where(t => t.CreatedAt >= startOfMonth && t.CreatedAt < startOfNextMonth);
+                    completedOrdersQuery = completedOrdersQuery.Where(o => o.CreatedAt >= startOfMonth && o.CreatedAt < startOfNextMonth);
+                    break;
+                case "year":
+                    var todayYear = DateTime.Today;
+                    var startOfYear = new DateTime(todayYear.Year, 1, 1);
+                    var startOfNextYear = startOfYear.AddYears(1);
+                    totalRevenueQuery = totalRevenueQuery.Where(t => t.CreatedAt >= startOfYear && t.CreatedAt < startOfNextYear);
+                    completedOrdersQuery = completedOrdersQuery.Where(o => o.CreatedAt >= startOfYear && o.CreatedAt < startOfNextYear);
+                    break;
+                default:
+                    break;
+            }
+
+            var totalRevenue = await totalRevenueQuery.SumAsync(t => t.Amount);
+            var completedOrdersCount = await completedOrdersQuery.CountAsync();
 
             // 4. Doanh thu tóm tắt theo từng tháng (Lấy dữ liệu thực tế)
-            var completedOrdersList = await _context.Orders
-                .Where(o => o.Status == "Delivered")
+            var completedOrdersList = await completedOrdersQuery
                 .Select(o => new { o.CreatedAt })
                 .ToListAsync();
 
-            var feeTransactionsList = await _context.Transactions
-                .Where(t => (t.Type == "FEE" || t.Type == "ADMIN_FEE") && t.Status == 1)
+            var feeTransactionsList = await totalRevenueQuery
                 .Select(t => new { t.CreatedAt, t.Amount })
                 .ToListAsync();
 
