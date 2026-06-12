@@ -155,6 +155,7 @@ namespace LangFoodAdmin.Controllers
             return Json(new { success = true, message = "Đã xóa tài khoản thành công!" });
         }
 
+
         private string HashPassword(string password)
         {
             using (var sha256 = SHA256.Create())
