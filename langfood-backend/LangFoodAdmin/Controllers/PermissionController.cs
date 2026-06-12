@@ -27,10 +27,20 @@ namespace LangFoodAdmin.Controllers
 
             return View(admins);
         }
+        private bool IsSuperAdminUser()
+        {
+            var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value?.ToLower();
+            var name = User.Identity?.Name?.ToLower();
+            return email == "admin@langfood.com" || email == "admin@langfood.vn" || name == "admin" || name == "super admin tổng" || name == "làng food administrator";
+        }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateAdmin(string fullName, string email, string password)
         {
+            if (!IsSuperAdminUser())
+                return Json(new { success = false, message = "Chỉ Admin tổng mới có quyền thực hiện hành động này!" });
+
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(fullName))
             {
                 return Json(new { success = false, message = "Vui lòng nhập đầy đủ thông tin!" });
@@ -95,8 +105,12 @@ namespace LangFoodAdmin.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApproveAdmin(string userId)
         {
+            if (!IsSuperAdminUser())
+                return Json(new { success = false, message = "Chỉ Admin tổng mới có quyền thực hiện hành động này!" });
+
             var admin = await _context.Users.FindAsync(userId);
             if (admin == null || admin.RoleId != 0)
             {
@@ -120,21 +134,25 @@ namespace LangFoodAdmin.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdatePermissions(string userId, bool canManageOrders, bool canManageFinance, bool canManageShops)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAdmin(string id)
         {
-            var admin = await _context.Users.FindAsync(userId);
-            if (admin == null || admin.RoleId != 0)
-            {
-                return Json(new { success = false, message = "Không tìm thấy tài khoản Admin!" });
-            }
+            if (!IsSuperAdminUser())
+                return Json(new { success = false, message = "Chỉ Admin tổng mới có quyền thực hiện hành động này!" });
 
-            admin.CanManageOrders = canManageOrders;
-            admin.CanManageFinance = canManageFinance;
-            admin.CanManageShops = canManageShops;
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+                return Json(new { success = false, message = "Không tìm thấy tài khoản." });
 
+            // Bảo vệ: Không cho phép tự xóa chính mình
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (user.Id == currentUserId)
+                return Json(new { success = false, message = "Bạn không thể tự xóa tài khoản của chính mình!" });
+
+            _context.Users.Remove(user);
             await _context.SaveChangesAsync();
 
-            return Json(new { success = true, message = "Cập nhật quyền thành công!" });
+            return Json(new { success = true, message = "Đã xóa tài khoản thành công!" });
         }
 
         private string HashPassword(string password)
