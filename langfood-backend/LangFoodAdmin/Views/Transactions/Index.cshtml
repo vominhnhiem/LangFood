@@ -1,62 +1,268 @@
-﻿@model IEnumerable<LangFoodAdmin.Controllers.DepositViewModel>
-
+﻿razor
+@model LangFood.Shared.ViewModels.FinanceDashboardViewModel
 @{
-    ViewData["Title"] = "Duyệt Nạp Tiền & Thanh Toán";
+    ViewData["Title"] = "Quản lý Tài chính";
 }
 
-<div class="container-fluid">
-    <h1 class="mt-4">Yêu Cầu Nạp Tiền & Thanh Toán QR</h1>
-    
-    <div class="card mb-4">
-        <div class="card-body">
-            <table class="table table-bordered table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Ngày gửi</th>
-                        <th>Người nạp/Mua hàng</th>
-                        <th>Số tiền</th>
-                        <th>Loại giao dịch</th>
-                        <th>Nội dung / Mã đơn</th>
-                        <th>Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model)
-                    {
-                        <tr>
-                            <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
-                            <td><strong>@item.UserFullName</strong></td>
-                            <td class="text-success"><strong>@item.Amount.ToString("N0") đ</strong></td>
-                            <td>
-                                @if (item.OrderId.HasValue)
-                                {
-                                    <span class="badge bg-warning text-dark">Thanh toán đơn hàng</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-secondary">Nạp tiền ví</span>
-                                }
-                            </td>
-                            <td>
-                                <span class="text-info">@item.Description</span>
-                            </td>
-                            <td>
-                                <form asp-action="Approve" asp-route-id="@item.TransactionId" method="post" onsubmit="return confirm('Xác nhận đã nhận đủ @item.Amount.ToString("N0") đ vào ngân hàng?')">
-                                    <button type="submit" class="btn btn-success btn-sm">
-                                        <i class="fas fa-check"></i> Duyệt & Xác nhận đơn
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    }
-                    @if (!Model.Any())
-                    {
-                        <tr>
-                            <td colspan="6" class="text-center">Không có yêu cầu nào cần xử lý.</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+<!-- Thẻ thống kê 4 ô trên cùng -->
+<div class="row mb-4 mt-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-start border-primary border-4 shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Tổng số dư hệ thống</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalSystemBalance.ToString("N0") đ</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-wallet fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-start border-success border-4 shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Doanh thu hệ thống</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalAdminRevenue.ToString("N0") đ</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-hand-holding-usd fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-start border-warning border-4 shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Yêu cầu nạp tiền</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.PendingDepositCount</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-money-check-alt fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-start border-danger border-4 shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Yêu cầu rút tiền</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.PendingWithdrawalCount</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<div class="card shadow mb-4 border-0">
+    <div class="card-header bg-white py-3 border-0">
+        <ul class="nav nav-tabs card-header-tabs" id="financeTab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active fw-bold" id="deposit-tab" data-bs-toggle="tab" href="#deposit" role="tab">Phê duyệt Nạp tiền</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link fw-bold" id="withdraw-tab" data-bs-toggle="tab" href="#withdraw" role="tab">Yêu cầu Rút tiền</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link fw-bold" id="history-tab" data-bs-toggle="tab" href="#history" role="tab">Lịch sử biến động</a>
+            </li>
+        </ul>
+    </div>
+    <div class="card-body">
+        <div class="tab-content" id="financeTabContent">
+
+            <!-- TAB 1: PHÊ DUYỆT NẠP TIỀN -->
+            <div class="tab-pane fade show active" id="deposit" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Ngày</th>
+                                <th>Người dùng</th>
+                                <th>Số tiền</th>
+                                <th>Mã / Nội dung GD</th>
+                                <th class="text-center">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.PendingDeposits)
+                            {
+                                <tr>
+                                    <td class="small">@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td><span class="fw-bold">@item.UserFullName</span></td>
+                                    <td class="text-success fw-bold">@item.Amount.ToString("N0") đ</td>
+                                    <td><span class="small text-muted">@item.Description</span></td>
+                                    <td class="text-center">
+                                        <div class="btn-group">
+                                            <form asp-action="ApproveDeposit" asp-route-id="@item.TransactionId" method="post" onsubmit="return confirm('Duyệt nạp tiền này?')">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-success px-3 me-1"><i class="fas fa-check"></i> Duyệt</button>
+                                            </form>
+                                            <button class="btn btn-sm btn-danger px-3 btn-reject-deposit" data-id="@item.TransactionId"><i class="fas fa-times"></i> Từ chối</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                            @if (!Model.PendingDeposits.Any())
+                            {
+                                <tr><td colspan="5" class="text-center py-4 text-muted">Không có yêu cầu nạp tiền nào.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 2: YÊU CẦU RÚT TIỀN -->
+            <div class="tab-pane fade" id="withdraw" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Ngày</th>
+                                <th>Người dùng</th>
+                                <th>Số tiền rút</th>
+                                <th>Thông báo Ngân hàng</th>
+                                <th class="text-center">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var w in Model.PendingWithdrawals)
+                            {
+                                <tr>
+                                    <td class="small">@w.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td><span class="fw-bold">@w.UserFullName</span></td>
+                                    <td class="text-danger fw-bold">@w.Amount.ToString("N0") đ</td>
+                                    <td>
+                                        <div class="small">
+                                            <div><strong>@w.BankName</strong></div>
+                                            <div>STK: @w.BankAccountNumber</div>
+                                            <div>Tên: @w.BankAccountName</div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-primary px-3 btn-confirm-withdraw" data-id="@w.WithdrawalId" data-amount="@w.Amount.ToString("N0")"><i class="fas fa-paper-plane"></i> Xác nhận đã chuyển</button>
+                                        <button class="btn btn-sm btn-outline-danger px-3 btn-reject-withdraw" data-id="@w.WithdrawalId"><i class="fas fa-ban"></i> Từ chối</button>
+                                    </td>
+                                </tr>
+                            }
+                            @if (!Model.PendingWithdrawals.Any())
+                            {
+                                <tr><td colspan="5" class="text-center py-4 text-muted">Không có yêu cầu rút tiền nào.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 3: LỊCH SỬ BIẾN ĐỘNG -->
+            <div class="tab-pane fade" id="history" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Ngày</th>
+                                <th>Người dùng</th>
+                                <th>Loại GD</th>
+                                <th>Số tiền</th>
+                                <th>Trạng thái</th>
+                                <th>Nội dung</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var h in Model.TransactionHistory)
+                            {
+                                <tr>
+                                    <td class="small">@h.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@h.UserFullName</td>
+                                    <td><span class="badge bg-light text-primary border">@h.TypeLabel</span></td>
+                                    <td class="fw-bold @(h.Amount >= 0 ? "text-success" : "text-danger")">
+                                        @(h.Amount >= 0 ? "+" : "")@h.Amount.ToString("N0") đ
+                                    </td>
+                                    <td>
+                                        @if (h.Status == 1)
+                                        {
+                                            <span class="badge bg-success"><i class="fas fa-check"></i> Thành công</span>
+                                        }
+                                        else if (h.Status == 0)
+                                        {
+
+                                            <span class="badge bg-warning text-dark">Đang chờ</span>
+                                        }
+                                        else
+                                        {
+
+                                            <span class="badge bg-danger">Đã hủy</span>
+                                        }
+                                    </td>
+                                    <td class="small">@h.Description</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal Xác nhận chuyển khoản rút tiền -->
+<div class="modal fade" id="confirmWithdrawModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Xác nhận đã chuyển tiền</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="ConfirmWithdrawal" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="withdrawId" />
+                <div class="modal-body">
+                    <p>Bạn đã chuyển khoản thực tế số tiền <strong id="withdrawAmountDisplay" class="text-danger"></strong> cho người dùng này chưa?</p>
+                    <div class="mb-3">
+                        <label class="form-label">Ảnh biên lai (Bill chuyển tiền)</label>
+                        <input type="file" name="billImage" class="form-control" accept="image/*" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ghi chú cho người dùng</label>
+                        <textarea name="adminNote" class="form-control" placeholder="Ví dụ: Đã chuyển qua MB Bank"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer text-end">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary px-4">Xác nhận đã chuyển</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Mở modal xác nhận rút tiền
+            $('.btn-confirm-withdraw').click(function () {
+                $('#withdrawId').val($(this).data('id'));
+                $('#withdrawAmountDisplay').text($(this).data('amount') + ' đ');
+                new bootstrap.Modal('#confirmWithdrawModal').show();
+            });
+        });
+    </script>
+}

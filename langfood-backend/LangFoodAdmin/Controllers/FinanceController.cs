@@ -30,11 +30,11 @@ namespace LangFoodAdmin.Controllers
         // Hàm helper để lấy nhãn vai trò
         private static string GetRoleLabel(int? roleId) => roleId switch
         {
-            1 => "Super Admin",
+            0 => "Admin",
             2 => "Quán ăn",
             3 => "Sinh viên",
             4 => "Shipper",
-            _ => "Người dùng"
+            1 => "Người dùng"
         };
 
         public FinanceController(LangFoodDbContext context, IWebHostEnvironment env)
@@ -50,7 +50,7 @@ namespace LangFoodAdmin.Controllers
         {
             var vm = new FinanceDashboardViewModel();
 
-            // 1. Thẻ thống kê (Chạy trực tiếp trên SQL ok)
+            // 1. Thẻ thống kê
             vm.TotalSystemBalance = await _context.Wallets.SumAsync(w => w.Balance);
             vm.TotalAdminRevenue = await _context.Transactions
                 .Where(t => (t.Type == "FEE" || t.Type == "ADMIN_FEE") && t.Status == 1)
@@ -62,13 +62,11 @@ namespace LangFoodAdmin.Controllers
                 .CountAsync(w => w.Status == 0);
 
             // 2. Tab 1: Yêu cầu nạp tiền
-            // Lấy data thô từ DB về trước
             var rawDeposits = await _context.Transactions
                 .Where(t => t.Type == "DEPOSIT" && t.Status == 0)
                 .Include(t => t.Wallet).ThenInclude(w => w.User)
                 .ToListAsync();
 
-            // Map data thô sang ViewModel bằng C# (trên Client)
             vm.PendingDeposits = rawDeposits.Select(t => new DepositRequestViewModel
             {
                 TransactionId = t.Id,
@@ -112,7 +110,6 @@ namespace LangFoodAdmin.Controllers
                 UserFullName = t.Wallet?.User?.FullName ?? t.Wallet?.User?.Username ?? "N/A",
                 UserRole = GetRoleLabel(t.Wallet?.User?.RoleId),
                 Amount = t.Amount,
-                // Chỗ này gây lỗi lúc trước, nay chạy trên C# nên sẽ hết lỗi
                 TypeLabel = (t.Type != null && TypeLabels.ContainsKey(t.Type)) ? TypeLabels[t.Type] : t.Type,
                 Status = t.Status,
                 Description = t.Description,
@@ -123,26 +120,44 @@ namespace LangFoodAdmin.Controllers
         }
 
         // ==========================================
-        // 2. DUYỆT NẠP TIỀN
+        // 2. DUYỆT NẠP TIỀN - ĐÃ FIX CẬP NHẬT ĐƠN HÀNG
         // ==========================================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApproveDeposit(int id)
         {
-            var trans = await _context.Transactions.Include(t => t.Wallet).FirstOrDefaultAsync(t => t.Id == id);
+            var trans = await _context.Transactions
+                .Include(t => t.Wallet)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
             if (trans == null || trans.Status != 0) return RedirectToAction(nameof(Index));
 
+            // 1. Cập nhật trạng thái giao dịch nạp tiền thành Công
             trans.Status = 1;
-            trans.Wallet.Balance += trans.Amount;
-            trans.Wallet.UpdatedAt = DateTime.Now;
+            if (trans.Wallet != null)
+            {
+                trans.Wallet.Balance += trans.Amount;
+                trans.Wallet.UpdatedAt = DateTime.Now;
+            }
+
+            // --- BỔ SUNG: Nếu giao dịch nạp này dùng để trả cho đơn hàng (OrderId) ---
+            if (trans.OrderId.HasValue)
+            {
+                var order = await _context.Orders.FindAsync(trans.OrderId.Value);
+                if (order != null && order.Status == "PendingPayment")
+                {
+                    // Chuyển đơn hàng sang "Chờ quán xác nhận" (Pending)
+                    order.Status = "Pending";
+                }
+            }
 
             await _context.SaveChangesAsync();
-            TempData["Success"] = "Đã duyệt nạp tiền thành công!";
+            TempData["Success"] = "Đã duyệt nạp tiền và cập nhật trạng thái đơn hàng thành công!";
             return RedirectToAction(nameof(Index));
         }
 
         // ==========================================
-        // 3. XÁC NHẬN RÚT TIỀN (Đã chuyển khoản thật)
+        // 3. XÁC NHẬN RÚT TIỀN (Admin đã chuyển khoản)
         // ==========================================
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -162,7 +177,7 @@ namespace LangFoodAdmin.Controllers
                 {
                     var folder = Path.Combine(_env.WebRootPath, "uploads", "bills");
                     if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
-                    var fileName = $"bill_withdraw_{id}_{DateTime.Now:ticks}{Path.GetExtension(billImage.FileName)}";
+                    var fileName = $"bill_withdraw_{id}_{DateTime.Now.Ticks}{Path.GetExtension(billImage.FileName)}";
                     using (var stream = new FileStream(Path.Combine(folder, fileName), FileMode.Create))
                     {
                         await billImage.CopyToAsync(stream);
@@ -193,7 +208,7 @@ namespace LangFoodAdmin.Controllers
         }
 
         // ==========================================
-        // 4. TỪ CHỐI RÚT TIỀN (Hoàn tiền)
+        // 4. TỪ CHỐI RÚT TIỀN (Hoàn lại tiền vào ví)
         // ==========================================
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -237,15 +252,21 @@ namespace LangFoodAdmin.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // ==========================================
+        // 5. TỪ CHỐI NẠP TIỀN
+        // ==========================================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RejectDeposit(int id, string? reason)
         {
             var trans = await _context.Transactions.FindAsync(id);
             if (trans == null || trans.Status != 0) return RedirectToAction(nameof(Index));
+
             trans.Status = 2;
             trans.Description += $" | Từ chối: {reason}";
+
             await _context.SaveChangesAsync();
+            TempData["Success"] = "Đã từ chối nạp tiền.";
             return RedirectToAction(nameof(Index));
         }
     }

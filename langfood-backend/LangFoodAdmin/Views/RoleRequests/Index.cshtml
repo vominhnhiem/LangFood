@@ -41,7 +41,7 @@
                         <tr>
                             <th class="ps-4">Người gửi</th>
                             <th>Tên quán dự kiến</th>
-                            <th>Minh chứng</th>
+                            @* Cột minh chứng đã xóa ở đây *@
                             <th class="text-end pe-4">Thao tác</th>
                         </tr>
                     </thead>
@@ -59,11 +59,7 @@
                                         <div class="fw-bold text-primary">@item.ShopName</div>
                                         <div class="small text-muted">@item.ShopAddress</div>
                                     </td>
-                                    <td>
-                                        <button class="btn btn-sm btn-info text-white rounded-pill px-3 btn-view-proof" data-img="http://localhost:5289/@item.ImageProof">
-                                            <i class="fas fa-image me-1"></i> Xem ảnh
-                                        </button>
-                                    </td>
+                                    @* Cột minh chứng đã xóa ở đây *@
                                     <td class="text-end pe-4">
                                         <div class="d-flex justify-content-end gap-2">
                                             <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-sm btn-success rounded-circle p-2 shadow-sm" title="Phê duyệt">
@@ -80,7 +76,7 @@
                         else
                         {
                             <tr>
-                                <td colspan="4" class="text-center py-5 text-muted italic">Hiện không có yêu cầu mở quán nào chờ duyệt.</td>
+                                <td colspan="3" class="text-center py-5 text-muted italic">Hiện không có yêu cầu mở quán nào chờ duyệt.</td>
                             </tr>
                         }
                     </tbody>
@@ -149,20 +145,7 @@
     </div>
 </div>
 
-<!-- Modal Xem ảnh minh chứng -->
-<div class="modal fade" id="proofModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold text-gray-800">Ảnh minh chứng cửa hàng</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4 text-center">
-                <img id="proofImg" src="" class="img-fluid rounded shadow-sm border" style="max-height: 70vh;">
-            </div>
-        </div>
-    </div>
-</div>
+@* Đã xóa Modal Xem ảnh ở đây *@
 
 <!-- Modal Từ chối -->
 <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
@@ -193,13 +176,6 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
-            // Xem ảnh minh chứng
-            $('.btn-view-proof').click(function() {
-                var src = $(this).data('img');
-                $('#proofImg').attr('src', src);
-                new bootstrap.Modal('#proofModal').show();
-            });
-
             // Mở modal từ chối
             $('.btn-reject-request').click(function() {
                 var id = $(this).data('id');
@@ -217,16 +193,14 @@
         background: #f8f9fa;
         margin-right: 5px;
     }
-    .nav-tabs .nav-link.active {
-        color: #fff;
-        background-color: var(--accent-color) !important;
-        border: none;
-    }
+
+        .nav-tabs .nav-link.active {
+            color: #fff;
+            background-color: var(--accent-color) !important;
+            border: none;
+        }
+
     .nav-link:hover:not(.active) {
         background-color: #eee;
-    }
-    .btn-info {
-        background-color: #0dcaf0;
-        border-color: #0dcaf0;
     }
 </style>

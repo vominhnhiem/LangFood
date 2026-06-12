@@ -4,6 +4,7 @@ using LangFood.Shared.Models;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
+using System.Collections.Generic;
 
 namespace LangFoodAdmin.Controllers
 {
@@ -16,6 +17,16 @@ namespace LangFoodAdmin.Controllers
             _context = context;
         }
 
+        // Hàm helper để lấy nhãn vai trò (Sửa lại: 1 là Sinh viên, 4 là Super Admin)
+        private static string GetRoleLabel(int? roleId) => roleId switch
+        {
+            1 => "Sinh viên",
+            2 => "Quán ăn",
+            3 => "Shipper",
+            4 => "Super Admin",
+            _ => "Người dùng"
+        };
+
         // 1. Hiển thị danh sách nạp tiền đang chờ duyệt
         public async Task<IActionResult> Index()
         {
@@ -25,11 +36,12 @@ namespace LangFoodAdmin.Controllers
                 .Join(_context.Users, j => j.w.UserId, u => u.Id, (j, u) => new DepositViewModel
                 {
                     TransactionId = j.t.Id,
-                    UserFullName = u.FullName,
+                    UserFullName = u.FullName ?? u.Username,
+                    UserRole = GetRoleLabel(u.RoleId), // Thêm logic lấy vai trò ở đây
                     Amount = j.t.Amount,
                     Description = j.t.Description,
                     CreatedAt = j.t.CreatedAt,
-                    OrderId = j.t.OrderId // Để biết đơn hàng nào đang được thanh toán
+                    OrderId = j.t.OrderId
                 })
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync();
@@ -41,7 +53,6 @@ namespace LangFoodAdmin.Controllers
         [HttpPost]
         public async Task<IActionResult> Approve(int id)
         {
-            // Sử dụng Transaction để đảm bảo an toàn dữ liệu
             using var dbTransaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -57,26 +68,27 @@ namespace LangFoodAdmin.Controllers
                     wallet.Balance += trans.Amount;
                     wallet.UpdatedAt = DateTime.Now;
 
-                    // B. QUAN TRỌNG: Nếu giao dịch này liên quan đến một Đơn hàng (Thanh toán QR)
-                    // Trong file TransactionsController.cs, hàm Approve:
+                    // B. Cập nhật trạng thái Đơn hàng
                     if (trans.OrderId.HasValue)
                     {
                         var order = await _context.Orders.FindAsync(trans.OrderId.Value);
                         if (order != null && order.Status == "PendingPayment")
                         {
-                            // Đổi từ "Confirmed" sang "Paid" 
-                            // Để báo cho hệ thống biết: Tiền đã vào túi Admin, giờ đợi Shop gật đầu.
-                            order.Status = "Paid";
+                            // Đổi sang "Pending" để Quán thấy đơn và Người mua thấy "Chờ xác nhận"
+                            // Không nên để "Paid" vì App Android của Quán đang tìm trạng thái "Pending"
+                            order.Status = "Pending";
                         }
                     }
 
                     await _context.SaveChangesAsync();
                     await dbTransaction.CommitAsync();
+                    TempData["Success"] = "Duyệt nạp tiền thành công!";
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 await dbTransaction.RollbackAsync();
+                TempData["Error"] = "Lỗi xử lý: " + ex.Message;
             }
 
             return RedirectToAction(nameof(Index));
@@ -88,6 +100,7 @@ namespace LangFoodAdmin.Controllers
     {
         public int TransactionId { get; set; }
         public string UserFullName { get; set; }
+        public string UserRole { get; set; } // Thuộc tính hiển thị vai trò
         public decimal Amount { get; set; }
         public string Description { get; set; }
         public DateTime CreatedAt { get; set; }
