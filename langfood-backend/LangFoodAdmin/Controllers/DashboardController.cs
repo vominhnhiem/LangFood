@@ -30,7 +30,7 @@ namespace LangFoodAdmin.Controllers
                 });
                 await _context.SaveChangesAsync();
             }
-
+            // Dashboard này có 2 vai trò Super Admin và Admin
             var now = DateTime.Now;
             var startOfMonth = new DateTime(now.Year, now.Month, 1);
             var startOfNextMonth = startOfMonth.AddMonths(1);
