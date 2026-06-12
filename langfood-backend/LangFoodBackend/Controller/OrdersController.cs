@@ -21,14 +21,17 @@ namespace LangFoodBackend.Controllers
             _context = context;
         }
 
-        // --- 1. TẠO ĐƠN HÀNG MỚI (Hỗ trợ lưu Topping & Ghi chú từ Android gửi lên) ---
+        // --- 1. TẠO ĐƠN HÀNG MỚI ---
         [HttpPost]
         public async Task<ActionResult<Order>> CreateOrder(Order order)
         {
             try
             {
                 order.CreatedAt = DateTime.Now;
-                order.Status = "Pending";
+
+                // Nếu chọn Chuyển khoản (PaymentMethod = 1) -> Trạng thái Chờ thanh toán
+                // Nếu chọn Tiền mặt (PaymentMethod = 0) -> Trạng thái Chờ xác nhận (Pending)
+                order.Status = (order.PaymentMethod == 1) ? "PendingPayment" : "Pending";
 
                 _context.Orders.Add(order);
                 await _context.SaveChangesAsync();
@@ -41,7 +44,24 @@ namespace LangFoodBackend.Controllers
             }
         }
 
-        // --- 2. LẤY LỊCH SỬ CHO NGƯỜI MUA ---
+        // --- 2. HỦY ĐƠN HÀNG (Dùng khi khách bấm Hủy ở màn hình QR) ---
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteOrder(int id)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+
+            // Chỉ cho phép xóa đơn nếu đang ở trạng thái chờ thanh toán hoặc chưa được xử lý
+            if (order.Status == "PendingPayment" || order.Status == "Pending")
+            {
+                _context.Orders.Remove(order);
+                await _context.SaveChangesAsync();
+                return Ok();
+            }
+            return BadRequest(new { message = "Không thể hủy đơn hàng đã được phía quán nhận hoặc đang giao." });
+        }
+
+        // --- 3. LẤY LỊCH SỬ CHO NGƯỜI MUA ---
         [HttpGet("buyer/{buyerId}")]
         public async Task<ActionResult<IEnumerable<Order>>> GetOrdersByBuyer(string buyerId)
         {
@@ -55,18 +75,20 @@ namespace LangFoodBackend.Controllers
             return Ok(orders);
         }
 
-        // --- 3. QUÁN XÁC NHẬN ĐƠN ---
+        // --- 4. QUÁN XÁC NHẬN ĐƠN (Bắt đầu chế biến) ---
         [HttpPut("shop-accept/{id}")]
         public async Task<IActionResult> ShopAcceptOrder(int id)
         {
             var order = await _context.Orders.FindAsync(id);
             if (order == null) return NotFound();
+
+            // Chỉ quán mới có thể nhận khi đơn đã thanh toán hoặc là tiền mặt (Pending)
             order.Status = "Preparing";
             await _context.SaveChangesAsync();
             return Ok();
         }
 
-        // --- 4. QUÁN BÁO ĐÃ NẤU XONG ---
+        // --- 5. QUÁN BÁO ĐÃ NẤU XONG ---
         [HttpPut("shop-ready/{id}")]
         public async Task<IActionResult> ShopReadyOrder(int id)
         {
@@ -77,7 +99,7 @@ namespace LangFoodBackend.Controllers
             return Ok();
         }
 
-        // --- 5. LẤY ĐƠN CHO SHIPPER ---
+        // --- 6. LẤY ĐƠN CHO SHIPPER (Chỉ hiện đơn đã sẵn sàng hoặc đang giao của chính mình) ---
         [HttpGet("available-for-shipper/{shipperId}")]
         public async Task<ActionResult<IEnumerable<Order>>> GetOrdersForShipper(int shipperId)
         {
@@ -91,7 +113,7 @@ namespace LangFoodBackend.Controllers
                 .ToListAsync();
         }
 
-        // --- 6. SHIPPER NHẬN ĐƠN (ĐÃ BỔ SUNG LOGIC CHẶN GIỚI HẠN) ---
+        // --- 7. SHIPPER NHẬN ĐƠN (Có chặn giới hạn & giam tiền ví) ---
         [HttpPut("accept/{id}")]
         public async Task<IActionResult> AcceptOrder(int id, [FromQuery] int shipperId)
         {
@@ -102,13 +124,12 @@ namespace LangFoodBackend.Controllers
                 return BadRequest(new { message = "Đơn hàng đã có người khác nhận." });
 
             if (order.Status != "Ready" && order.Status != "Confirmed" && order.Status != "Accepted")
-                return BadRequest(new { message = "Đơn hàng không ở trạng thái có thể nhận." });
+                return BadRequest(new { message = "Đơn hàng chưa sẵn sàng để giao." });
 
-            // --- BẮT ĐẦU: KIỂM TRA GIỚI HẠN ĐƠN HÀNG TẠI SERVER ---
+            // KIỂM TRA GIỚI HẠN ĐƠN HÀNG TỪ SETTINGS
             var settings = await _context.SystemSettings.FirstOrDefaultAsync();
             int maxLimit = settings?.MaxOrderPerShipper ?? 3;
 
-            // Đếm số đơn mà Shipper này đang đi giao
             var deliveringCount = await _context.Orders
                 .CountAsync(o => o.ShipperId == shipperId && o.Status == "Delivering");
 
@@ -116,17 +137,17 @@ namespace LangFoodBackend.Controllers
             {
                 return BadRequest(new { message = $"Bạn đã đạt giới hạn nhận tối đa {maxLimit} đơn hàng cùng lúc." });
             }
-            // --- KẾT THÚC KIỂM TRA ---
 
             var shipper = await _context.Shippers.FindAsync(shipperId);
             var wallet = await _context.Wallets.FirstOrDefaultAsync(w => w.UserId == shipper.UserId);
 
+            // Số tiền giam = Tiền món + phí ship
             decimal amountToHold = (decimal)(order.TotalAmount + order.ShippingFee);
 
             if (wallet == null || wallet.Balance < amountToHold)
-                return BadRequest(new { message = "Số dư ví không đủ để nhận đơn." });
+                return BadRequest(new { message = "Số dư ví không đủ để nhận đơn thu hộ." });
 
-            // LOGIC TIỀN: Tạm giữ tiền
+            // Thực hiện giam tiền
             wallet.Balance -= amountToHold;
             _context.Transactions.Add(new Transaction
             {
@@ -145,7 +166,7 @@ namespace LangFoodBackend.Controllers
             return Ok();
         }
 
-        // --- 7. HOÀN THÀNH ĐƠN HÀNG ---
+        // --- 8. HOÀN THÀNH ĐƠN HÀNG (Chia tiền Quán & Shipper) ---
         [HttpPut("complete/{id}")]
         public async Task<IActionResult> CompleteOrder(int id)
         {
@@ -157,9 +178,9 @@ namespace LangFoodBackend.Controllers
 
             decimal foodAmount = (decimal)order.TotalAmount;
             decimal systemFee = (decimal)order.ShippingFee;
-            decimal shipperPay = 10000;
+            decimal shipperPay = 10000; // Công ship 10k
 
-            // Tiền cho quán
+            // Trả tiền cho Quán
             var shop = await _context.Shops.FindAsync(order.ShopId);
             if (shop != null)
             {
@@ -171,7 +192,7 @@ namespace LangFoodBackend.Controllers
                 }
             }
 
-            // Tiền trả lại Shipper + Công
+            // Trả lại tiền giam + Công cho Shipper
             if (order.ShipperId.HasValue)
             {
                 var shipper = await _context.Shippers.FindAsync(order.ShipperId.Value);
@@ -179,17 +200,20 @@ namespace LangFoodBackend.Controllers
                 if (sw != null)
                 {
                     decimal holdAmount = foodAmount + systemFee;
+                    // Nếu khách trả tiền mặt (0) -> Shipper giữ tiền mặt khách đưa -> Chỉ cộng công 10k vào ví
+                    // Nếu khách chuyển khoản (1) -> Shipper ko có tiền mặt -> Trả lại tiền đã giam + 10k công
                     decimal totalBack = (order.PaymentMethod == 0) ? shipperPay : (holdAmount + shipperPay);
+
                     sw.Balance += totalBack;
                     _context.Transactions.Add(new Transaction { WalletId = sw.Id, Amount = totalBack, Type = "SHIPPER_EARNING", Description = $"Hoàn vốn/Công đơn #{order.Id}", Status = 1, OrderId = order.Id, CreatedAt = DateTime.Now });
                 }
             }
 
             await _context.SaveChangesAsync();
-            return Ok(new { message = "Thành công" });
+            return Ok(new { message = "Giao hàng thành công" });
         }
 
-        // --- 8. THỐNG KÊ & DASHBOARD ---
+        // --- 9. CÁC HÀM THỐNG KÊ DOANH THU QUÁN ---
         [HttpGet("shop-stats/{shopId}")]
         public async Task<ActionResult<DetailedShopStatsDto>> GetShopStats(int shopId)
         {
@@ -254,7 +278,7 @@ namespace LangFoodBackend.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = "Lỗi lấy thống kê chi tiết: " + ex.Message });
+                return BadRequest(new { message = "Lỗi lấy thống kê: " + ex.Message });
             }
         }
     }
