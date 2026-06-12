@@ -1,4 +1,5 @@
-@model IEnumerable<LangFood.Shared.Models.User>@{
+@model IEnumerable<LangFood.Shared.Models.User>
+@{
     ViewData["Title"] = "Quản lý phân quyền";
 }
 
@@ -6,7 +7,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h3 mb-0 text-gray-800 fw-bold">Quản lý phân quyền Admin</h1>
-            <p class="text-muted small mb-0">Quản lý danh sách tài khoản quản trị và trạng thái hoạt động của hệ thống.</p>
+            <p class="text-muted small mb-0">Quản lý danh sách tài khoản quản trị và phân quyền chi tiết cho từng Module hệ thống.</p>
         </div>
         <button class="btn text-white fw-bold shadow-sm d-flex align-items-center" 
                 style="background-color: #f24e1e; border-color: #f24e1e; border-radius: 8px;" 
@@ -70,7 +71,7 @@
         </div>
     </div>
 
-    <!-- Bảng danh sách Admin Hoạt Động (Đã xóa 3 cột phân quyền) -->
+    <!-- Bảng danh sách Admin Hoạt Động -->
     <div class="card border-0 shadow-sm" style="border-radius: 16px;">
         <div class="card-header bg-white border-0 py-3">
             <h5 class="fw-bold mb-0 text-dark">
@@ -84,6 +85,9 @@
                         <th>Họ tên</th>
                         <th>Tài khoản</th>
                         <th>Email</th>
+                        <th class="text-center">Quản lý đơn hàng</th>
+                        <th class="text-center">Quản lý tài chính</th>
+                        <th class="text-center">Duyệt cửa hàng</th>
                         <th class="text-center">Hành động</th>
                     </tr>
                 </thead>
@@ -91,7 +95,7 @@
                     @if (!activeAdmins.Any())
                     {
                         <tr>
-                            <td colspan="4" class="text-center text-muted py-4">Chưa có tài khoản Admin nào hoạt động.</td>
+                            <td colspan="7" class="text-center text-muted py-4">Chưa có tài khoản Admin nào hoạt động.</td>
                         </tr>
                     }
                     else
@@ -103,8 +107,23 @@
                                 <td><span class="badge bg-secondary-subtle text-secondary fw-semibold">@admin.Username</span></td>
                                 <td>@admin.Email</td>
                                 <td class="text-center">
-                                    <button class="btn btn-sm btn-outline-danger fw-semibold delete-admin-btn" data-userid="@admin.Id" style="border-radius: 6px;">
-                                        <i class="fa-solid fa-trash me-1"></i> Xóa
+                                    <div class="form-check form-switch d-inline-block">
+                                        <input class="form-check-input permission-toggle" type="checkbox" data-userid="@admin.Id" data-permission="canManageOrders" @(admin.CanManageOrders ? "checked" : "") style="cursor: pointer;" />
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="form-check form-switch d-inline-block">
+                                        <input class="form-check-input permission-toggle" type="checkbox" data-userid="@admin.Id" data-permission="canManageFinance" @(admin.CanManageFinance ? "checked" : "") style="cursor: pointer;" />
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="form-check form-switch d-inline-block">
+                                        <input class="form-check-input permission-toggle" type="checkbox" data-userid="@admin.Id" data-permission="canManageShops" @(admin.CanManageShops ? "checked" : "") style="cursor: pointer;" />
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-primary fw-semibold save-permissions-btn" data-userid="@admin.Id" style="border-radius: 6px;">
+                                        <i class="fa-solid fa-floppy-disk me-1"></i> Lưu quyền
                                     </button>
                                 </td>
                             </tr>
@@ -116,8 +135,8 @@
     </div>
 </div>
 
-<!-- Modal Thêm Admin Mới (Giữ nguyên) -->
-<div class="modal fade" id="addAdminModal" tabindex="-1" aria-labelledby="addAdminModalLabel" aria-hidden="true">
+<!-- Modal Thêm Admin Mới -->
+<div class="modal fade" id="addAdminModal" tabindex="-1" aria-labelledby="addAdminModalLabel" aria-hidden="true" style="border-radius: 16px;">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow" style="border-radius: 16px;">
             <div class="modal-header border-0 pt-4 px-4 pb-0">
@@ -141,6 +160,7 @@
                             <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-envelope"></i></span>
                             <input type="email" name="Email" class="form-control border-start-0" placeholder="nhapemail@domain.com" required />
                         </div>
+                        <div class="form-text small text-muted">Hệ thống sẽ tự động tách phần trước ký tự @@ làm tên đăng nhập (Username).</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold text-secondary small">Mật khẩu</label>
@@ -148,6 +168,7 @@
                             <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-lock"></i></span>
                             <input type="password" name="Password" class="form-control border-start-0" placeholder="Nhập mật khẩu của admin" required />
                         </div>
+                        <div class="form-text small text-muted">Mật khẩu sẽ được mã hóa bảo mật khi lưu trữ.</div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 px-4 pb-4 pt-0">
@@ -162,14 +183,18 @@
 </div>
 
 @section Scripts {
+    <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function () {
-            // Xử lý tạo admin
+            // Xử lý submit form tạo admin
             $('#addAdminForm').on('submit', function (e) {
                 e.preventDefault();
+                
                 var form = $(this);
                 var btnSubmit = form.find('button[type="submit"]');
+                var originalText = btnSubmit.html();
+                
                 btnSubmit.html('<span class="spinner-border spinner-border-sm me-2"></span> Đang tạo...').attr('disabled', true);
 
                 $.ajax({
@@ -178,21 +203,52 @@
                     data: form.serialize(),
                     success: function (res) {
                         if (res.success) {
-                            window.location.reload();
+                            // Đóng modal
+                            var modalEl = document.getElementById('addAdminModal');
+                            var modal = bootstrap.Modal.getInstance(modalEl);
+                            modal.hide();
+                            
+                            // Reset form
+                            form[0].reset();
+                            
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Thành công!',
+                                text: res.message,
+                                confirmButtonColor: '#f24e1e'
+                            }).then(() => {
+                                // Tải lại trang để cập nhật danh sách
+                                window.location.reload();
+                            });
                         } else {
-                            Swal.fire({ icon: 'error', title: 'Thất bại!', text: res.message, confirmButtonColor: '#f24e1e' });
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Thất bại!',
+                                text: res.message,
+                                confirmButtonColor: '#f24e1e'
+                            });
                         }
                     },
+                    error: function () {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Lỗi kết nối!',
+                            text: 'Không thể kết nối đến máy chủ. Vui lòng thử lại.',
+                            confirmButtonColor: '#f24e1e'
+                        });
+                    },
                     complete: function () {
-                        btnSubmit.html('<i class="fa-solid fa-circle-check me-2"></i> Lưu tài khoản').attr('disabled', false);
+                        btnSubmit.html(originalText).attr('disabled', false);
                     }
                 });
             });
 
-            // Xử lý duyệt Admin
+            // Xử lý duyệt Admin con
             $('.approve-admin-btn').on('click', function () {
                 var btn = $(this);
                 var userId = btn.data('userid');
+                var originalHtml = btn.html();
+                
                 btn.html('<span class="spinner-border spinner-border-sm me-1"></span> Đang duyệt...').attr('disabled', true);
 
                 $.ajax({
@@ -201,11 +257,70 @@
                     data: { userId: userId },
                     success: function (res) {
                         if (res.success) {
-                            window.location.reload();
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Thành công!',
+                                text: res.message,
+                                confirmButtonColor: '#f24e1e'
+                            }).then(() => {
+                                window.location.reload();
+                            });
                         } else {
-                            Swal.fire({ icon: 'error', title: 'Thất bại!', text: res.message, confirmButtonColor: '#f24e1e' });
-                            btn.html('<i class="fa-solid fa-check me-1"></i> Duyệt hoạt động').attr('disabled', false);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Thất bại!',
+                                text: res.message,
+                                confirmButtonColor: '#f24e1e'
+                            });
+                            btn.html(originalHtml).attr('disabled', false);
                         }
+                    },
+                    error: function () {
+                        toastr.error('Lỗi kết nối máy chủ!');
+                        btn.html(originalHtml).attr('disabled', false);
+                    }
+                });
+            });
+
+            // Xử lý bấm nút "Lưu quyền"
+            $('.save-permissions-btn').on('click', function () {
+                var btn = $(this);
+                var userId = btn.data('userid');
+                var row = $('#row-' + userId);
+                
+                var canManageOrders = row.find('input[data-permission="canManageOrders"]').is(':checked');
+                var canManageFinance = row.find('input[data-permission="canManageFinance"]').is(':checked');
+                var canManageShops = row.find('input[data-permission="canManageShops"]').is(':checked');
+
+                var originalHtml = btn.html();
+                btn.html('<span class="spinner-border spinner-border-sm"></span>').attr('disabled', true);
+
+                $.ajax({
+                    url: '/Permission/UpdatePermissions',
+                    type: 'POST',
+                    data: {
+                        userId: userId,
+                        canManageOrders: canManageOrders,
+                        canManageFinance: canManageFinance,
+                        canManageShops: canManageShops
+                    },
+                    success: function (res) {
+                        if (res.success) {
+                            toastr.success(res.message);
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Thất bại!',
+                                text: res.message,
+                                confirmButtonColor: '#f24e1e'
+                            });
+                        }
+                    },
+                    error: function () {
+                        toastr.error('Lỗi kết nối máy chủ!');
+                    },
+                    complete: function () {
+                        btn.html(originalHtml).attr('disabled', false);
                     }
                 });
             });
