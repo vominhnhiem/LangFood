@@ -10,12 +10,12 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h3 mb-0 text-gray-800 fw-bold">Quản lý phân quyền Admin</h1>
-            <p class="text-muted small mb-0">Quản lý danh sách tài khoản quản trị và trạng thái hoạt động của hệ thống.</p>
+            <p class="text-muted small mb-0">Quản lý danh sách tài khoản quản trị và phân quyền chi tiết cho từng Module hệ thống.</p>
         </div>
         @if (isSuperAdmin)
         {
-            <button class="btn text-white fw-bold shadow-sm d-flex align-items-center" 
-                    style="background-color: #f24e1e; border-color: #f24e1e; border-radius: 8px;" 
+            <button class="btn text-white fw-bold shadow-sm d-flex align-items-center"
+                    style="background-color: #f24e1e; border-color: #f24e1e; border-radius: 8px;"
                     data-bs-toggle="modal" data-bs-target="#addAdminModal">
                 <i class="fa-solid fa-plus me-2"></i> Thêm Admin Mới
             </button>
@@ -29,65 +29,63 @@
 
     @if (isSuperAdmin)
     {
-    <!-- Bảng danh sách Admin Chờ Duyệt -->
-    <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px; border-left: 4px solid #f24e1e;">
-        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
-            <h5 class="fw-bold mb-0 text-dark">
-                <i class="fa-solid fa-hourglass-half me-2 text-warning"></i>Tài khoản Admin chờ duyệt
-            </h5>
-            <span class="badge bg-warning text-dark fw-bold">@pendingAdmins.Count yêu cầu</span>
-        </div>
-        <div class="table-responsive px-4 pb-4">
-            <table class="table table-striped table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Họ tên</th>
-                        <th>Tài khoản</th>
-                        <th>Email</th>
-                        <th>Trạng thái</th>
-                        <th class="text-center">Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (!pendingAdmins.Any())
-                    {
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px; border-left: 4px solid #f24e1e;">
+            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-dark">
+                    <i class="fa-solid fa-hourglass-half me-2 text-warning"></i>Tài khoản Admin chờ duyệt
+                </h5>
+                <span class="badge bg-warning text-dark fw-bold">@pendingAdmins.Count yêu cầu</span>
+            </div>
+            <div class="table-responsive px-4 pb-4">
+                <table class="table table-striped table-hover align-middle">
+                    <thead class="table-light">
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-4">Không có tài khoản Admin nào đang chờ duyệt.</td>
+                            <th>Họ tên</th>
+                            <th>Tài khoản</th>
+                            <th>Email</th>
+                            <th>Trạng thái</th>
+                            <th class="text-center">Hành động</th>
                         </tr>
-                    }
-                    else
-                    {
-                        @foreach (var admin in pendingAdmins)
+                    </thead>
+                    <tbody>
+                        @if (!pendingAdmins.Any())
                         {
-                            <tr id="row-pending-@admin.Id">
-                                <td class="fw-bold text-dark">@admin.FullName</td>
-                                <td><span class="badge bg-secondary-subtle text-secondary fw-semibold">@admin.Username</span></td>
-                                <td>@admin.Email</td>
-                                <td><span class="badge bg-warning-subtle text-warning fw-bold"><i class="fa-solid fa-circle-notch fa-spin me-1"></i>Chờ duyệt</span></td>
-                                <td class="text-center">
-                                    <div class="d-flex justify-content-center gap-2">
-                                        <button class="btn btn-sm text-white fw-semibold approve-admin-btn" 
-                                                data-userid="@admin.Id" 
-                                                style="background-color: #f24e1e; border-color: #f24e1e; border-radius: 6px;">
-                                            <i class="fa-solid fa-check me-1"></i> Duyệt hoạt động
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger fw-semibold delete-admin-btn" 
-                                                data-userid="@admin.Id" 
-                                                style="border-radius: 6px;">
-                                            <i class="fa-solid fa-trash me-1"></i> Từ chối & Xóa
-                                        </button>
-                                    </div>
-                                </td>
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">Không có tài khoản Admin nào đang chờ duyệt.</td>
                             </tr>
                         }
-                    }
-                </tbody>
-            </table>
+                        else
+                        {
+                            @foreach (var admin in pendingAdmins)
+                            {
+                                <tr id="row-pending-@admin.Id">
+                                    <td class="fw-bold text-dark">@admin.FullName</td>
+                                    <td><span class="badge bg-secondary-subtle text-secondary fw-semibold">@admin.Username</span></td>
+                                    <td>@admin.Email</td>
+                                    <td><span class="badge bg-warning-subtle text-warning fw-bold"><i class="fa-solid fa-circle-notch fa-spin me-1"></i>Chờ duyệt</span></td>
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center gap-2">
+                                            <button class="btn btn-sm text-white fw-semibold approve-admin-btn"
+                                                    data-userid="@admin.Id"
+                                                    style="background-color: #f24e1e; border-color: #f24e1e; border-radius: 6px;">
+                                                <i class="fa-solid fa-check me-1"></i> Duyệt hoạt động
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger fw-semibold delete-admin-btn"
+                                                    data-userid="@admin.Id"
+                                                    style="border-radius: 6px;">
+                                                <i class="fa-solid fa-trash me-1"></i> Từ chối & Xóa
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </div>
     }
 
-    <!-- Bảng danh sách Admin Hoạt Động (Đã xóa 3 cột phân quyền) -->
     <div class="card border-0 shadow-sm" style="border-radius: 16px;">
         <div class="card-header bg-white border-0 py-3">
             <h5 class="fw-bold mb-0 text-dark">
@@ -101,6 +99,9 @@
                         <th>Họ tên</th>
                         <th>Tài khoản</th>
                         <th>Email</th>
+                        <th class="text-center">Quản lý đơn hàng</th>
+                        <th class="text-center">Quản lý tài chính</th>
+                        <th class="text-center">Duyệt cửa hàng</th>
                         @if (isSuperAdmin)
                         {
                             <th class="text-center">Hành động</th>
@@ -111,7 +112,7 @@
                     @if (!activeAdmins.Any())
                     {
                         <tr>
-                            <td colspan="@(isSuperAdmin ? 4 : 3)" class="text-center text-muted py-4">Chưa có tài khoản Admin nào hoạt động.</td>
+                            <td colspan="@(isSuperAdmin ? 7 : 6)" class="text-center text-muted py-4">Chưa có tài khoản Admin nào hoạt động.</td>
                         </tr>
                     }
                     else
@@ -123,19 +124,39 @@
                                 <td class="fw-bold text-dark">@admin.FullName</td>
                                 <td><span class="badge bg-secondary-subtle text-secondary fw-semibold">@admin.Username</span></td>
                                 <td>@admin.Email</td>
+                                <td class="text-center">
+                                    <div class="form-check form-switch d-inline-block">
+                                        <input class="form-check-input permission-toggle" type="checkbox" data-userid="@admin.Id" data-permission="canManageOrders" @(admin.CanManageOrders ? "checked" : "") @(isSuperAdmin ? "" : "disabled") style="cursor: pointer;" />
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="form-check form-switch d-inline-block">
+                                        <input class="form-check-input permission-toggle" type="checkbox" data-userid="@admin.Id" data-permission="canManageFinance" @(admin.CanManageFinance ? "checked" : "") @(isSuperAdmin ? "" : "disabled") style="cursor: pointer;" />
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="form-check form-switch d-inline-block">
+                                        <input class="form-check-input permission-toggle" type="checkbox" data-userid="@admin.Id" data-permission="canManageShops" @(admin.CanManageShops ? "checked" : "") @(isSuperAdmin ? "" : "disabled") style="cursor: pointer;" />
+                                    </div>
+                                </td>
                                 @if (isSuperAdmin)
                                 {
                                     <td class="text-center">
-                                        @if (!isRowSuperAdmin)
-                                        {
-                                            <button class="btn btn-sm btn-outline-danger fw-semibold delete-admin-btn" data-userid="@admin.Id" style="border-radius: 6px;">
-                                                <i class="fa-solid fa-trash me-1"></i> Xóa
+                                        <div class="d-flex justify-content-center gap-2">
+                                            <button class="btn btn-sm btn-outline-primary fw-semibold save-permissions-btn" data-userid="@admin.Id" style="border-radius: 6px;">
+                                                <i class="fa-solid fa-floppy-disk me-1"></i> Lưu quyền
                                             </button>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-secondary-subtle text-secondary px-3 py-2" style="font-size: 0.72rem; font-weight: 600; border-radius: 8px;">Tài khoản gốc</span>
-                                        }
+                                            @if (!isRowSuperAdmin)
+                                            {
+                                                <button class="btn btn-sm btn-outline-danger fw-semibold delete-admin-btn" data-userid="@admin.Id" style="border-radius: 6px;">
+                                                    <i class="fa-solid fa-trash me-1"></i> Xóa
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary-subtle text-secondary px-3 py-2" style="font-size: 0.72rem; font-weight: 600; border-radius: 8px;">Tài khoản gốc</span>
+                                            }
+                                        </div>
                                     </td>
                                 }
                             </tr>
@@ -147,8 +168,7 @@
     </div>
 </div>
 
-<!-- Modal Thêm Admin Mới (Giữ nguyên) -->
-<div class="modal fade" id="addAdminModal" tabindex="-1" aria-labelledby="addAdminModalLabel" aria-hidden="true">
+<div class="modal fade" id="addAdminModal" tabindex="-1" aria-labelledby="addAdminModalLabel" aria-hidden="true" style="border-radius: 16px;">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow" style="border-radius: 16px;">
             <div class="modal-header border-0 pt-4 px-4 pb-0">
@@ -172,6 +192,7 @@
                             <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-envelope"></i></span>
                             <input type="email" name="Email" class="form-control border-start-0" placeholder="nhapemail@domain.com" required />
                         </div>
+                        <div class="form-text small text-muted">Hệ thống sẽ tự động tách phần trước ký tự @@ làm tên đăng nhập (Username).</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold text-secondary small">Mật khẩu</label>
@@ -179,6 +200,7 @@
                             <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-lock"></i></span>
                             <input type="password" name="Password" class="form-control border-start-0" placeholder="Nhập mật khẩu của admin" required />
                         </div>
+                        <div class="form-text small text-muted">Mật khẩu sẽ được mã hóa bảo mật khi lưu trữ.</div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 px-4 pb-4 pt-0">
@@ -196,120 +218,192 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function () {
-            function getToken() {
-                return $('input[name="__RequestVerificationToken"]').val() || '';
-            }
 
-            // Xử lý tạo admin
-            $('#addAdminForm').on('submit', function (e) {
-                e.preventDefault();
-                var form = $(this);
-                var btnSubmit = form.find('button[type="submit"]');
-                btnSubmit.html('<span class="spinner-border spinner-border-sm me-2"></span> Đang tạo...').attr('disabled', true);
+        function getToken() {
+        return $('input[name="__RequestVerificationToken"]').val() || '';
+        }
 
-                $.ajax({
-                    url: '/Permission/CreateAdmin',
-                    type: 'POST',
-                    data: form.serialize() + '&__RequestVerificationToken=' + encodeURIComponent(getToken()),
-                    success: function (res) {
-                        if (res.success) {
-                            window.location.reload();
-                        } else {
-                            Swal.fire({ icon: 'error', title: 'Thất bại!', text: res.message, confirmButtonColor: '#f24e1e' });
-                        }
-                    },
-                    complete: function () {
-                        btnSubmit.html('<i class="fa-solid fa-circle-check me-2"></i> Lưu tài khoản').attr('disabled', false);
-                    }
-                });
-            });
+        $('#addAdminForm').on('submit', function (e) {
+        e.preventDefault();
 
-            // Xử lý duyệt Admin
-            $(document).on('click', '.approve-admin-btn', function () {
-                var btn = $(this);
-                var userId = btn.data('userid');
+        var form = $(this);
+        var btnSubmit = form.find('button[type="submit"]');
+        var originalText = btnSubmit.html();
 
-                Swal.fire({
-                    title: 'Xác nhận duyệt?',
-                    text: 'Duyệt tài khoản này làm Quản trị viên?',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: '#2e7d32',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Duyệt ngay',
-                    cancelButtonText: 'Hủy',
-                    customClass: { popup: 'rounded-4' }
-                }).then(result => {
-                    if (!result.isConfirmed) return;
+        btnSubmit.html('<span class="spinner-border spinner-border-sm me-2"></span> Đang tạo...').attr('disabled', true);
 
-                    btn.html('<span class="spinner-border spinner-border-sm me-1"></span> Đang duyệt...').attr('disabled', true);
-                    $.ajax({
-                        url: '/Permission/ApproveAdmin',
-                        type: 'POST',
-                        data: { userId: userId, __RequestVerificationToken: getToken() },
-                        success: function (res) {
-                            if (res.success) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Thành công!',
-                                    text: res.message,
-                                    confirmButtonColor: '#2e7d32',
-                                    customClass: { popup: 'rounded-4' }
-                                }).then(() => location.reload());
-                            } else {
-                                Swal.fire({ icon: 'error', title: 'Thất bại!', text: res.message, confirmButtonColor: '#f24e1e' });
-                                btn.html('<i class="fa-solid fa-check me-1"></i> Duyệt hoạt động').attr('disabled', false);
-                            }
-                        },
-                        error: () => {
-                            Swal.fire({ icon: 'error', title: 'Lỗi!', text: 'Không thể kết nối đến máy chủ.', confirmButtonColor: '#f24e1e' });
-                            btn.html('<i class="fa-solid fa-check me-1"></i> Duyệt hoạt động').attr('disabled', false);
-                        }
-                    });
-                });
-            });
+        $.ajax({
+        url: '/Permission/CreateAdmin',
+        type: 'POST',
+        data: form.serialize() + '&__RequestVerificationToken=' + encodeURIComponent(getToken()),
+        success: function (res) {
+        if (res.success) {
+        var modalEl = document.getElementById('addAdminModal');
+        var modal = bootstrap.Modal.getInstance(modalEl);
+        modal.hide();
 
-            // Xử lý xóa Admin (SweetAlert2 xác nhận + AJAX + Reload)
-            $(document).on('click', '.delete-admin-btn', function () {
-                var btn = $(this);
-                var id = btn.data('userid');
+        form[0].reset();
 
-                Swal.fire({
-                    title: 'Xác nhận xóa tài khoản',
-                    text: 'Bạn có chắc chắn muốn xóa tài khoản này không?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#c62828',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Xóa tài khoản',
-                    cancelButtonText: 'Hủy',
-                    customClass: { popup: 'rounded-4' }
-                }).then(result => {
-                    if (!result.isConfirmed) return;
+        Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: res.message,
+        confirmButtonColor: '#f24e1e'
+        }).then(() => {
+        window.location.reload();
+        });
+        } else {
+        Swal.fire({
+        icon: 'error',
+        title: 'Thất bại!',
+        text: res.message,
+        confirmButtonColor: '#f24e1e'
+        });
+        }
+        },
+        error: function () {
+        Swal.fire({
+        icon: 'error',
+        title: 'Lỗi kết nối!',
+        text: 'Không thể kết nối đến máy chủ. Vui lòng thử lại.',
+        confirmButtonColor: '#f24e1e'
+        });
+        },
+        complete: function () {
+        btnSubmit.html(originalText).attr('disabled', false);
+        }
+        });
+        });
 
-                    $.ajax({
-                        url: '/Permission/DeleteAdmin',
-                        type: 'POST',
-                        data: { id: id, __RequestVerificationToken: getToken() },
-                        success: function (res) {
-                            if (res.success) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Thành công!',
-                                    text: 'Đã xóa tài khoản thành công!',
-                                    confirmButtonColor: '#2e7d32',
-                                    customClass: { popup: 'rounded-4' }
-                                }).then(() => {
-                                    location.reload();
-                                });
-                            } else {
-                                Swal.fire({ icon: 'error', title: 'Không thể xóa!', text: res.message, confirmButtonColor: '#f24e1e' });
-                            }
-                        },
-                        error: () => Swal.fire({ icon: 'error', title: 'Lỗi kết nối!', text: 'Không thể kết nối đến máy chủ.', confirmButtonColor: '#f24e1e' })
-                    });
-                });
-            });
+        // Xử lý duyệt Admin
+        $(document).on('click', '.approve-admin-btn', function () {
+        var btn = $(this);
+        var userId = btn.data('userid');
+
+        Swal.fire({
+        title: 'Xác nhận duyệt?',
+        text: 'Duyệt tài khoản này làm Quản trị viên?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#2e7d32',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Duyệt ngay',
+        cancelButtonText: 'Hủy',
+        customClass: { popup: 'rounded-4' }
+        }).then(result => {
+        if (!result.isConfirmed) return;
+
+        btn.html('<span class="spinner-border spinner-border-sm me-1"></span> Đang duyệt...').attr('disabled', true);
+        $.ajax({
+        url: '/Permission/ApproveAdmin',
+        type: 'POST',
+        data: { userId: userId, __RequestVerificationToken: getToken() },
+        success: function (res) {
+        if (res.success) {
+        Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: res.message,
+        confirmButtonColor: '#2e7d32',
+        customClass: { popup: 'rounded-4' }
+        }).then(() => location.reload());
+        } else {
+        Swal.fire({ icon: 'error', title: 'Thất bại!', text: res.message, confirmButtonColor: '#f24e1e' });
+        btn.html('<i class="fa-solid fa-check me-1"></i> Duyệt hoạt động').attr('disabled', false);
+        }
+        },
+        error: () => {
+        Swal.fire({ icon: 'error', title: 'Lỗi!', text: 'Không thể kết nối đến máy chủ.', confirmButtonColor: '#f24e1e' });
+        btn.html('<i class="fa-solid fa-check me-1"></i> Duyệt hoạt động').attr('disabled', false);
+        }
+        });
+        });
+        });
+
+        // Xử lý cập nhật phân quyền
+        $(document).on('click', '.save-permissions-btn', function () {
+        var btn = $(this);
+        var userId = btn.data('userid');
+        var row = $('#row-' + userId);
+
+        var canManageOrders = row.find('input[data-permission="canManageOrders"]').is(':checked');
+        var canManageFinance = row.find('input[data-permission="canManageFinance"]').is(':checked');
+        var canManageShops = row.find('input[data-permission="canManageShops"]').is(':checked');
+
+        var originalHtml = btn.html();
+        btn.html('<span class="spinner-border spinner-border-sm"></span>').attr('disabled', true);
+
+        $.ajax({
+        url: '/Permission/UpdatePermissions',
+        type: 'POST',
+        data: {
+        userId: userId,
+        canManageOrders: canManageOrders,
+        canManageFinance: canManageFinance,
+        canManageShops: canManageShops,
+        __RequestVerificationToken: getToken()
+        },
+        success: function (res) {
+        if (res.success) {
+        if (typeof toastr !== 'undefined') {
+        toastr.success(res.message);
+        } else {
+        Swal.fire({ icon: 'success', title: 'Thành công!', text: res.message, timer: 1500, showConfirmButton: false });
+        }
+        } else {
+        Swal.fire({ icon: 'error', title: 'Thất bại!', text: res.message, confirmButtonColor: '#f24e1e' });
+        }
+        },
+        error: function () {
+        Swal.fire({ icon: 'error', title: 'Lỗi!', text: 'Không thể kết nối đến máy chủ.', confirmButtonColor: '#f24e1e' });
+        },
+        complete: function () {
+        btn.html(originalHtml).attr('disabled', false);
+        }
+        });
+        });
+
+        // Xử lý xóa Admin
+        $(document).on('click', '.delete-admin-btn', function () {
+        var btn = $(this);
+        var id = btn.data('userid');
+
+        Swal.fire({
+        title: 'Xác nhận xóa tài khoản',
+        text: 'Bạn có chắc chắn muốn xóa tài khoản này không?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#c62828',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Xóa tài khoản',
+        cancelButtonText: 'Hủy',
+        customClass: { popup: 'rounded-4' }
+        }).then(result => {
+        if (!result.isConfirmed) return;
+
+        $.ajax({
+        url: '/Permission/DeleteAdmin',
+        type: 'POST',
+        data: { id: id, __RequestVerificationToken: getToken() },
+        success: function (res) {
+        if (res.success) {
+        Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: 'Đã xóa tài khoản thành công!',
+        confirmButtonColor: '#2e7d32',
+        customClass: { popup: 'rounded-4' }
+        }).then(() => {
+        location.reload();
+        });
+        } else {
+        Swal.fire({ icon: 'error', title: 'Không thể xóa!', text: res.message, confirmButtonColor: '#f24e1e' });
+        }
+        },
+        error: () => Swal.fire({ icon: 'error', title: 'Lỗi kết nối!', text: 'Không thể kết nối đến máy chủ.', confirmButtonColor: '#f24e1e' })
+        });
+        });
+        });
         });
     </script>
 }
