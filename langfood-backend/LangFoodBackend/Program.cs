@@ -1,4 +1,5 @@
 using LangFood.Shared.Models;
+using LangFoodBackend.Hubs;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Net.Sockets;
@@ -35,9 +36,13 @@ builder.WebHost.ConfigureKestrel(options =>
 
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<LangFoodBackend.Services.EmailService>();
+// Thêm SignalR Service
+builder.Services.AddSignalR();
+
 
 var app = builder.Build();
-
+// Mánh Hub (đặt trước app.Run())
+app.MapHub<LocationHub>("/locationHub");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
