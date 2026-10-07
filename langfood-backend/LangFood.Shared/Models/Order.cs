@@ -46,9 +46,11 @@
             [JsonIgnore]
             [ForeignKey("BuildingId")]
             public virtual Building? Building { get; set; }
+        public double? DeliveryLatitude { get; set; }
+        public double? DeliveryLongitude { get; set; }
 
-            // Danh sách món ăn trong đơn
-            public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+        // Danh sách món ăn trong đơn
+        public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 
             // Danh sách lịch sử tiền tệ liên quan đến đơn này
             [JsonIgnore]
