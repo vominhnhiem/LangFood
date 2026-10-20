@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
+
 import 'package:http/http.dart' as http;
+
 import '../constants/app_constants.dart';
 
 class ApiClient {
@@ -82,7 +84,10 @@ class ApiClient {
       final response = await _client
           .get(uri, headers: _buildHeaders(token))
           .timeout(const Duration(seconds: 15));
-      developer.log('RESPONSE [${response.statusCode}] <- $uri', name: 'ApiClient');
+      developer.log(
+        'RESPONSE [${response.statusCode}] <- $uri',
+        name: 'ApiClient',
+      );
       return response;
     } catch (e) {
       developer.log('ERROR on GET $uri: $e', name: 'ApiClient');
@@ -103,10 +108,15 @@ class ApiClient {
           .post(
             uri,
             headers: _buildHeaders(token),
-            body: body is String ? body : (body != null ? jsonEncode(body) : null),
+            body: body is String
+                ? body
+                : (body != null ? jsonEncode(body) : null),
           )
           .timeout(const Duration(seconds: 15));
-      developer.log('RESPONSE [${response.statusCode}] <- $uri', name: 'ApiClient');
+      developer.log(
+        'RESPONSE [${response.statusCode}] <- $uri',
+        name: 'ApiClient',
+      );
       return response;
     } catch (e) {
       developer.log('ERROR on POST $uri: $e', name: 'ApiClient');
@@ -127,10 +137,15 @@ class ApiClient {
           .put(
             uri,
             headers: _buildHeaders(token),
-            body: body is String ? body : (body != null ? jsonEncode(body) : null),
+            body: body is String
+                ? body
+                : (body != null ? jsonEncode(body) : null),
           )
           .timeout(const Duration(seconds: 15));
-      developer.log('RESPONSE [${response.statusCode}] <- $uri', name: 'ApiClient');
+      developer.log(
+        'RESPONSE [${response.statusCode}] <- $uri',
+        name: 'ApiClient',
+      );
       return response;
     } catch (e) {
       developer.log('ERROR on PUT $uri: $e', name: 'ApiClient');
@@ -149,7 +164,10 @@ class ApiClient {
       final response = await _client
           .delete(uri, headers: _buildHeaders(token))
           .timeout(const Duration(seconds: 15));
-      developer.log('RESPONSE [${response.statusCode}] <- $uri', name: 'ApiClient');
+      developer.log(
+        'RESPONSE [${response.statusCode}] <- $uri',
+        name: 'ApiClient',
+      );
       return response;
     } catch (e) {
       developer.log('ERROR on DELETE $uri: $e', name: 'ApiClient');

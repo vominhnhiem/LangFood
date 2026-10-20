@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../constants/app_colors.dart';
 
 class CustomTextField extends StatefulWidget {
@@ -70,16 +71,10 @@ class _CustomTextFieldState extends State<CustomTextField> {
           validator: widget.validator,
           maxLines: widget.isPassword ? 1 : widget.maxLines,
           readOnly: widget.readOnly,
-          style: const TextStyle(
-            fontSize: 15,
-            color: AppColors.textPrimary,
-          ),
+          style: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
           decoration: InputDecoration(
             hintText: widget.hintText,
-            hintStyle: TextStyle(
-              color: Colors.grey.shade400,
-              fontSize: 14,
-            ),
+            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
             filled: true,
             fillColor: Colors.grey.shade50,
             contentPadding: const EdgeInsets.symmetric(
@@ -87,7 +82,11 @@ class _CustomTextFieldState extends State<CustomTextField> {
               vertical: 16,
             ),
             prefixIcon: widget.prefixIcon != null
-                ? Icon(widget.prefixIcon, color: AppColors.textSecondary, size: 20)
+                ? Icon(
+                    widget.prefixIcon,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  )
                 : null,
             suffixIcon: widget.isPassword
                 ? IconButton(

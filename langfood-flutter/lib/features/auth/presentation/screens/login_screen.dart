@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../providers/auth_provider.dart';
-import '../../../../screens/auth/register_screen.dart';
+import 'register_screen.dart';
 import '../../../home/presentation/screens/home_screen.dart';
 import '../../../shipper/presentation/screens/shipper_orders_screen.dart';
 
@@ -47,16 +48,23 @@ class _LoginScreenState extends State<LoginScreen> {
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Xin chào, ${authProvider.user?.fullName ?? authProvider.user?.username}!'),
+          content: Text(
+            'Xin chào, ${authProvider.user?.fullName ?? authProvider.user?.username}!',
+          ),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
         ),
       );
 
       final user = authProvider.user;
-      final isShipper = user?.roleId == 3 || user?.shipperId != null || user?.username.toLowerCase() == 'shipper';
+      final isShipper =
+          user?.roleId == 3 ||
+          user?.shipperId != null ||
+          user?.username.toLowerCase() == 'shipper';
 
-      Widget targetScreen = isShipper ? const ShipperOrdersScreen() : const HomeScreen();
+      Widget targetScreen = isShipper
+          ? const ShipperOrdersScreen()
+          : const HomeScreen();
 
       Navigator.pushReplacement(
         context,
@@ -65,7 +73,9 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(authProvider.errorMessage ?? 'Đăng nhập không thành công'),
+          content: Text(
+            authProvider.errorMessage ?? 'Đăng nhập không thành công',
+          ),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
         ),
@@ -180,7 +190,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Tính năng quên mật khẩu: Vui lòng liên hệ Admin KTX hoặc check email đăng ký.'),
+                            content: Text(
+                              'Tính năng quên mật khẩu: Vui lòng liên hệ Admin KTX hoặc check email đăng ký.',
+                            ),
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
@@ -208,7 +220,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // Quick test account chips
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade50,
                       borderRadius: BorderRadius.circular(12),
@@ -230,9 +245,21 @@ class _LoginScreenState extends State<LoginScreen> {
                           spacing: 8,
                           runSpacing: 6,
                           children: [
-                            _buildQuickChip('Sinh viên (User)', 'nhiem', 'nhiem2512005'),
-                            _buildQuickChip('Chủ quán (Shop)', 'seller', '123456'),
-                            _buildQuickChip('Tài xế (Shipper)', 'shipper', '123456'),
+                            _buildQuickChip(
+                              'Sinh viên (User)',
+                              'nhiem',
+                              'nhiem2512005',
+                            ),
+                            _buildQuickChip(
+                              'Chủ quán (Shop)',
+                              'seller',
+                              '123456',
+                            ),
+                            _buildQuickChip(
+                              'Tài xế (Shipper)',
+                              'shipper',
+                              '123456',
+                            ),
                           ],
                         ),
                       ],
@@ -245,7 +272,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const RegisterScreen(),
+                        ),
                       );
                     },
                     child: const Text(
