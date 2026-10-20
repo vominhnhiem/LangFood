@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../../data/models/product_model.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_constants.dart';
@@ -18,8 +19,13 @@ class FoodCardItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
-    final formattedPrice = currencyFormatter.format(product.price).replaceAll(' ', '');
+    final currencyFormatter = NumberFormat.currency(
+      locale: 'vi_VN',
+      symbol: 'đ',
+    );
+    final formattedPrice = currencyFormatter
+        .format(product.price)
+        .replaceAll(' ', '');
 
     return GestureDetector(
       onTap: onTap,
@@ -44,11 +50,15 @@ class FoodCardItem extends StatelessWidget {
               child: Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
                     child: SizedBox(
                       width: double.infinity,
                       height: double.infinity,
-                      child: product.imageUrl != null && product.imageUrl!.isNotEmpty
+                      child:
+                          product.imageUrl != null &&
+                              product.imageUrl!.isNotEmpty
                           ? Image.network(
                               product.imageUrl!.startsWith('http')
                                   ? product.imageUrl!
@@ -64,7 +74,9 @@ class FoodCardItem extends StatelessWidget {
                       child: Container(
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.6),
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(12),
+                          ),
                         ),
                         child: const Center(
                           child: Text(

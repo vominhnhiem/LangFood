@@ -6,15 +6,15 @@ class AppConstants {
   static const int apiPort = 5289;
 
   /// Default Base URL
-  /// - Real LAN IP: http://192.168.100.192:5289/
+  /// - Real LAN IP: http://192.168.2.11:5289/
   /// - Android Emulator: http://10.0.2.2:5289/
   /// - iOS Simulator / Desktop / Web: http://localhost:5289/
   static String get defaultBaseUrl {
-    return 'http://10.19.18.38:$apiPort/';
+    return 'http://192.168.2.11:$apiPort/';
   }
 
   // Active Base URL (Can be changed dynamically if running on real device)
-  static String baseUrl = 'http://10.19.18.38:$apiPort/';
+  static String baseUrl = 'http://192.168.2.11:$apiPort/';
 
   // SharedPreferences Keys
   static const String keyUserId = 'USER_ID';
@@ -27,6 +27,8 @@ class AppConstants {
   static const String keyJwtToken = 'JWT_TOKEN';
 
   // Default image
-  static const String defaultFoodImage = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500';
-  static const String defaultShopAvatar = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500';
+  static const String defaultFoodImage =
+      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500';
+  static const String defaultShopAvatar =
+      'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500';
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../constants/app_colors.dart';
 import 'custom_button.dart';
 
@@ -34,11 +35,7 @@ class EmptyStateView extends StatelessWidget {
                 color: AppColors.primaryLight.withOpacity(0.3),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon,
-                size: 46,
-                color: AppColors.primary,
-              ),
+              child: Icon(icon, size: 46, color: AppColors.primary),
             ),
             const SizedBox(height: 20),
             Text(

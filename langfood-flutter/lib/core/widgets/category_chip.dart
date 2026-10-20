@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../data/models/category_model.dart';
 import '../constants/app_colors.dart';
 
@@ -32,7 +33,9 @@ class CategoryChip extends StatelessWidget {
               height: 60,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected ? AppColors.primaryLight.withOpacity(0.4) : Colors.white,
+                color: isSelected
+                    ? AppColors.primaryLight.withOpacity(0.4)
+                    : Colors.white,
                 border: Border.all(
                   color: isSelected ? AppColors.primary : Colors.grey.shade200,
                   width: isSelected ? 2.0 : 1.0,
@@ -82,7 +85,9 @@ class CategoryChip extends StatelessWidget {
       iconData = Icons.grid_view_rounded;
     } else if (nameLower.contains('cơm')) {
       iconData = Icons.rice_bowl;
-    } else if (nameLower.contains('bún') || nameLower.contains('phở') || nameLower.contains('mì')) {
+    } else if (nameLower.contains('bún') ||
+        nameLower.contains('phở') ||
+        nameLower.contains('mì')) {
       iconData = Icons.ramen_dining;
     } else if (nameLower.contains('trà sữa') || nameLower.contains('uống')) {
       iconData = Icons.local_cafe;
