@@ -102,7 +102,9 @@ class OrderModel {
   Map<String, dynamic> toJson() {
     return {
       if (id != null) 'id': id,
-      'buyerId': buyerId.isNotEmpty ? buyerId : 'demo-buyer-id',
+      'buyerId': (buyerId.isNotEmpty && buyerId != 'demo-buyer-id' && buyerId != 'guest-student')
+          ? buyerId
+          : '2A16828F-7451-410C-9174-1AE06CB01186',
       'buyerName': buyerName ?? 'Khách hàng',
       'shopId': shopId > 0 ? shopId : 1,
       if (shipperId != null) 'shipperId': shipperId,

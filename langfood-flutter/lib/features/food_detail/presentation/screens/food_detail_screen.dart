@@ -97,11 +97,15 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
       optionsJson = selectedNames.join(', ');
     }
 
+    final itemPriceWithCustomization = _calculateTotalPerItem();
+    final prod = widget.product.copyWith(price: itemPriceWithCustomization);
+
     cartProvider.addToCart(
-      product: widget.product,
+      product: prod,
       quantity: _quantity,
       note: _noteController.text.trim().isNotEmpty ? _noteController.text.trim() : null,
       selectedOptionsJson: optionsJson,
+      unitPrice: itemPriceWithCustomization,
       userId: authProvider.user?.id,
     );
 

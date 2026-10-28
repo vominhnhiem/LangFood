@@ -31,7 +31,7 @@ class ProductModel {
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     int sId = json['shopId'] ?? json['ShopId'] ?? 0;
-    String sName = (json['shopName'] ?? json['ShopName'] ?? '').toString();
+    String sName = (json['shopName'] ?? json['ShopName'] ?? json['sellerName'] ?? json['SellerName'] ?? '').toString();
 
     if (json['shop'] != null && json['shop'] is Map<String, dynamic>) {
       if (sId <= 0) sId = json['shop']['id'] ?? json['shop']['Id'] ?? 0;
@@ -76,5 +76,35 @@ class ProductModel {
       'categoryId': categoryId,
       'categoryName': categoryName,
     };
+  }
+
+  ProductModel copyWith({
+    int? id,
+    String? name,
+    String? description,
+    double? price,
+    String? imageUrl,
+    bool? isAvailable,
+    int? shopId,
+    String? shopName,
+    int? categoryId,
+    String? categoryName,
+    List<ProductOptionGroupModel>? optionGroups,
+    bool? isShopOpen,
+  }) {
+    return ProductModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      price: price ?? this.price,
+      imageUrl: imageUrl ?? this.imageUrl,
+      isAvailable: isAvailable ?? this.isAvailable,
+      shopId: shopId ?? this.shopId,
+      shopName: shopName ?? this.shopName,
+      categoryId: categoryId ?? this.categoryId,
+      categoryName: categoryName ?? this.categoryName,
+      optionGroups: optionGroups ?? this.optionGroups,
+      isShopOpen: isShopOpen ?? this.isShopOpen,
+    );
   }
 }

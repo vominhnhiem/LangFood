@@ -27,11 +27,14 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
     policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
 int desiredPort = 5289;
-int portToUse = IsPortAvailable(desiredPort) ? desiredPort : GetAvailablePort();
+int portToUse = IsPortAvailable(desiredPort) ? desiredPort : 5289;
 
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.ListenAnyIP(portToUse);
+    if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
+    {
+        options.ListenAnyIP(portToUse);
+    }
 });
 
 builder.Services.AddMemoryCache();
@@ -61,12 +64,15 @@ await app.RunAsync();
 // --- Helpers ---
 static bool IsPortAvailable(int port)
 {
-    try { TcpListener l = new TcpListener(IPAddress.Any, port); l.Start(); l.Stop(); return true; }
-    catch { return false; }
-}
-
-static int GetAvailablePort()
-{
-    TcpListener l = new TcpListener(IPAddress.Loopback, 0); l.Start();
-    int port = ((IPEndPoint)l.LocalEndpoint).Port; l.Stop(); return port;
+    try
+    {
+        using var tcp = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
+        tcp.DualMode = true;
+        tcp.Bind(new IPEndPoint(IPAddress.IPv6Any, port));
+        return true;
+    }
+    catch
+    {
+        return false;
+    }
 }

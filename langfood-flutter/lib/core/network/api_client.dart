@@ -2,11 +2,26 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../constants/app_constants.dart';
 
 class ApiClient {
   static final http.Client _client = http.Client();
+
+  static bool _trySwitchHost() {
+    if (kIsWeb) return false;
+    if (AppConstants.baseUrl.contains(AppConstants.emulatorIp)) {
+      AppConstants.baseUrl = 'http://${AppConstants.lanIp}:${AppConstants.apiPort}/';
+      developer.log('Auto-switched baseUrl to LAN IP: ${AppConstants.baseUrl}', name: 'ApiClient');
+      return true;
+    } else if (AppConstants.baseUrl.contains(AppConstants.lanIp)) {
+      AppConstants.baseUrl = 'http://${AppConstants.emulatorIp}:${AppConstants.apiPort}/';
+      developer.log('Auto-switched baseUrl to Emulator IP: ${AppConstants.baseUrl}', name: 'ApiClient');
+      return true;
+    }
+    return false;
+  }
 
   static Uri _buildUri(String endpoint, [Map<String, dynamic>? queryParams]) {
     String base = AppConstants.baseUrl.replaceAll(' ', '').trim();
@@ -76,7 +91,7 @@ class ApiClient {
     Map<String, dynamic>? queryParams,
     String? token,
   }) async {
-    final uri = _buildUri(endpoint, queryParams);
+    var uri = _buildUri(endpoint, queryParams);
     developer.log('GET -> $uri', name: 'ApiClient');
     try {
       final response = await _client
@@ -85,6 +100,14 @@ class ApiClient {
       developer.log('RESPONSE [${response.statusCode}] <- $uri', name: 'ApiClient');
       return response;
     } catch (e) {
+      if ((e is SocketException || e is TimeoutException) && _trySwitchHost()) {
+        uri = _buildUri(endpoint, queryParams);
+        try {
+          return await _client
+              .get(uri, headers: _buildHeaders(token))
+              .timeout(const Duration(seconds: 15));
+        } catch (_) {}
+      }
       developer.log('ERROR on GET $uri: $e', name: 'ApiClient');
       throw _handleException(e, uri);
     }
@@ -96,7 +119,7 @@ class ApiClient {
     Map<String, dynamic>? queryParams,
     String? token,
   }) async {
-    final uri = _buildUri(endpoint, queryParams);
+    var uri = _buildUri(endpoint, queryParams);
     developer.log('POST -> $uri, Body: $body', name: 'ApiClient');
     try {
       final response = await _client
@@ -109,6 +132,18 @@ class ApiClient {
       developer.log('RESPONSE [${response.statusCode}] <- $uri', name: 'ApiClient');
       return response;
     } catch (e) {
+      if ((e is SocketException || e is TimeoutException) && _trySwitchHost()) {
+        uri = _buildUri(endpoint, queryParams);
+        try {
+          return await _client
+              .post(
+                uri,
+                headers: _buildHeaders(token),
+                body: body is String ? body : (body != null ? jsonEncode(body) : null),
+              )
+              .timeout(const Duration(seconds: 15));
+        } catch (_) {}
+      }
       developer.log('ERROR on POST $uri: $e', name: 'ApiClient');
       throw _handleException(e, uri);
     }
@@ -120,7 +155,7 @@ class ApiClient {
     Map<String, dynamic>? queryParams,
     String? token,
   }) async {
-    final uri = _buildUri(endpoint, queryParams);
+    var uri = _buildUri(endpoint, queryParams);
     developer.log('PUT -> $uri, Body: $body', name: 'ApiClient');
     try {
       final response = await _client
@@ -133,6 +168,18 @@ class ApiClient {
       developer.log('RESPONSE [${response.statusCode}] <- $uri', name: 'ApiClient');
       return response;
     } catch (e) {
+      if ((e is SocketException || e is TimeoutException) && _trySwitchHost()) {
+        uri = _buildUri(endpoint, queryParams);
+        try {
+          return await _client
+              .put(
+                uri,
+                headers: _buildHeaders(token),
+                body: body is String ? body : (body != null ? jsonEncode(body) : null),
+              )
+              .timeout(const Duration(seconds: 15));
+        } catch (_) {}
+      }
       developer.log('ERROR on PUT $uri: $e', name: 'ApiClient');
       throw _handleException(e, uri);
     }
@@ -143,7 +190,7 @@ class ApiClient {
     Map<String, dynamic>? queryParams,
     String? token,
   }) async {
-    final uri = _buildUri(endpoint, queryParams);
+    var uri = _buildUri(endpoint, queryParams);
     developer.log('DELETE -> $uri', name: 'ApiClient');
     try {
       final response = await _client
@@ -152,6 +199,14 @@ class ApiClient {
       developer.log('RESPONSE [${response.statusCode}] <- $uri', name: 'ApiClient');
       return response;
     } catch (e) {
+      if ((e is SocketException || e is TimeoutException) && _trySwitchHost()) {
+        uri = _buildUri(endpoint, queryParams);
+        try {
+          return await _client
+              .delete(uri, headers: _buildHeaders(token))
+              .timeout(const Duration(seconds: 15));
+        } catch (_) {}
+      }
       developer.log('ERROR on DELETE $uri: $e', name: 'ApiClient');
       throw _handleException(e, uri);
     }

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class AppConstants {
   static const String appName = 'Làng Food';
   static const String appSlogan = 'Ship đồ ngon - Giá sinh viên';
@@ -5,16 +7,23 @@ class AppConstants {
   // Backend Port (Fixed at 5289 as recommended)
   static const int apiPort = 5289;
 
-  /// Default Base URL
-  /// - Real LAN IP: http://192.168.100.192:5289/
-  /// - Android Emulator: http://10.0.2.2:5289/
-  /// - iOS Simulator / Desktop / Web: http://localhost:5289/
+  /// Cấu hình IP kết nối tới Backend:
+  /// - Máy ảo Android Emulator (Pixel, Nox, LDPlayer): 10.0.2.2
+  /// - Điện thoại thật kết nối cùng Wi-Fi với máy tính: 192.168.2.56
+  /// - Web / Windows Desktop: localhost
+  static const String emulatorIp = '10.0.2.2';
+  static const String lanIp = '192.168.2.56';
+
   static String get defaultBaseUrl {
-    return 'http://10.19.18.38:$apiPort/';
+    if (kIsWeb) {
+      return 'http://localhost:$apiPort/';
+    }
+    // Mặc định cho máy ảo Android Emulator
+    return 'http://$emulatorIp:$apiPort/';
   }
 
-  // Active Base URL (Can be changed dynamically if running on real device)
-  static String baseUrl = 'http://10.19.18.38:$apiPort/';
+  // Active Base URL (Có thể chuyển đổi linh hoạt khi đổi thiết bị)
+  static String baseUrl = defaultBaseUrl;
 
   // SharedPreferences Keys
   static const String keyUserId = 'USER_ID';

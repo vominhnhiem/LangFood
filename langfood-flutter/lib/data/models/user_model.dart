@@ -29,6 +29,9 @@ class UserModel {
     this.shipperId,
   });
 
+  bool get isShipper => roleId == 3 || shipperId != null;
+  bool get isSeller => roleId == 2 || shopId != null;
+
   String get roleName {
     switch (roleId) {
       case 1:

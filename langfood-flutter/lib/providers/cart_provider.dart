@@ -72,12 +72,17 @@ class CartProvider extends ChangeNotifier {
     int quantity = 1,
     String? note,
     String? selectedOptionsJson,
+    double? unitPrice,
     String? userId,
   }) {
-    // Check if identical item (same product, same note, same options) exists
+    final effectivePrice = unitPrice ?? product.price;
+    final productWithPrice = product.copyWith(price: effectivePrice);
+
+    // Check if identical item (same product, same price, same note, same options) exists
     bool exists = false;
     for (var item in _items) {
       bool sameProduct = item.product.id == product.id;
+      bool samePrice = item.effectiveUnitPrice == effectivePrice;
       bool sameNote = (note == null || note.trim().isEmpty)
           ? (item.note == null || item.note!.trim().isEmpty)
           : (item.note == note);
@@ -85,7 +90,7 @@ class CartProvider extends ChangeNotifier {
           ? (item.selectedOptionsJson == null || item.selectedOptionsJson!.trim().isEmpty)
           : (item.selectedOptionsJson == selectedOptionsJson);
 
-      if (sameProduct && sameNote && sameOptions) {
+      if (sameProduct && samePrice && sameNote && sameOptions) {
         item.quantity += quantity;
         exists = true;
         break;
@@ -94,10 +99,11 @@ class CartProvider extends ChangeNotifier {
 
     if (!exists) {
       _items.add(CartItemModel(
-        product: product,
+        product: productWithPrice,
         quantity: quantity,
         note: note,
         selectedOptionsJson: selectedOptionsJson,
+        unitPrice: effectivePrice,
       ));
     }
 

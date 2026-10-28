@@ -96,11 +96,15 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
     final optionsJson = selectedOptionIds.isNotEmpty ? jsonEncode(selectedOptionIds) : null;
     final note = _noteController.text.trim().isEmpty ? null : _noteController.text.trim();
 
+    final itemPriceWithCustomization = _calculateUnitPrice;
+    final prod = widget.product.copyWith(price: itemPriceWithCustomization);
+
     cartProvider.addToCart(
-      product: widget.product,
+      product: prod,
       quantity: _quantity,
       note: note,
       selectedOptionsJson: optionsJson,
+      unitPrice: itemPriceWithCustomization,
       userId: authProvider.user?.id,
     );
 

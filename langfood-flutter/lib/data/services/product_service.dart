@@ -39,6 +39,24 @@ class ProductService {
     throw Exception('Không tìm thấy món ăn');
   }
 
+  Future<List<ProductModel>> getProductsByShop(int shopId) async {
+    final response = await ApiClient.get('api/Products/shop/$shopId');
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      return data.map((json) => ProductModel.fromJson(json)).toList();
+    }
+    return [];
+  }
+
+  Future<ProductModel> createProduct(Map<String, dynamic> productData) async {
+    final response = await ApiClient.post('api/Products', body: productData);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return ProductModel.fromJson(jsonDecode(response.body));
+    }
+    final error = jsonDecode(response.body);
+    throw Exception(error['message'] ?? 'Không thể tạo món ăn mới');
+  }
+
   Future<List<ProductOptionGroupModel>> getProductOptions(int productId) async {
     try {
       final response = await ApiClient.get('api/ProductOptions/product/$productId');

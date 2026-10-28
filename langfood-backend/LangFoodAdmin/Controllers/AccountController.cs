@@ -44,9 +44,9 @@ namespace LangFoodAdmin.Controllers
 
             var passwordHash = HashPassword(password);
 
-            // Tìm user có RoleId = 0 (Admin) và khớp Email hoặc Username
+            // Tìm user có RoleId = 0 (Admin) và khớp Email hoặc Username (hỗ trợ cả hash SHA256 và plaintext)
             var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.RoleId == 0 && (u.Email == email || u.Username == email) && u.PasswordHash == passwordHash);
+                .FirstOrDefaultAsync(u => u.RoleId == 0 && (u.Email == email || u.Username == email) && (u.PasswordHash == passwordHash || u.PasswordHash == password));
 
             if (user == null)
             {

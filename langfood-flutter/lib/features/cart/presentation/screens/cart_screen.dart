@@ -9,6 +9,7 @@ import '../../../../providers/auth_provider.dart';
 import '../../../../providers/cart_provider.dart';
 import '../../../tracking/presentation/screens/live_tracking_screen.dart';
 import '../../../tracking/presentation/screens/location_picker_screen.dart';
+import '../../../checkout/presentation/screens/checkout_screen.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -66,14 +67,22 @@ class CartScreen extends StatelessWidget {
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(ctx);
-                Navigator.push(
+                final addr = await Navigator.push<String>(
                   context,
                   MaterialPageRoute(
                     builder: (_) => const LocationPickerScreen(),
                   ),
                 );
+                if (context.mounted) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CheckoutScreen(deliveryAddress: addr),
+                    ),
+                  );
+                }
               },
               child: const Text('Xác nhận & Set định vị'),
             ),
@@ -199,11 +208,9 @@ class CartScreen extends StatelessWidget {
                         ),
                       ),
                       onPressed: () {
-                        _showCheckoutDialog(
+                        Navigator.push(
                           context,
-                          'Tất cả các quán',
-                          cartProvider.totalAmount,
-                          cartProvider.totalItemsCount,
+                          MaterialPageRoute(builder: (_) => const CheckoutScreen()),
                         );
                       },
                       child: Text(
@@ -331,7 +338,10 @@ class CartScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   ),
                   onPressed: () {
-                    _showCheckoutDialog(context, shopName, shopTotal, totalItemsInShop);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const CheckoutScreen()),
+                    );
                   },
                   child: const Text(
                     'Đặt đơn quán này',

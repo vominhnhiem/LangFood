@@ -46,6 +46,8 @@ namespace LangFoodBackend.Controllers
                     SellerId = p.Shop != null ? p.Shop.UserId : null,
                     SellerName = !string.IsNullOrEmpty(p.Shop.Name) ? p.Shop.Name :
                                  (p.Shop.User != null ? p.Shop.User.FullName : "Quán ăn Lang Food"),
+                    ShopName = !string.IsNullOrEmpty(p.Shop.Name) ? p.Shop.Name :
+                               (p.Shop.User != null ? p.Shop.User.FullName : "Quán ăn Lang Food"),
                     OptionGroups = p.OptionGroups.Select(g => new {
                         g.Id,
                         g.Name,
@@ -113,6 +115,7 @@ namespace LangFoodBackend.Controllers
         public async Task<ActionResult<IEnumerable<object>>> GetProductsByShop(int shopId)
         {
             return await _context.Products
+                .Include(p => p.Shop)
                 .Include(p => p.OptionGroups)
                 .Where(p => p.ShopId == shopId && !p.IsDeleted)
                 .OrderByDescending(p => p.Id)
@@ -125,13 +128,39 @@ namespace LangFoodBackend.Controllers
                     p.IsAvailable,
                     p.Status,
                     p.ShopId,
+                    ShopName = p.Shop != null ? p.Shop.Name : "Quán ăn",
                     p.CategoryId,
                     StatusText = p.Status == 1 ? "Approved" : (p.Status == 0 ? "Pending" : "Rejected")
                 })
                 .ToListAsync();
         }
 
-        // 4. ĐĂNG MÓN ĂN KÈM FILE ẢNH
+        // 4. ĐĂNG MÓN ĂN MỚI BẰNG JSON (Dành Cho Quán Ăn trên App)
+        [HttpPost]
+        public async Task<ActionResult<Product>> CreateProduct([FromBody] Product product)
+        {
+            if (product == null) return BadRequest(new { message = "Dữ liệu món ăn không hợp lệ!" });
+            if (product.ShopId <= 0) return BadRequest(new { message = "ShopId không hợp lệ!" });
+
+            var shopExists = await _context.Shops.AnyAsync(s => s.Id == product.ShopId);
+            if (!shopExists) return BadRequest(new { message = "Quán ăn không tồn tại trong hệ thống!" });
+
+            if (string.IsNullOrWhiteSpace(product.ImageUrl))
+            {
+                product.ImageUrl = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c";
+            }
+
+            product.IsAvailable = true;
+            product.Status = 1; // Duyệt ngay lập tức để Sinh viên thấy ngay
+            product.IsDeleted = false;
+
+            _context.Products.Add(product);
+            await _context.SaveChangesAsync();
+
+            return Ok(product);
+        }
+
+        // 4.1 ĐĂNG MÓN ĂN KÈM FILE ẢNH
         [HttpPost("upload")]
         public async Task<ActionResult<Product>> PostProductWithImage(
             [FromForm] string name,

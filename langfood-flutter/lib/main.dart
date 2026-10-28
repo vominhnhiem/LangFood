@@ -5,9 +5,9 @@ import 'core/constants/app_colors.dart';
 import 'core/constants/app_constants.dart';
 import 'providers/auth_provider.dart';
 import 'providers/cart_provider.dart';
-import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/home/presentation/screens/home_screen.dart';
 import 'features/shipper/presentation/screens/shipper_orders_screen.dart';
+import 'features/restaurant/presentation/screens/shop_orders_screen.dart';
 
 void main() {
   runZonedGuarded(() async {
@@ -76,16 +76,19 @@ class AuthWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
 
-    // If already logged in from SharedPreferences, direct to appropriate screen
+    // If logged in as Shipper or Shop, direct to appropriate dashboard
     if (authProvider.isLoggedIn) {
       final user = authProvider.user;
       final isShipper = user?.roleId == 3 || user?.shipperId != null || user?.username.toLowerCase() == 'shipper';
+      final isShop = user?.roleId == 2 || user?.shopId != null || user?.username.toLowerCase() == 'quanan';
       if (isShipper) {
         return const ShipperOrdersScreen();
+      } else if (isShop) {
+        return const ShopOrdersScreen();
       }
-      return const HomeScreen();
     }
 
-    return const LoginScreen();
+    // Default to LF-01: Trang chủ khám phá (Hôm nay ăn gì?)
+    return const HomeScreen();
   }
 }
