@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../config/config_url.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/display_format.dart';
@@ -459,8 +460,8 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                   ),
                   children: [
                     TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      urlTemplate: ConfigUrl.mapTileUrl,
+                      fallbackUrl: ConfigUrl.mapTileFallbackUrl,
                       userAgentPackageName: 'com.langfood.app',
                       tileProvider: widget.tileProvider,
                     ),

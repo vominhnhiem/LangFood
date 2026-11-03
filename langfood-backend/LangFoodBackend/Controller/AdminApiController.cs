@@ -2,10 +2,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LangFood.Shared.Models;
 using LangFood.Shared.DTOs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace LangFoodBackend.Controllers
 {
     [Route("api/[controller]")]
+    [Authorize(Roles = "Admin")]
     [ApiController]
     public class AdminApiController : ControllerBase
     {

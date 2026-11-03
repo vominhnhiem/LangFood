@@ -37,6 +37,9 @@ namespace LangFood.Shared.Models
         [NotMapped]
         public string? ShopAddress { get; set; }
 
+        [NotMapped]
+        public string? Token { get; set; }
+
         [JsonIgnore]
         public virtual ICollection<Product> Products { get; set; } = new List<Product>();
         [JsonIgnore]

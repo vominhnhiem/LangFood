@@ -7,9 +7,6 @@ import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../providers/auth_provider.dart';
 import 'register_screen.dart';
-import '../../../home/presentation/screens/home_screen.dart';
-import '../../../shipper/presentation/screens/shipper_orders_screen.dart';
-import '../../../restaurant/presentation/screens/shop_orders_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -55,23 +52,6 @@ class _LoginScreenState extends State<LoginScreen> {
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
         ),
-      );
-
-      final user = authProvider.user;
-      final isShipper =
-          user?.roleId == 3 ||
-          user?.shipperId != null ||
-          user?.username.toLowerCase() == 'shipper';
-
-      Widget targetScreen = isShipper
-          ? const ShipperOrdersScreen()
-          : user?.isSeller == true
-          ? const ShopOrdersScreen()
-          : const HomeScreen();
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => targetScreen),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

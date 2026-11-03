@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../../config/config_url.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_tokens.dart';
@@ -372,7 +373,8 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: ConfigUrl.mapTileUrl,
+                fallbackUrl: ConfigUrl.mapTileFallbackUrl,
                 userAgentPackageName: 'com.langfood.app',
                 tileProvider: widget.tileProvider,
                 errorTileCallback: (tile, error, stackTrace) {

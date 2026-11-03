@@ -1,13 +1,17 @@
 using LangFood.Shared.Models;
 using LangFoodBackend.Hubs;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Cấu hình Controller: Bỏ IgnoreCycles, dùng JsonIgnore ở Model cho nhanh
+// 1. Cấu hình Controller
 builder.Services.AddControllers(options =>
 {
     options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
@@ -18,7 +22,41 @@ builder.Services.AddControllers(options =>
 });
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+// Cấu hình Swagger kèm nút Authorize Bearer Token
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo 
+    { 
+        Title = "LangFood API", 
+        Version = "v1",
+        Description = "Hệ thống Web API Làng Food có tích hợp bảo mật JWT Bearer Token theo chuẩn HUTECH."
+    });
+
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "Nhập Token theo cú pháp: Bearer {token của bạn}\nVí dụ: Bearer eyJhbGciOi...",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 builder.Services.AddDbContext<LangFoodDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -26,23 +64,53 @@ builder.Services.AddDbContext<LangFoodDbContext>(options =>
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
     policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
-int desiredPort = 5289;
-int portToUse = IsPortAvailable(desiredPort) ? desiredPort : 5289;
+// Cấu hình JWT Authentication
+var jwtSettings = builder.Configuration.GetSection("JWTKey");
+var secretKey = jwtSettings["Secret"] ?? "LangFoodSuperSecretKeyForJWTSigning2026NguyenManhHung!@#";
+var key = Encoding.UTF8.GetBytes(secretKey);
 
-builder.WebHost.ConfigureKestrel(options =>
+builder.Services.AddAuthentication(options =>
 {
-    options.ListenAnyIP(portToUse);
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["ValidIssuer"] ?? "LangFoodBackend",
+        ValidAudience = jwtSettings["ValidAudience"] ?? "LangFoodApp",
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ClockSkew = TimeSpan.Zero
+    };
 });
+
+builder.Services.AddAuthorization();
+
+int desiredPort = 5289;
+int portToUse = desiredPort;
+if (builder.Environment.IsDevelopment())
+{
+    portToUse = IsPortAvailable(desiredPort) ? desiredPort : 5289;
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.ListenAnyIP(portToUse);
+    });
+}
 
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<LangFoodBackend.Services.EmailService>();
-// Thêm SignalR Service
 builder.Services.AddSignalR();
-
 
 var app = builder.Build();
 
-// Luôn kích hoạt Swagger & Swagger UI để kiểm thử API thuận tiện
+// 2. Kích hoạt Swagger
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -50,16 +118,17 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
-// Điều hướng trang gốc "/" thẳng vào giao diện Swagger Web API
-app.MapGet("/", () => Results.Redirect("/swagger"));
-
-// Mánh Hub (đặt trước app.Run())
-app.MapHub<LocationHub>("/locationHub");
-
-app.UseCors();
+// 3. Middleware (Đúng thứ tự từ trên xuống dưới)
 app.UseStaticFiles();
+app.UseCors();
+
+app.UseAuthentication();
 app.UseAuthorization();
+
+// 4. Map Endpoints
+app.MapGet("/", () => Results.Redirect("/swagger"));
 app.MapControllers();
+app.MapHub<LocationHub>("/locationHub");
 
 Console.WriteLine($"Server running on port {portToUse} -> http://localhost:{portToUse}/swagger");
 

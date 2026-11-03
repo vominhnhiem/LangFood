@@ -8,6 +8,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 
 namespace LangFoodBackend.Controllers
 {
@@ -18,12 +24,14 @@ namespace LangFoodBackend.Controllers
         private readonly LangFoodDbContext _context;
         private readonly IMemoryCache _cache;
         private readonly EmailService _emailService;
+        private readonly IConfiguration _configuration;
 
-        public UsersController(LangFoodDbContext context, IMemoryCache cache, EmailService emailService)
+        public UsersController(LangFoodDbContext context, IMemoryCache cache, EmailService emailService, IConfiguration configuration)
         {
             _context = context;
             _cache = cache;
             _emailService = emailService;
+            _configuration = configuration;
         }
 
         [HttpGet("check-email")]
@@ -75,9 +83,9 @@ namespace LangFoodBackend.Controllers
             return BadRequest(new { success = false, message = "Mã OTP không đúng hoặc đã hết hạn." });
         }
 
-        // --- CẬP NHẬT: LOGIN BAO GỒM CẢ SHOP VÀ SHIPPER ---
+        // --- CẬP NHẬT: LOGIN XÁC THỰC VÀ SINH MÃ JWT BEARER TOKEN THEO CHUẨN ---
         [HttpPost("login")]
-        public async Task<ActionResult<User>> Login([FromBody] User loginRequest)
+        public async Task<IActionResult> Login([FromBody] User loginRequest)
         {
             string sha256Hash = "";
             if (!string.IsNullOrEmpty(loginRequest.PasswordHash))
@@ -95,11 +103,37 @@ namespace LangFoodBackend.Controllers
                     (u.PasswordHash == loginRequest.PasswordHash || u.PasswordHash == sha256Hash));
 
             if (user == null) return Unauthorized(new { message = "Sai tài khoản hoặc mật khẩu!" });
-            return Ok(user);
+
+            var token = GenerateJwtToken(user);
+            user.Token = token;
+
+            // Trả về vừa có token chuẩn JWT bài thầy Hùng, vừa có cấu trúc User phẳng để Flutter tương thích 100%
+            return Ok(new
+            {
+                status = true,
+                message = "Đăng nhập thành công",
+                token = token,
+                id = user.Id,
+                username = user.Username,
+                fullName = user.FullName,
+                email = user.Email,
+                phoneNumber = user.PhoneNumber,
+                roleId = user.RoleId,
+                buildingId = user.BuildingId,
+                ktxRoom = user.KtxRoom,
+                avatarUrl = user.AvatarUrl,
+                isApproved = user.IsApproved,
+                shopId = user.Shop?.Id,
+                shopName = user.Shop?.Name,
+                shipperId = user.Shipper?.Id,
+                shop = user.Shop,
+                shipper = user.Shipper,
+                wallet = user.Wallet
+            });
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult<User>> Register([FromBody] User user)
+        public async Task<IActionResult> Register([FromBody] User user)
         {
             if (!_cache.TryGetValue(user.Email + "_verified", out bool isVerified) || !isVerified)
                 return BadRequest(new { message = "Email chưa được xác thực OTP!" });
@@ -129,27 +163,85 @@ namespace LangFoodBackend.Controllers
             }
 
             await _context.SaveChangesAsync();
-            return Ok(user);
+
+            var token = GenerateJwtToken(user);
+            user.Token = token;
+
+            return Ok(new
+            {
+                status = true,
+                message = "Đăng ký thành công",
+                token = token,
+                id = user.Id,
+                username = user.Username,
+                fullName = user.FullName,
+                email = user.Email,
+                phoneNumber = user.PhoneNumber,
+                roleId = user.RoleId,
+                buildingId = user.BuildingId,
+                ktxRoom = user.KtxRoom,
+                avatarUrl = user.AvatarUrl,
+                isApproved = user.IsApproved,
+                shopId = user.Shop?.Id,
+                shopName = user.Shop?.Name,
+                shipperId = user.Shipper?.Id,
+                shop = user.Shop,
+                shipper = user.Shipper,
+                wallet = user.Wallet
+            });
+        }
+
+        // --- API BẢO MẬT: XÁC THỰC TOKEN VÀ LẤY THÔNG TIN CLAIM ---
+        [Authorize]
+        [HttpGet("me")]
+        public async Task<IActionResult> GetCurrentUserProfile()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Không xác định được danh tính từ Token." });
+
+            var user = await _context.Users
+                .Include(u => u.Wallet)
+                .Include(u => u.Shop)
+                .Include(u => u.Shipper)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null) return NotFound(new { message = "Không tìm thấy người dùng." });
+
+            return Ok(new
+            {
+                status = true,
+                message = "Xác thực Token thành công!",
+                user = new
+                {
+                    user.Id,
+                    user.Username,
+                    user.FullName,
+                    user.Email,
+                    user.PhoneNumber,
+                    user.RoleId,
+                    user.KtxRoom,
+                    user.IsApproved
+                },
+                claims = User.Claims.Select(c => new { c.Type, c.Value })
+            });
         }
 
         // --- FIX: API ĐĂNG KÝ SHIPPER (APPLY SHIPPER) ---
         [HttpPost("apply-shipper")]
         public async Task<IActionResult> ApplyShipper([FromForm] string userId, [FromForm] string? mssv, IFormFile imageProof)
         {
-            // Làm sạch userId (xóa dấu ngoặc kép nếu có từ Android gửi qua)
             userId = userId.Replace("\"", "");
 
             var user = await _context.Users.FindAsync(userId);
             if (user == null) return NotFound(new { message = "Người dùng không tồn tại." });
 
-            // Kiểm tra xem đã có hồ sơ đang chờ chưa
             var existingRequest = await _context.RoleRequests
                 .FirstOrDefaultAsync(r => r.UserId == userId && r.Status == 0 && r.RequestType == 2);
 
             if (existingRequest != null)
                 return BadRequest(new { message = "Bạn đã có hồ sơ đang chờ duyệt rồi!" });
 
-            // Xử lý lưu ảnh thẻ sinh viên
             string imageUrl = null;
             if (imageProof != null && imageProof.Length > 0)
             {
@@ -166,11 +258,10 @@ namespace LangFoodBackend.Controllers
                 imageUrl = "/images/proofs/" + uniqueFileName;
             }
 
-            // Lưu MSSV vào hồ sơ (Lưu vào trường ShopName để Admin thấy)
             var request = new RoleRequest
             {
                 UserId = userId,
-                RequestType = 2, // 2 là loại Shipper
+                RequestType = 2,
                 ImageProof = imageUrl,
                 ShopName = "MSSV: " + mssv,
                 Status = 0,
@@ -222,6 +313,52 @@ namespace LangFoodBackend.Controllers
             user.AvatarUrl = "/images/avatars/" + uniqueFileName;
             await _context.SaveChangesAsync();
             return Ok(new { message = "Upload thành công", url = user.AvatarUrl });
+        }
+
+        // --- HELPER: SINH MÃ JWT TOKEN ---
+        private string GenerateJwtToken(User user)
+        {
+            var jwtSettings = _configuration.GetSection("JWTKey");
+            var secret = jwtSettings["Secret"] ?? "LangFoodSuperSecretKeyForJWTSigning2026NguyenManhHung!@#";
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            bool isAdmin = user.RoleId == 0 || user.Username.Equals("admin", StringComparison.OrdinalIgnoreCase) || user.CanManageShops;
+            string roleName = isAdmin ? "Admin" : (user.RoleId == 2 ? "Seller" : (user.RoleId == 3 ? "Shipper" : "User"));
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Name, user.Username ?? ""),
+                new Claim(ClaimTypes.Role, roleName),
+                new Claim(ClaimTypes.Email, user.Email ?? ""),
+                new Claim("roleId", user.RoleId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            if (user.Shop != null)
+            {
+                claims.Add(new Claim("shopId", user.Shop.Id.ToString()));
+            }
+            if (user.Shipper != null)
+            {
+                claims.Add(new Claim("shipperId", user.Shipper.Id.ToString()));
+            }
+
+            var expiryHours = Convert.ToDouble(jwtSettings["TokenExpiryTimeInHour"] ?? "24");
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddHours(expiryHours),
+                Issuer = jwtSettings["ValidIssuer"] ?? "LangFoodBackend",
+                Audience = jwtSettings["ValidAudience"] ?? "LangFoodApp",
+                SigningCredentials = creds
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
         }
     }
 }

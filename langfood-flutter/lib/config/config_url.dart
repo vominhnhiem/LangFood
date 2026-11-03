@@ -2,6 +2,18 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ConfigUrl {
+  static String get mapTileUrl =>
+      _configuredTileUrl('MAP_TILE_URL') ??
+      'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+  static String? get mapTileFallbackUrl =>
+      _configuredTileUrl('MAP_TILE_FALLBACK_URL');
+
+  static String? _configuredTileUrl(String name) {
+    final value = dotenv.isInitialized ? dotenv.env[name]?.trim() : null;
+    return value == null || value.isEmpty ? null : value;
+  }
+
   static double get shippingFee {
     final raw = dotenv.isInitialized ? dotenv.env['SHIPPING_FEE'] : null;
     final fee = double.tryParse(raw?.trim() ?? '');

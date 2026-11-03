@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../orders/presentation/screens/my_orders_screen.dart';
 import '../../../account/presentation/screens/profile_screen.dart';
-import '../../../auth/presentation/screens/login_screen.dart';
 import '../../../wallet/presentation/screens/wallet_screen.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -1997,11 +1996,6 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () async {
                 Navigator.pop(sheetContext);
                 await authProvider.logout();
-                if (mounted)
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    (route) => false,
-                  );
               },
             ),
           ],
