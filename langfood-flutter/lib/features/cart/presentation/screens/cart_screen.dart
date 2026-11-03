@@ -5,6 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../config/config_url.dart';
+import '../../../../data/models/checkout_selection.dart';
+import '../../../checkout/presentation/screens/checkout_screen.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_tokens.dart';
@@ -41,7 +44,7 @@ class _CartScreenState extends State<CartScreen> {
   final Map<int, TextEditingController> _shopNoteControllers = {};
 
   // Trạng thái voucher campus ghép đơn
-  bool _isVoucherApplied = true;
+  static const bool _isVoucherApplied = false;
 
   @override
   void dispose() {
@@ -265,123 +268,35 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  // Luồng thanh toán bảo toàn hợp đồng hiện tại (chuyển sang LocationPickerScreen)
-  void _startCheckoutFlow(
+  Future<void> _startCheckoutFlow(
     BuildContext context, {
     required String shopLabel,
     required double amount,
     required int count,
-  }) {
-    AppHaptics.medium();
-
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        final theme = ctx.langFoodTheme;
-        return AlertDialog(
-          backgroundColor: theme.card,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTokens.radiusXl),
-          ),
-          title: Row(
-            children: [
-              const Icon(
-                Icons.check_circle_outline_rounded,
-                color: AppColors.success,
-                size: 28,
-              ),
-              const SizedBox(width: AppTokens.spaceSm),
-              Expanded(
-                child: Text(
-                  'Xác nhận đặt đơn',
-                  style: AppTypography.titleMd.copyWith(
-                    color: theme.textPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Quán: $shopLabel',
-                style: AppTypography.bodyMd.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Số lượng: $count món',
-                style: AppTypography.bodyMd.copyWith(
-                  color: theme.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Địa chỉ nhận: Sảnh KTX Khu B, Thủ Đức',
-                style: AppTypography.bodyMd.copyWith(
-                  color: theme.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Divider(color: theme.borderSubtle),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Tổng tiền:',
-                    style: AppTypography.titleMd.copyWith(
-                      color: theme.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    _formatCurrency(amount),
-                    style: AppTypography.titleMd.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text('Hủy', style: TextStyle(color: theme.textSecondary)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(0, 44),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                ),
-              ),
-              onPressed: () {
-                Navigator.pop(ctx);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const LocationPickerScreen(),
-                  ),
-                );
-              },
-              child: const Text(
-                'Xác nhận & Set định vị',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        );
+    List<CartItemModel>? items,
+  }) async {
+    final selected = items ?? _selectedItems.toList();
+    if (selected.isEmpty) return;
+    final selection = CheckoutSelection(
+      selected,
+      shopNotes: {
+        for (final entry in _shopNoteControllers.entries)
+          entry.key: entry.value.text.trim(),
       },
+    );
+    final location = await Navigator.push<CampusDeliveryLocation>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const LocationPickerScreen(returnResult: true),
+      ),
+    );
+    if (location == null || !context.mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            CheckoutScreen(deliveryLocation: location, selection: selection),
+      ),
     );
   }
 
@@ -412,9 +327,24 @@ class _CartScreenState extends State<CartScreen> {
         .map((item) => item.product.shopId > 0 ? item.product.shopId : 999)
         .toSet()
         .length;
-    final double deliveryFee = selectedShopsCount >= 2 ? 5000.0 : 0.0;
-    final double voucherDiscount =
-        (_isVoucherApplied && rawSelectedSubtotal >= 80000.0) ? 20000.0 : 0.0;
+    late final double configuredFee;
+    try {
+      configuredFee = ConfigUrl.shippingFee;
+    } catch (_) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Giỏ hàng của bạn')),
+        body: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Text(
+              'Chưa cấu hình phí giao hàng. Vui lòng kiểm tra cấu hình ứng dụng.',
+            ),
+          ),
+        ),
+      );
+    }
+    final double deliveryFee = selectedShopsCount * configuredFee;
+    const double voucherDiscount = 0;
     final double checkoutTotal =
         (rawSelectedSubtotal + deliveryFee - voucherDiscount).clamp(
           0.0,
@@ -602,7 +532,7 @@ class _CartScreenState extends State<CartScreen> {
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 290),
               child: Text(
-                'Bạn chưa chọn món nào từ các quán quen Khu A & Khu B. Chọn ngay để nhận ưu đãi ghép đơn nhé!',
+                'Bạn chưa chọn món nào. Khám phá thực đơn và thêm món vào giỏ nhé!',
                 textAlign: TextAlign.center,
                 style: AppTypography.bodyMd.copyWith(
                   color: theme.textSecondary,
@@ -696,7 +626,7 @@ class _CartScreenState extends State<CartScreen> {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
-                      'Đơn ghép đa quán KTX',
+                      'Giỏ hàng theo quán',
                       style: AppTypography.titleMd.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.bold,
@@ -715,7 +645,7 @@ class _CartScreenState extends State<CartScreen> {
                         ),
                       ),
                       child: Text(
-                        'Tối đa 2 quán',
+                        'Đơn riêng từng quán',
                         style: AppTypography.labelSm.copyWith(
                           color: Colors.white,
                           fontSize: 10,
@@ -727,7 +657,7 @@ class _CartScreenState extends State<CartScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'LangFood hỗ trợ ghép tối đa 2 quán trong cùng Khu B. Shipper sẽ lấy cùng lúc và giao tận sảnh tòa nhà của bạn!',
+                  'Các món được nhóm theo quán. Mỗi quán tạo một đơn, có phí giao và trạng thái riêng.',
                   style: AppTypography.bodySm.copyWith(
                     color: theme.textSecondary,
                     height: 1.35,
@@ -865,7 +795,7 @@ class _CartScreenState extends State<CartScreen> {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Text(
-                            'Freeship KTX',
+                            'Phí giao tính tại thanh toán',
                             style: AppTypography.labelSm.copyWith(
                               color: AppColors.tertiary,
                               fontWeight: FontWeight.bold,
@@ -880,7 +810,7 @@ class _CartScreenState extends State<CartScreen> {
                             ),
                           ),
                           Text(
-                            '350m (KTX B)',
+                            'Chọn điểm nhận',
                             style: AppTypography.labelSm.copyWith(
                               color: theme.textSecondary,
                               fontSize: 11,
@@ -975,6 +905,7 @@ class _CartScreenState extends State<CartScreen> {
                       Expanded(
                         child: TextField(
                           controller: _getNoteController(shopId),
+                          cursorColor: AppColors.primary,
                           style: AppTypography.bodySm.copyWith(
                             color: theme.textPrimary,
                           ),
@@ -1044,6 +975,7 @@ class _CartScreenState extends State<CartScreen> {
                         _startCheckoutFlow(
                           context,
                           shopLabel: shopName,
+                          items: shopItems,
                           amount: shopSubtotal,
                           count: shopItems.fold<int>(
                             0,
@@ -1293,200 +1225,38 @@ class _CartScreenState extends State<CartScreen> {
     required double voucherDiscount,
     required int totalSelectedCount,
     required int selectedShopsCount,
-  }) {
-    final theme = context.langFoodTheme;
-    final isDark = context.isDarkMode;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppTokens.spaceMd),
-      padding: const EdgeInsets.all(AppTokens.spaceMd),
-      decoration: BoxDecoration(
-        color: theme.card,
-        borderRadius: BorderRadius.circular(AppTokens.radiusXl),
-        border: Border.all(color: theme.borderSubtle, width: 0.5),
-        boxShadow: isDark ? AppTokens.shadowLevel1Dark : AppTokens.shadowLevel1,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Banner ưu đãi ghép quán (khi có 2 quán trở lên)
-          if (selectedShopsCount >= 2) ...[
-            Container(
-              padding: const EdgeInsets.all(AppTokens.spaceSm),
-              decoration: BoxDecoration(
-                color: AppColors.tertiary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: AppColors.tertiary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.volunteer_activism_rounded,
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: AppTokens.spaceSm),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Ghép 2 quán tiết kiệm 15.000₫ ship',
-                          style: AppTypography.labelMd.copyWith(
-                            color: theme.textPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          'Chung 1 tài xế sinh viên giao tận cửa',
-                          style: AppTypography.labelSm.copyWith(
-                            color: AppColors.tertiary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.tertiary,
-                      borderRadius: BorderRadius.circular(AppTokens.radiusFull),
-                    ),
-                    child: Text(
-                      'Đã áp dụng',
-                      style: AppTypography.labelSm.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppTokens.spaceMd),
-          ],
-
-          // Voucher sinh viên KTX
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? theme.surfaceContainerLow
-                  : const Color(0xFFF7F7F9),
-              borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-              border: Border.all(color: theme.borderSubtle, width: 0.5),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.confirmation_number_rounded,
-                  color: AppColors.primary,
-                  size: 20,
-                ),
-                const SizedBox(width: AppTokens.spaceSm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            'LANGFOODPAIR',
-                            style: AppTypography.labelMd.copyWith(
-                              color: theme.textPrimary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 4,
-                              vertical: 1,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text(
-                              '-20.000₫',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        'Giảm 20k cho đơn ghép KTX trên 80k',
-                        style: AppTypography.labelSm.copyWith(
-                          color: theme.textSecondary,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                TextButton(
-                  style: TextButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    foregroundColor: AppColors.primary,
-                  ),
-                  onPressed: () {
-                    AppHaptics.light();
-                    setState(() => _isVoucherApplied = !_isVoucherApplied);
-                  },
-                  child: Text(
-                    _isVoucherApplied ? 'Gỡ mã' : 'Áp dụng',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+  }) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: context.langFoodTheme.card,
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Chi tiết thanh toán',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        _buildSummaryRow(
+          textColor: context.langFoodTheme.textPrimary,
+          label: 'Tiền món ($totalSelectedCount món)',
+          value: _formatCurrency(rawSubtotal),
+        ),
+        _buildSummaryRow(
+          textColor: context.langFoodTheme.textPrimary,
+          label: 'Phí giao ($selectedShopsCount đơn)',
+          value: _formatCurrency(deliveryFee),
+        ),
+        if (selectedShopsCount > 1)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text('Mỗi quán tạo một đơn và tính phí giao riêng.'),
           ),
-          const SizedBox(height: AppTokens.spaceMd),
-
-          // Bảng tóm tắt các dòng tiền
-          _buildSummaryRow(
-            label: 'Tổng tiền món ($totalSelectedCount món)',
-            value: _formatCurrency(rawSubtotal),
-            textColor: theme.textPrimary,
-          ),
-          const SizedBox(height: 6),
-          _buildSummaryRow(
-            label: 'Phí giao hàng KTX',
-            value: selectedShopsCount >= 2 ? '5.000₫' : 'Freeship KTX',
-            textColor: AppColors.tertiary,
-            icon: Icons.local_shipping_rounded,
-          ),
-          if (voucherDiscount > 0) ...[
-            const SizedBox(height: 6),
-            _buildSummaryRow(
-              label: 'Voucher ghép đơn sinh viên',
-              value: '-${_formatCurrency(voucherDiscount)}',
-              textColor: AppColors.primary,
-              icon: Icons.loyalty_rounded,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+      ],
+    ),
+  );
 
   Widget _buildSummaryRow({
     required String label,
@@ -1579,7 +1349,7 @@ class _CartScreenState extends State<CartScreen> {
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            'Giao gộp 1 shipper tới sảnh KTX Khu B',
+                            'Giao hàng tới điểm nhận đã chọn',
                             style: AppTypography.labelSm.copyWith(
                               color: theme.textSecondary,
                               fontSize: 11,
@@ -1593,7 +1363,7 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '20 - 25 phút',
+                    'Phí theo quán',
                     style: AppTypography.labelSm.copyWith(
                       color: AppColors.secondary,
                       fontWeight: FontWeight.bold,

@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/mock/mock_data.dart';
-import '../../../../core/showcase/design_system_showcase.dart';
+import '../../../orders/presentation/screens/my_orders_screen.dart';
+import '../../../account/presentation/screens/profile_screen.dart';
+import '../../../auth/presentation/screens/login_screen.dart';
+import '../../../wallet/presentation/screens/wallet_screen.dart';
+
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -22,12 +25,10 @@ import '../../../../data/services/product_service.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../../providers/cart_provider.dart';
 import '../../../../providers/theme_provider.dart';
-import '../../../auth/presentation/screens/login_screen.dart';
+
 import '../../../cart/presentation/screens/cart_screen.dart';
 import '../../../food_detail/presentation/screens/food_detail_screen.dart';
 import '../../../shop/presentation/screens/shop_menu_screen.dart';
-import '../../../tracking/presentation/screens/live_tracking_screen.dart';
-import '../../../shipper/presentation/screens/shipper_orders_screen.dart';
 
 /// Màn hình Trang Chủ (HomeScreen) chuẩn thiết kế Stitch LF-01 (Apple HIG & Material 3)
 /// - Collapsing Header với SliverAppBar và tìm kiếm thích ứng
@@ -49,9 +50,9 @@ class _HomeScreenState extends State<HomeScreen> {
   final ProductService _productService = ProductService();
   final TextEditingController _searchController = TextEditingController();
 
-  List<CategoryModel> _categories = MockData.getCategories();
-  List<ProductModel> _allProducts = MockData.getProducts();
-  List<ProductModel> _filteredProducts = MockData.getProducts();
+  List<CategoryModel> _categories = [];
+  List<ProductModel> _allProducts = [];
+  List<ProductModel> _filteredProducts = [];
 
   int _selectedCategoryId = -1;
   int _selectedVibeIndex =
@@ -67,35 +68,33 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _bannerTimer;
 
   // Live Deal Countdown Timer (Stitch: 00:31:38)
-  Timer? _dealCountdownTimer;
-  int _dealRemainingSeconds = 31 * 60 + 38;
 
   // Selected delivery location
   String _selectedDorm = 'KTX Khu B • Tòa BA2';
 
   final List<Map<String, String>> _promoBanners = [
     {
-      'tag': 'KHUYẾN MÃI LÀNG ĐH',
-      'title': 'Combo thi cử no căng bụng chỉ 35k',
-      'subtitle': 'Freeship tận sảnh KTX Khu A & Khu B',
-      'cta': 'Lấy mã ngay',
+      'tag': 'LANGFOOD KTX',
+      'title': 'Khám phá món ngon quanh KTX',
+      'subtitle': 'Chọn món và xem đầy đủ chi phí trước khi đặt',
+      'cta': 'Xem thực đơn',
       'icon': 'lunch_dining',
       'gradientStart': '0xFFFF5722',
       'gradientEnd': '0xFFFF9800',
     },
     {
-      'tag': 'ĐẠI TIỆC TRƯA KTX',
-      'title': 'Giảm ngay 20% Cơm tấm & Bún bò',
-      'subtitle': 'Áp dụng cho sinh viên các trường ĐHQG',
+      'tag': 'THỰC ĐƠN HÔM NAY',
+      'title': 'Đổi bữa với thực đơn hôm nay',
+      'subtitle': 'Giá món được cập nhật từ quán',
       'cta': 'Đặt món ngay',
       'icon': 'rice_bowl',
       'gradientStart': '0xFFE64A19',
       'gradientEnd': '0xFFFF7043',
     },
     {
-      'tag': 'GIỜ VÀNG TRÀ SỮA',
-      'title': 'Trà sữa nướng Vân Nam đồng giá 15k',
-      'subtitle': 'Topping trân châu ngập tràn - Giao siêu tốc',
+      'tag': 'ĐỒ UỐNG & ĂN VẶT',
+      'title': 'Thêm đồ uống cho bữa ăn của bạn',
+      'subtitle': 'Xem tùy chọn và ghi chú trước khi đặt',
       'cta': 'Thử ngay',
       'icon': 'local_cafe',
       'gradientStart': '0xFFB02F00',
@@ -105,8 +104,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<String> _vibeFilters = [
     'Tất cả',
-    'Gần KTX (≤ 500m)',
-    'Đánh giá 4.8+ ⭐',
+    'Đang mở cửa',
+    'Món từ 30k',
     'Sinh viên < 30k',
   ];
 
@@ -115,7 +114,6 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadInitialData();
     _startBannerAutoScroll();
-    _startDealCountdown();
   }
 
   @override
@@ -123,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _searchController.dispose();
     _bannerController.dispose();
     _bannerTimer?.cancel();
-    _dealCountdownTimer?.cancel();
+
     super.dispose();
   }
 
@@ -141,73 +139,31 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _startDealCountdown() {
-    _dealCountdownTimer?.cancel();
-    _dealCountdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) return;
-      if (_dealRemainingSeconds > 0) {
-        setState(() {
-          _dealRemainingSeconds--;
-        });
-      }
-    });
-  }
-
-  String _formatCountdown(int totalSeconds) {
-    final hrs = (totalSeconds ~/ 3600).toString().padLeft(2, '0');
-    final mins = ((totalSeconds % 3600) ~/ 60).toString().padLeft(2, '0');
-    final secs = (totalSeconds % 60).toString().padLeft(2, '0');
-    return '$hrs:$mins:$secs';
-  }
-
   Future<void> _loadInitialData() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
-
     try {
-      // 1. Fetch categories
-      List<CategoryModel> catList = [];
-      try {
-        final apiCats = await _productService.getCategories();
-        if (apiCats.isNotEmpty) {
-          catList = [CategoryModel(id: -1, name: 'Tất cả'), ...apiCats];
-        } else {
-          catList = MockData.getCategories();
-        }
-      } catch (_) {
-        catList = MockData.getCategories();
-      }
-
-      // 2. Fetch products
-      List<ProductModel> prodList = [];
-      try {
-        final apiProds = await _productService.getProducts();
-        if (apiProds.isNotEmpty) {
-          prodList = apiProds;
-        } else {
-          prodList = MockData.getProducts();
-        }
-      } catch (_) {
-        prodList = MockData.getProducts();
-      }
-
+      final categories = await _productService.getCategories();
+      final products = await _productService.getProducts();
       if (!mounted) return;
       setState(() {
-        _categories = catList;
-        _allProducts = prodList;
+        _categories = [CategoryModel(id: -1, name: 'Tất cả'), ...categories];
+        _allProducts = products;
         _isLoading = false;
       });
       _applyFilter();
-    } catch (e) {
+    } catch (error) {
+      debugPrint('Không tải được thực đơn: $error');
       if (!mounted) return;
       setState(() {
-        _categories = MockData.getCategories();
-        _allProducts = MockData.getProducts();
+        _categories = [];
+        _allProducts = [];
+        _filteredProducts = [];
         _isLoading = false;
+        _errorMessage = error.toString();
       });
-      _applyFilter();
     }
   }
 
@@ -231,14 +187,10 @@ class _HomeScreenState extends State<HomeScreen> {
         // 3. Lọc theo Vibe Filter
         bool matchVibe = true;
         if (_selectedVibeIndex == 1) {
-          // Gần KTX (≤ 500m)
-          matchVibe =
-              product.shopName.toLowerCase().contains('ktx') ||
-              (product.description?.toLowerCase().contains('ktx') ?? false) ||
-              product.id % 2 == 0;
+          matchVibe = product.isShopOpen;
         } else if (_selectedVibeIndex == 2) {
           // Đánh giá 4.8+
-          matchVibe = (product.id % 3 != 0);
+          matchVibe = product.price >= 30000;
         } else if (_selectedVibeIndex == 3) {
           // Sinh viên < 30k
           matchVibe = product.price <= 30000;
@@ -254,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
         } else if (_activeQuickPill == 'under30k') {
           matchQuickPill = product.price <= 30000;
         } else if (_activeQuickPill == 'freeship') {
-          matchQuickPill = product.price >= 20000;
+          matchQuickPill = product.isShopOpen;
         }
 
         return matchCategory && matchQuery && matchVibe && matchQuickPill;
@@ -418,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                // F. Quán ngon sinh viên chấm cao 🌟 (Section Header & Vibe Filter)
+                // F. Thực đơn quanh KTX (Section Header & Vibe Filter)
                 SliverToBoxAdapter(child: _buildVibeFilterSection(theme)),
 
                 // G. Danh sách món ăn / nhà hàng (Quán ngon sinh viên chấm cao)
@@ -689,12 +641,7 @@ class _HomeScreenState extends State<HomeScreen> {
               PressScaleWidget(
                 onTap: () {
                   AppHaptics.light();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Không có thông báo mới nào từ KTX!'),
-                      duration: Duration(seconds: 1),
-                    ),
-                  );
+                  _showNotifications();
                 },
                 child: Container(
                   width: 36,
@@ -908,7 +855,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(width: 8),
                 _buildQuickActionPill(
                   id: 'freeship',
-                  label: 'Freeship 0đ',
+                  label: 'Đang mở cửa',
                   icon: Icons.moped_rounded,
                   iconColor: AppColors.primary,
                   theme: theme,
@@ -1398,98 +1345,46 @@ class _HomeScreenState extends State<HomeScreen> {
     CartProvider cartProvider,
     AuthProvider authProvider,
   ) {
-    final dealProducts = _allProducts.isNotEmpty
-        ? _allProducts.take(4).toList()
-        : MockData.getProducts().take(4).toList();
-    if (dealProducts.isEmpty) return const SizedBox.shrink();
-
+    final products = _allProducts.take(4).toList();
+    if (products.isEmpty) return const SizedBox.shrink();
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppTokens.marginMobile,
-            12,
-            AppTokens.marginMobile,
-            8,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
               Expanded(
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Deal chớp nhoáng nghỉ trưa',
-                        style: AppTypography.titleMd.copyWith(
-                          color: theme.textPrimary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Text('⚡', style: TextStyle(fontSize: 15)),
-                    const SizedBox(width: 6),
-                    // Countdown badge (Stitch: 00:31:38)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 5,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.error.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        _formatCountdown(_dealRemainingSeconds),
-                        style: AppTypography.currencyDisplay.copyWith(
-                          color: AppColors.error,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              InkWell(
-                onTap: () => _onVibeFilterSelected(3),
                 child: Text(
-                  'Xem thêm',
-                  style: AppTypography.labelMd.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
+                  'Gợi ý hôm nay',
+                  style: AppTypography.titleMd.copyWith(
+                    color: theme.textPrimary,
                   ),
                 ),
+              ),
+              TextButton(
+                onPressed: () => _onVibeFilterSelected(0),
+                child: const Text('Xem thêm'),
               ),
             ],
           ),
         ),
         SizedBox(
           height: 236,
-          child: ListView.builder(
+          child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTokens.marginMobile,
-            ),
-            itemCount: dealProducts.length,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: products.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
-              final prod = dealProducts[index];
-              final discount = (index % 2 == 0) ? 35 : 28;
-              final prepTime = '${10 + (index * 5)}p';
-
-              return LangFoodDealCard(
-                product: prod,
-                discountPercent: discount,
-                prepTime: prepTime,
-                onTap: () => _openFoodDetail(prod),
-                onAddToCart: () =>
-                    _handleAddToCart(prod, cartProvider, authProvider),
+              final product = products[index];
+              return SizedBox(
+                width: 164,
+                child: LangFoodDealCard(
+                  product: product,
+                  onTap: () => _openFoodDetail(product),
+                  onAddToCart: () =>
+                      _handleAddToCart(product, cartProvider, authProvider),
+                ),
               );
             },
           ),
@@ -1503,7 +1398,7 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         LangFoodSectionHeader(
-          title: 'Quán ngon sinh viên chấm cao 🌟',
+          title: 'Thực đơn quanh KTX',
           subtitle: 'Lọc theo vibe ẩm thực KTX',
         ),
         SingleChildScrollView(
@@ -1589,7 +1484,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: LangFoodEmptyState(
-            title: 'Mất kết nối WiFi KTX',
+            title: 'Chưa tải được thực đơn',
             message: 'Không thể tải danh sách thực đơn Làng ĐH. Vui lòng kiểm tra lại kết nối mạng phòng ký túc xá.',
             buttonText: 'Thử tải lại',
             onButtonPressed: _loadInitialData,
@@ -1627,8 +1522,6 @@ class _HomeScreenState extends State<HomeScreen> {
           final product = _filteredProducts[index];
           return LangFoodHorizontalProductCard(
             product: product,
-            rating: 4.7 + (index % 3) * 0.1,
-            prepTime: '${10 + (index % 4) * 5} phút',
             onTap: () => _openFoodDetail(product),
             onShopTap: () => _openShopMenu(product.shopId, product.shopName),
             onAddToCart: () =>
@@ -1688,7 +1581,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Tạo giỏ nhóm chia tiền ship 0đ tự động!',
+                  'Các món được nhóm theo quán trong giỏ hàng.',
                   style: AppTypography.bodySm.copyWith(
                     color: theme.textSecondary,
                     fontSize: 12,
@@ -1774,12 +1667,17 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: () {
           AppHaptics.selection();
           setState(() {
-            _currentNavIndex = index;
+            _currentNavIndex = 0;
           });
           if (index == 1) {
-            _openCart();
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MyOrdersScreen()),
+            );
           } else if (index == 2) {
             _showCommunalOrderSheet();
+          } else if (index == 3) {
+            _showNotifications();
           } else if (index == 4) {
             _showUserMenu(Provider.of<AuthProvider>(context, listen: false));
           }
@@ -1967,14 +1865,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Đặt nhóm gom đơn chia ship 0đ',
+                  'Đặt chung',
                   style: AppTypography.titleMd.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'Tạo mã phòng để bạn cùng phòng KTX chọn món chung vào một giỏ hàng. Phí vận chuyển tự động chia đều hoặc miễn phí!',
+                  'Chưa hỗ trợ giỏ chung giữa nhiều tài khoản. Bạn có thể chọn món từ nhiều quán; mỗi quán tạo một đơn riêng.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 13, color: Colors.grey),
                 ),
@@ -1982,11 +1880,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ElevatedButton(
                   onPressed: () {
                     Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Đã tạo nhóm đơn phòng P.402 KTX Khu B!'),
-                      ),
-                    );
+                    _openCart();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
@@ -1996,7 +1890,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   child: const Text(
-                    'Tạo nhóm mới ngay',
+                    'Xem giỏ hàng',
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -2011,238 +1905,108 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showUserMenu(AuthProvider authProvider) {
-    final rootNavigator = Navigator.of(context);
-    showModalBottomSheet(
+  void _showNotifications() {
+    showModalBottomSheet<void>(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (bottomSheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: AppColors.primary,
-                    child: Text(
-                      authProvider.user?.username.isNotEmpty == true
-                          ? authProvider.user!.username[0].toUpperCase()
-                          : 'U',
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  title: Text(
-                    authProvider.user?.fullName ??
-                        authProvider.user?.username ??
-                        'Tài khoản',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    'Vai trò: ${authProvider.user?.roleName ?? 'Khách hàng'}',
-                  ),
-                ),
-                const Divider(),
-                // Chuyển đổi giao diện Sáng / Tối
-                Consumer<ThemeProvider>(
-                  builder: (context, themeProvider, _) {
-                    return ListTile(
-                      leading: Icon(
-                        themeProvider.isDarkMode
-                            ? Icons.dark_mode_rounded
-                            : Icons.light_mode_rounded,
-                        color: AppColors.primary,
-                      ),
-                      title: const Text(
-                        'Chế độ giao diện',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      subtitle: Text(
-                        themeProvider.isDarkMode
-                            ? 'Đang bật chế độ tối'
-                            : 'Đang bật chế độ sáng',
-                      ),
-                      trailing: Switch.adaptive(
-                        value: themeProvider.isDarkMode,
-                        activeThumbColor: AppColors.primary,
-                        onChanged: (isDark) {
-                          AppHaptics.selection();
-                          themeProvider.setThemeMode(
-                            isDark ? ThemeMode.dark : ThemeMode.light,
-                          );
-                        },
-                      ),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(
-                    Icons.shopping_cart_outlined,
-                    color: AppColors.primary,
-                  ),
-                  title: const Text('Xem giỏ hàng'),
-                  onTap: () {
-                    Navigator.pop(bottomSheetContext);
-                    _openCart();
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(
-                    Icons.palette_outlined,
-                    color: AppColors.primary,
-                  ),
-                  title: const Text(
-                    '🎨 Design System Showcase (UI-01)',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: const Text(
-                    'Xem bảng màu, typography, nút, card, stepper, dark mode',
-                  ),
-                  onTap: () {
-                    Navigator.pop(bottomSheetContext);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const DesignSystemShowcase(),
-                      ),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.map_outlined, color: Colors.orange),
-                  title: const Text('Bản đồ & Live Tracking (Shipper/Khách)'),
-                  onTap: () {
-                    Navigator.pop(bottomSheetContext);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const RoleChooserScreen(),
-                      ),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.swap_horiz_rounded, color: Colors.blue),
-                  title: const Text('Chuyển vai trò Demo (3 Roles)',
-                      style: TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: const Text('Chuyển nhanh sang Shipper hoặc Chủ quán'),
-                  onTap: () {
-                    Navigator.pop(bottomSheetContext);
-                    _showRoleSwitcherDialog(context);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.logout, color: AppColors.error),
-                  title: const Text('Đăng xuất'),
-                  onTap: () async {
-                    Navigator.pop(bottomSheetContext);
-                    await authProvider.logout();
-                    if (!mounted) return;
-                    rootNavigator.pushReplacement(
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    );
-                  },
-                ),
-              ],
-            ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.notifications_none,
+                size: 40,
+                color: AppColors.primary,
+              ),
+              const SizedBox(height: 12),
+              const Text('Thông báo đơn hàng'),
+              const SizedBox(height: 8),
+              const Text(
+                'Theo dõi trạng thái mới nhất trong Đơn hàng của tôi.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const MyOrdersScreen()),
+                  );
+                },
+                child: const Text('Xem đơn hàng'),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  void _showRoleSwitcherDialog(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context, listen: false);
-    showModalBottomSheet(
+  void _showUserMenu(AuthProvider authProvider) {
+    showModalBottomSheet<void>(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Chuyển đổi 3 Role (Demo Giảng Viên)',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(ctx),
-                    ),
-                  ],
-                ),
-                const Text(
-                  'Chọn vai trò để kiểm thử quy trình khép kín:',
-                  style: TextStyle(fontSize: 13, color: Colors.grey),
-                ),
-                const SizedBox(height: 16),
-                ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: Color(0xFFFFECE5),
-                    child: Icon(Icons.person, color: Color(0xFFFF5722)),
-                  ),
-                  title: const Text('1. Sinh viên (Khách hàng)'),
-                  subtitle: const Text('Tài khoản: nhiem - Đang hoạt động'),
-                  trailing: const Icon(Icons.check_circle, color: Color(0xFFFF5722)),
-                  onTap: () => Navigator.pop(ctx),
-                ),
-                const Divider(),
-                ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: Color(0xFFE8F5E9),
-                    child: Icon(Icons.storefront, color: Colors.green),
-                  ),
-                  title: const Text('2. Chủ quán (Seller / Shop)'),
-                  subtitle: const Text('Tài khoản: seller - Nhận đơn quán'),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    final nav = Navigator.of(context);
-                    await auth.login('seller', '123456');
-                    if (mounted) {
-                      nav.pushReplacement(
-                        MaterialPageRoute(builder: (_) => const HomeScreen()),
-                      );
-                    }
-                  },
-                ),
-                const Divider(),
-                ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: Color(0xFFFFF3E0),
-                    child: Icon(Icons.directions_bike, color: Colors.orange),
-                  ),
-                  title: const Text('3. Tài xế (Shipper)'),
-                  subtitle: const Text('Tài khoản: shipper - Xem đơn theo thời gian thực'),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    final nav = Navigator.of(context);
-                    await auth.login('shipper', '123456');
-                    if (mounted) {
-                      nav.pushReplacement(
-                        MaterialPageRoute(
-                            builder: (_) => const ShipperOrdersScreen()),
-                      );
-                    }
-                  },
-                ),
-              ],
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text(
+                authProvider.user?.fullName ??
+                    authProvider.user?.username ??
+                    '',
+              ),
+              subtitle: const Text('Tài khoản LangFood'),
             ),
-          ),
-        );
-      },
+            for (final entry in <(IconData, String, Widget)>[
+              (Icons.person_outline, 'Hồ sơ cá nhân', const ProfileScreen()),
+              (Icons.receipt_long, 'Đơn hàng của tôi', const MyOrdersScreen()),
+              (
+                Icons.account_balance_wallet_outlined,
+                'Ví và giao dịch',
+                const WalletScreen(),
+              ),
+            ])
+              ListTile(
+                leading: Icon(entry.$1),
+                title: Text(entry.$2),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => entry.$3),
+                  );
+                },
+              ),
+            SwitchListTile(
+              title: const Text('Giao diện tối'),
+              value: context.read<ThemeProvider>().themeMode == ThemeMode.dark,
+              onChanged: (_) {
+                context.read<ThemeProvider>().toggleTheme();
+                Navigator.pop(sheetContext);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Đăng xuất'),
+              onTap: () async {
+                Navigator.pop(sheetContext);
+                await authProvider.logout();
+                if (mounted)
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+                  );
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

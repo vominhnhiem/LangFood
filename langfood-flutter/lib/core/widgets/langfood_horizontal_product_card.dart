@@ -25,7 +25,7 @@ class LangFoodHorizontalProductCard extends StatelessWidget {
   final VoidCallback? onShopTap;
   final String? tag;
   final String? prepTime;
-  final double rating;
+  final double? rating;
   final String? reviewCount;
 
   const LangFoodHorizontalProductCard({
@@ -36,7 +36,7 @@ class LangFoodHorizontalProductCard extends StatelessWidget {
     this.onShopTap,
     this.tag,
     this.prepTime,
-    this.rating = 4.8,
+    this.rating,
     this.reviewCount,
   });
 
@@ -52,8 +52,8 @@ class LangFoodHorizontalProductCard extends StatelessWidget {
         .replaceAll(' ', '');
 
     final displayTag = tag ?? _resolveDefaultTag(product);
-    final displayTime = prepTime ?? '15 phút';
-    final displayReview = reviewCount ?? '(${product.id * 120 + 350}+ đã bán)';
+    final displayTime = prepTime ?? 'Xem thực đơn';
+    final displayReview = reviewCount ?? '';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -76,39 +76,40 @@ class LangFoodHorizontalProductCard extends StatelessWidget {
                   ),
                 ),
                 // Rating badge overlay (Stitch: bottom-left)
-                Positioned(
-                  bottom: 6,
-                  left: 6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 5,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.72),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.star_rounded,
-                          size: 12,
-                          color: AppColors.accent,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          rating.toStringAsFixed(1),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                if (rating != null)
+                  Positioned(
+                    bottom: 6,
+                    left: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.72),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.star_rounded,
+                            size: 12,
+                            color: AppColors.accent,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 2),
+                          Text(
+                            rating!.toStringAsFixed(1),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
                 // Trạng thái quán đóng cửa
                 if (!product.isShopOpen)
                   Positioned.fill(
@@ -340,14 +341,6 @@ class LangFoodHorizontalProductCard extends StatelessWidget {
     );
   }
 
-  String _resolveDefaultTag(ProductModel p) {
-    if (p.price <= 25000) return 'Combo sinh viên';
-    if (p.name.toLowerCase().contains('gà')) return 'Freeship KTX';
-    if (p.name.toLowerCase().contains('trà sữa')) return 'Mua 1 tặng 1 thạch';
-    if (p.name.toLowerCase().contains('bún') ||
-        p.name.toLowerCase().contains('phở')) {
-      return 'Tặng trà tắc';
-    }
-    return 'Freeship 0đ';
-  }
+  String _resolveDefaultTag(ProductModel product) =>
+      product.isShopOpen ? 'Đang mở cửa' : 'Tạm ngưng';
 }

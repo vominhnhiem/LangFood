@@ -1,3 +1,6 @@
+import 'package:langfood_flutter/core/utils/display_format.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -96,6 +99,7 @@ class TestTileProvider extends TileProvider {
 }
 
 void main() {
+  setUp(() => dotenv.loadFromString(envString: 'SHIPPING_FEE=10000'));
   group('UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch)', () {
     // Fixture: Quán 1 - Cơm Gà Bà Tám
     final productShop1 = ProductModel(
@@ -173,7 +177,7 @@ void main() {
         // 2. Kiểm tra Bottom sheet header & ETA
         expect(find.text('Chi tiết điểm nhận món'), findsOneWidget);
         expect(find.text('Khuôn viên Ký túc xá ĐHQG TP.HCM'), findsOneWidget);
-        expect(find.text('15 - 20 phút'), findsOneWidget);
+        expect(find.text('Điểm nhận'), findsOneWidget);
 
         // Kéo sheet lên tối đa
         await tester.drag(
@@ -190,7 +194,7 @@ void main() {
 
         // 4. Kiểm tra Tòa nhà mặc định
         expect(find.text('Tòa BA2 - KTX Khu B'), findsWidgets);
-        expect(find.text('Đúng tuyến'), findsOneWidget);
+        expect(find.text('Đã chọn'), findsOneWidget);
 
         // 5. Kiểm tra 3 Drop-off options
         expect(find.text('Sảnh tầng G (Chân thang máy)'), findsOneWidget);
@@ -369,8 +373,8 @@ void main() {
         expect(find.text('Size L, 50% Đường, 70% Đá'), findsOneWidget);
 
         // 3. Kiểm tra nhãn đơn ghép 2 quán
-        expect(find.text('Đơn ghép KTX ĐHQG'), findsOneWidget);
-        expect(find.text('2 Quán • 1 Shipper'), findsOneWidget);
+        expect(find.text('2 quán • 2 đơn riêng'), findsOneWidget);
+        expect(find.text('2 Quán • 1 Shipper'), findsNothing);
 
         // 4. Kiểm tra nút Đặt đơn ngay
         expect(find.text('Đặt đơn ngay'), findsOneWidget);
@@ -413,10 +417,15 @@ void main() {
         expect(find.text('Ví MoMo KTX Express'), findsOneWidget);
         expect(find.text('VietQR Pro / Chuyển khoản'), findsOneWidget);
         expect(find.text('Ví ZaloPay'), findsOneWidget);
-        expect(find.text('Tiền mặt khi nhận đồ (COD)'), findsOneWidget);
+        expect(find.text('Tiền mặt khi nhận đồ (COD)'), findsWidgets);
 
         // Chọn COD
-        await tester.tap(find.text('Tiền mặt khi nhận đồ (COD)'));
+        await tester.tap(
+          find.descendant(
+            of: find.byType(BottomSheet),
+            matching: find.text('Tiền mặt khi nhận đồ (COD)'),
+          ),
+        );
         await tester.pumpAndSettle();
 
         // Xác nhận
@@ -424,7 +433,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // Đã cập nhật phương thức sang COD
-        expect(find.text('Tiền mặt khi nhận đồ (COD)'), findsOneWidget);
+        expect(find.text('Tiền mặt khi nhận đồ (COD)'), findsWidgets);
       },
     );
 
@@ -482,7 +491,7 @@ void main() {
           find.text(
             'Chế độ thử nghiệm: Đơn hàng sẽ gửi qua hệ thống mô phỏng OrderTest.',
           ),
-          findsOneWidget,
+          findsNothing,
         );
       },
     );
@@ -516,8 +525,8 @@ void main() {
 
         await tester.scrollUntilVisible(find.text('Chi tiết thanh toán'), 300);
 
-        expect(find.text('Phụ phí giao tận phòng (Lầu cao)'), findsOneWidget);
-        expect(find.text('5.000₫'), findsWidgets);
+        expect(find.text('Giao tận cửa phòng'), findsOneWidget);
+        expect(find.text(money(5000)), findsWidgets);
       },
     );
 
@@ -633,7 +642,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Táp nút Back trên AppBar
-      final backBtn = find.byIcon(Icons.arrow_back_ios_new_rounded);
+      final backBtn = find.byType(BackButton);
       expect(backBtn, findsOneWidget);
 
       await tester.tap(backBtn);
@@ -673,7 +682,7 @@ void main() {
 
     // TC15: ShipperOrdersScreen nhận đơn mới theo thời gian thực (Real-time Order Dispatch)
     testWidgets(
-      'TC15: Real-time simulated order dispatch updates ShipperOrdersScreen automatically',
+      'TC15: simulated orders never leak into the real shipper list',
       (tester) async {
         await tester.pumpWidget(
           createTestApp(
@@ -711,8 +720,11 @@ void main() {
         await tester.pumpAndSettle();
 
         // Đơn mới đã xuất hiện tự động trên màn hình Shipper
-        expect(find.textContaining('Nguyễn Văn A (Demo Test)'), findsOneWidget);
-        expect(find.textContaining('Phòng 412 - Tòa BA2 KTX Khu B'), findsOneWidget);
+        expect(find.textContaining('Nguyễn Văn A (Demo Test)'), findsNothing);
+        expect(
+          find.textContaining('Phòng 412 - Tòa BA2 KTX Khu B'),
+          findsNothing,
+        );
       },
     );
 
@@ -736,7 +748,10 @@ void main() {
         await tester.tap(switcherBtn);
         await tester.pumpAndSettle();
 
-        expect(find.text('Chuyển đổi 3 Role (Demo Giảng Viên)'), findsOneWidget);
+        expect(
+          find.text('Chuyển đổi 3 Role (Demo Giảng Viên)'),
+          findsOneWidget,
+        );
         expect(find.text('1. Sinh viên (Khách hàng)'), findsOneWidget);
         expect(find.text('2. Chủ quán (Seller / Shop)'), findsOneWidget);
         expect(find.text('3. Tài xế (Shipper)'), findsOneWidget);

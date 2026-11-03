@@ -1,3 +1,11 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:langfood_flutter/core/network/api_client.dart';
+import 'package:langfood_flutter/core/mock/mock_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +19,25 @@ import 'package:langfood_flutter/providers/cart_provider.dart';
 import 'package:langfood_flutter/providers/theme_provider.dart';
 
 void main() {
+  setUp(() => dotenv.loadFromString(envString: 'SHIPPING_FEE=10000'));
+  setUp(
+    () => ApiClient.useClient(
+      MockClient(
+        (request) async => http.Response(
+          jsonEncode(
+            request.url.path.endsWith('/Categories')
+                ? MockData.getCategories()
+                      .where((c) => c.id > 0)
+                      .map((c) => c.toJson())
+                      .toList()
+                : MockData.getProducts().map((p) => p.toJson()).toList(),
+          ),
+          200,
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        ),
+      ),
+    ),
+  );
   group('UI-02 HomeScreen Tests (LF-01 Stitch Implementation)', () {
     Widget buildTestableHomeScreen({
       CartProvider? cartProvider,
@@ -64,18 +91,18 @@ void main() {
       expect(find.text('Đặt nhóm chia ship'), findsOneWidget);
       expect(find.text('Quán quen KTX'), findsOneWidget);
       expect(find.text('Dưới 30k'), findsOneWidget);
-      expect(find.text('Freeship 0đ'), findsWidgets);
+      expect(find.text('Đang mở cửa'), findsWidgets);
 
       // 5. Category Section
       expect(find.text('Danh mục món ngon'), findsOneWidget);
 
       // 6. Flash Deals Section
-      expect(find.text('Deal chớp nhoáng nghỉ trưa'), findsOneWidget);
+      expect(find.text('Gợi ý hôm nay'), findsOneWidget);
 
       // 7. Vibe Filter Section
-      expect(find.text('Quán ngon sinh viên chấm cao 🌟'), findsOneWidget);
-      expect(find.text('Gần KTX (≤ 500m)'), findsOneWidget);
-      expect(find.text('Đánh giá 4.8+ ⭐'), findsOneWidget);
+      expect(find.text('Thực đơn quanh KTX'), findsOneWidget);
+      expect(find.text('Đang mở cửa'), findsWidgets);
+      expect(find.text('Món từ 30k'), findsOneWidget);
 
       // 8. Bottom Navigation
       expect(find.text('Khám phá'), findsOneWidget);
@@ -183,8 +210,8 @@ void main() {
             );
 
             // Banner CTA & Content are present
-            expect(find.text('Lấy mã ngay'), findsWidgets);
-            expect(find.text('KHUYẾN MÃI LÀNG ĐH'), findsWidgets);
+            expect(find.text('Xem thực đơn'), findsWidgets);
+            expect(find.text('LANGFOOD KTX'), findsWidgets);
 
             // Bottom navigation tabs are visible
             expect(find.text('Khám phá'), findsOneWidget);
@@ -204,7 +231,7 @@ void main() {
             );
 
             // Flash Deals header is present and readable without overflow
-            expect(find.text('Deal chớp nhoáng nghỉ trưa'), findsOneWidget);
+            expect(find.text('Gợi ý hôm nay'), findsOneWidget);
 
             // Further scroll down to test bottom lists & Floating Cart area
             await tester.drag(

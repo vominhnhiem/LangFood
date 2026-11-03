@@ -28,8 +28,8 @@ class LangFoodDealCard extends StatelessWidget {
     required this.product,
     required this.onTap,
     required this.onAddToCart,
-    this.discountPercent = 25,
-    this.prepTime = '15p',
+    this.discountPercent = 0,
+    this.prepTime = 'Xem món',
   });
 
   @override
@@ -41,7 +41,7 @@ class LangFoodDealCard extends StatelessWidget {
     );
 
     // Tính giá khuyến mãi và giá gốc
-    final double originalPrice = product.price > 0 ? product.price : 40000;
+    final double originalPrice = product.price;
     final double dealPrice = originalPrice * (1.0 - (discountPercent / 100.0));
 
     final formattedDealPrice = currencyFormatter
@@ -73,29 +73,29 @@ class LangFoodDealCard extends StatelessWidget {
                     child: _buildProductImage(),
                   ),
                 ),
-                // Badge giảm giá đỏ (-35%)
-                Positioned(
-                  top: 6,
-                  left: 6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.error,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      '-$discountPercent%',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                if (discountPercent > 0)
+                  Positioned(
+                    top: 6,
+                    left: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.error,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '-$discountPercent%',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
-                ),
                 // Thời gian giao hàng (15p)
                 Positioned(
                   bottom: 6,
@@ -178,16 +178,17 @@ class LangFoodDealCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Text(
-                        formattedOriginalPrice,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: theme.textSecondary.withValues(alpha: 0.7),
-                          decoration: TextDecoration.lineThrough,
+                      if (discountPercent > 0)
+                        Text(
+                          formattedOriginalPrice,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: theme.textSecondary.withValues(alpha: 0.7),
+                            decoration: TextDecoration.lineThrough,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),

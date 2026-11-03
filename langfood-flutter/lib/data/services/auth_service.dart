@@ -14,17 +14,18 @@ class AuthService {
     );
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
       return UserModel.fromJson(data);
     } else {
       String errorMessage = 'Đăng nhập thất bại';
       try {
-        final err = jsonDecode(response.body);
+        final err = jsonDecode(utf8.decode(response.bodyBytes));
         if (err is Map && err.containsKey('message')) {
           errorMessage = err['message'];
         }
       } catch (_) {
-        errorMessage = response.body.isNotEmpty ? response.body : errorMessage;
+        final bodyStr = utf8.decode(response.bodyBytes);
+        errorMessage = bodyStr.isNotEmpty ? bodyStr : errorMessage;
       }
       throw Exception(errorMessage);
     }
@@ -33,7 +34,7 @@ class AuthService {
   Future<UserModel> getUserById(String id) async {
     final response = await ApiClient.get('api/Users/$id');
     if (response.statusCode == 200) {
-      return UserModel.fromJson(jsonDecode(response.body));
+      return UserModel.fromJson(jsonDecode(utf8.decode(response.bodyBytes)));
     }
     throw Exception('Không tìm thấy thông tin người dùng');
   }
@@ -43,7 +44,7 @@ class AuthService {
       'api/Users/send-otp',
       queryParams: {'email': email},
     );
-    final data = jsonDecode(response.body);
+    final data = jsonDecode(utf8.decode(response.bodyBytes));
     if (response.statusCode == 200) {
       return data['message'] ?? 'Đã gửi mã OTP thành công!';
     }
@@ -58,7 +59,7 @@ class AuthService {
     if (response.statusCode == 200) {
       return true;
     }
-    final data = jsonDecode(response.body);
+    final data = jsonDecode(utf8.decode(response.bodyBytes));
     throw Exception(data['message'] ?? 'Mã OTP không đúng hoặc đã hết hạn');
   }
 
@@ -86,17 +87,18 @@ class AuthService {
     );
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
       return UserModel.fromJson(data);
     } else {
       String errorMessage = 'Đăng ký thất bại';
       try {
-        final err = jsonDecode(response.body);
+        final err = jsonDecode(utf8.decode(response.bodyBytes));
         if (err is Map && err.containsKey('message')) {
           errorMessage = err['message'];
         }
       } catch (_) {
-        errorMessage = response.body.isNotEmpty ? response.body : errorMessage;
+        final bodyStr = utf8.decode(response.bodyBytes);
+        errorMessage = bodyStr.isNotEmpty ? bodyStr : errorMessage;
       }
       throw Exception(errorMessage);
     }
@@ -104,9 +106,10 @@ class AuthService {
 
   Future<List<Map<String, dynamic>>> getBuildings() async {
     final response = await ApiClient.get('api/Buildings');
-    if (response.statusCode != 200)
+    if (response.statusCode != 200) {
       throw Exception('Không tải được danh sách tòa nhà.');
-    final List data = jsonDecode(response.body);
+    }
+    final List data = jsonDecode(utf8.decode(response.bodyBytes));
     return data.map((e) => Map<String, dynamic>.from(e)).toList();
   }
 }

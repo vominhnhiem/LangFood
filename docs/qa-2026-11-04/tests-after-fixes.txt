@@ -1,0 +1,144 @@
+00:00 +0: loading D:/Đồ án/LangFood/langfood-flutter/test/api_models_test.dart
+00:00 +0: D:/Đồ án/LangFood/langfood-flutter/test/api_models_test.dart: server payment state is preserved and missing fees are not invented
+00:00 +1: D:/Đồ án/LangFood/langfood-flutter/test/api_models_test.dart: reads option surcharge and filters unavailable database options
+00:00 +2: D:/Đồ án/LangFood/langfood-flutter/test/api_models_test.dart: order serialization never substitutes demo buyer, shop or subtotal
+00:00 +3: D:/Đồ án/LangFood/langfood-flutter/test/api_models_test.dart: selected delivery coordinates survive order serialization
+00:00 +4: D:/Đồ án/LangFood/langfood-flutter/test/cart_restore_test.dart: server empty cart replaces previous account and logout preserves saved account cart
+00:00 +5: D:/Đồ án/LangFood/langfood-flutter/test/cart_restore_test.dart: guest cart persists across restart and merges into account only once
+00:00 +6: D:/Đồ án/LangFood/langfood-flutter/test/cart_restore_test.dart: rapid quantity edits and removing one variant preserve the other
+00:00 +7: D:/Đồ án/LangFood/langfood-flutter/test/cart_restore_test.dart: failed writes survive restart and retry sends the saved local state
+00:00 +8: D:/Đồ án/LangFood/langfood-flutter/test/cart_restore_test.dart: failed initial restore never replaces an unknown remote cart
+00:00 +9: D:/Đồ án/LangFood/langfood-flutter/test/config_url_test.dart: delivery fee is configured explicitly and invalid values are rejected
+00:00 +10: D:/Đồ án/LangFood/langfood-flutter/test/config_url_test.dart: loads the declared .env asset
+00:00 +11: D:/Đồ án/LangFood/langfood-flutter/test/config_url_test.dart: uses environment URL and normalizes its trailing slash
+00:00 +12: D:/Đồ án/LangFood/langfood-flutter/test/config_url_test.dart: does not duplicate api prefix and preserves query parameters
+00:00 +13: D:/Đồ án/LangFood/langfood-flutter/test/config_url_test.dart: image URLs use server root, including deployment prefixes
+00:00 +14: D:/Đồ án/LangFood/langfood-flutter/test/config_url_test.dart: empty BASE_URL falls back and invalid schemes are rejected
+00:00 +15: D:/Đồ án/LangFood/langfood-flutter/test/customer_checkout_regression_test.dart: door delivery requires room and returns without another checkout
+00:00 +16: D:/Đồ án/LangFood/langfood-flutter/test/customer_checkout_regression_test.dart: door delivery requires room and returns without another checkout
+00:00 +17: D:/Đồ án/LangFood/langfood-flutter/test/customer_checkout_regression_test.dart: door delivery requires room and returns without another checkout
+00:00 +18: D:/Đồ án/LangFood/langfood-flutter/test/customer_checkout_regression_test.dart: door delivery requires room and returns without another checkout
+00:00 +19: D:/Đồ án/LangFood/langfood-flutter/test/customer_checkout_regression_test.dart: door delivery requires room and returns without another checkout
+00:01 +20: D:/Đồ án/LangFood/langfood-flutter/test/customer_checkout_regression_test.dart: door delivery requires room and returns without another checkout
+00:01 +21: D:/Đồ án/LangFood/langfood-flutter/test/customer_checkout_regression_test.dart: door delivery requires room and returns without another checkout
+00:01 +22: D:/Đồ án/LangFood/langfood-flutter/test/customer_checkout_regression_test.dart: door delivery requires room and returns without another checkout
+00:01 +23: D:/Đồ án/LangFood/langfood-flutter/test/customer_checkout_regression_test.dart: door delivery requires room and returns without another checkout
+00:01 +24: D:/Đồ án/LangFood/langfood-flutter/test/customer_checkout_regression_test.dart: door delivery requires room and returns without another checkout
+00:01 +25: D:/Đồ án/LangFood/langfood-flutter/test/customer_checkout_regression_test.dart: door delivery requires room and returns without another checkout
+00:02 +26: D:/Đồ án/LangFood/langfood-flutter/test/customer_checkout_regression_test.dart: door delivery requires room and returns without another checkout
+00:03 +27: D:/Đồ án/LangFood/langfood-flutter/test/customer_checkout_regression_test.dart: door delivery requires room and returns without another checkout
+00:03 +28: D:/Đồ án/LangFood/langfood-flutter/test/customer_checkout_regression_test.dart: door delivery requires room and returns without another checkout
+00:03 +29: D:/Đồ án/LangFood/langfood-flutter/test/customer_checkout_regression_test.dart: door delivery requires room and returns without another checkout
+00:03 +30: D:/Đồ án/LangFood/langfood-flutter/test/customer_checkout_regression_test.dart: door delivery requires room and returns without another checkout
+00:03 +31: D:/Đồ án/LangFood/langfood-flutter/test/customer_checkout_regression_test.dart: door delivery requires room and returns without another checkout
+00:04 +32: D:/Đồ án/LangFood/langfood-flutter/test/customer_checkout_regression_test.dart: door delivery requires room and returns without another checkout
+00:04 +33: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) HomeScreen renders all key LF-01 sections properly
+00:04 +34: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) HomeScreen renders all key LF-01 sections properly
+00:04 +35: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) HomeScreen renders all key LF-01 sections properly
+00:04 +36: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) HomeScreen renders all key LF-01 sections properly
+00:04 +37: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) HomeScreen renders all key LF-01 sections properly
+00:05 +38: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) HomeScreen renders all key LF-01 sections properly
+00:05 +39: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) HomeScreen renders all key LF-01 sections properly
+00:05 +40: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) HomeScreen renders all key LF-01 sections properly
+00:05 +41: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) HomeScreen renders all key LF-01 sections properly
+00:05 +42: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC01: LocationPicker renders all Stitch LF-06 layout components
+00:05 +43: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC01: LocationPicker renders all Stitch LF-06 layout components
+00:05 +44: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC01: LocationPicker renders all Stitch LF-06 layout components
+00:05 +45: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC01: LocationPicker renders all Stitch LF-06 layout components
+00:06 +46: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC01: LocationPicker renders all Stitch LF-06 layout components
+00:06 +47: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC01: LocationPicker renders all Stitch LF-06 layout components
+00:06 +48: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC01: LocationPicker renders all Stitch LF-06 layout components
+00:06 +49: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC01: LocationPicker renders all Stitch LF-06 layout components
+00:06 +50: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC01: LocationPicker renders all Stitch LF-06 layout components
+00:06 +51: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC01: LocationPicker renders all Stitch LF-06 layout components
+00:06 +52: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC01: LocationPicker renders all Stitch LF-06 layout components
+00:07 +53: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC01: LocationPicker renders all Stitch LF-06 layout components
+00:07 +54: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC01: LocationPicker renders all Stitch LF-06 layout components
+00:07 +55: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC01: LocationPicker renders all Stitch LF-06 layout components
+00:07 +56: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC01: LocationPicker renders all Stitch LF-06 layout components
+00:07 +57: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC01: LocationPicker renders all Stitch LF-06 layout components
+00:07 +58: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC01: LocationPicker renders all Stitch LF-06 layout components
+00:07 +59: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC01: LocationPicker renders all Stitch LF-06 layout components
+00:07 +60: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC01: LocationPicker renders all Stitch LF-06 layout components
+00:07 +61: D:/Đồ án/LangFood/langfood-flutter/test/widget_test.dart: LangFoodApp smoke test
+00:07 +62: D:/Đồ án/LangFood/langfood-flutter/test/widget_test.dart: LangFoodApp smoke test
+00:07 +63: D:/Đồ án/LangFood/langfood-flutter/test/widget_test.dart: LangFoodApp smoke test
+00:07 +64: D:/Đồ án/LangFood/langfood-flutter/test/widget_test.dart: LangFoodApp smoke test
+00:07 +65: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) Search query filters products or displays Empty State
+00:07 +66: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) Search query filters products or displays Empty State
+00:08 +67: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) Search query filters products or displays Empty State
+00:08 +68: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) Search query filters products or displays Empty State
+00:08 +69: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) Search query filters products or displays Empty State
+00:08 +70: D:/Đồ án/LangFood/langfood-flutter/test/ui_04_food_customization_sheet_test.dart: UI-04 FoodCustomizationSheet Tests (LF-03 Medium & LF-04 Expanded Stitch) 6. Quantity stepper increment and decrement multiplies total price accurately
+00:08 +71: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC03: Tapping preset hotspot chip updates selected building and address
+00:08 +72: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC03: Tapping preset hotspot chip updates selected building and address
+00:08 +73: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC03: Tapping preset hotspot chip updates selected building and address
+00:08 +74: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) Responsive & Overflow Test: Compact (320x640) with textScale 1.0 and 1.3 without RenderFlex error
+00:08 +75: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) Responsive & Overflow Test: Compact (320x640) with textScale 1.0 and 1.3 without RenderFlex error
+00:08 +76: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) Responsive & Overflow Test: Compact (320x640) with textScale 1.0 and 1.3 without RenderFlex error
+00:09 +77: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) Responsive & Overflow Test: Compact (320x640) with textScale 1.0 and 1.3 without RenderFlex error
+00:09 +78: D:/Đồ án/LangFood/langfood-flutter/test/ui_05_cart_screen_test.dart: UI-05 CartScreen Tests (LF-05 Stitch Implementation) TC09: Tapping checkout CTA opens confirmation dialog with proper shop and amount
+00:09 +79: D:/Đồ án/LangFood/langfood-flutter/test/ui_05_cart_screen_test.dart: UI-05 CartScreen Tests (LF-05 Stitch Implementation) TC09: Tapping checkout CTA opens confirmation dialog with proper shop and amount
+ClientException: Request to https://tile.openstreetmap.org/16/52211/30775.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52211/30775.png
+ClientException: Request to https://tile.openstreetmap.org/16/52211/30774.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52211/30774.png
+ClientException: Request to https://tile.openstreetmap.org/16/52210/30775.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52210/30775.png
+ClientException: Request to https://tile.openstreetmap.org/16/52211/30776.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52211/30776.png
+ClientException: Request to https://tile.openstreetmap.org/16/52212/30775.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52212/30775.png
+ClientException: Request to https://tile.openstreetmap.org/16/52210/30774.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52210/30774.png
+ClientException: Request to https://tile.openstreetmap.org/16/52212/30774.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52212/30774.png
+ClientException: Request to https://tile.openstreetmap.org/16/52210/30776.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52210/30776.png
+ClientException: Request to https://tile.openstreetmap.org/16/52212/30776.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52212/30776.png
+ClientException: Request to https://tile.openstreetmap.org/16/52211/30777.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52211/30777.png
+ClientException: Request to https://tile.openstreetmap.org/16/52211/30773.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52211/30773.png
+ClientException: Request to https://tile.openstreetmap.org/16/52209/30775.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52209/30775.png
+ClientException: Request to https://tile.openstreetmap.org/16/52213/30775.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52213/30775.png
+ClientException: Request to https://tile.openstreetmap.org/16/52212/30777.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52212/30777.png
+ClientException: Request to https://tile.openstreetmap.org/16/52210/30777.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52210/30777.png
+ClientException: Request to https://tile.openstreetmap.org/16/52210/30773.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52210/30773.png
+ClientException: Request to https://tile.openstreetmap.org/16/52212/30773.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52212/30773.png
+ClientException: Request to https://tile.openstreetmap.org/16/52209/30774.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52209/30774.png
+ClientException: Request to https://tile.openstreetmap.org/16/52213/30774.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52213/30774.png
+ClientException: Request to https://tile.openstreetmap.org/16/52209/30776.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52209/30776.png
+ClientException: Request to https://tile.openstreetmap.org/16/52213/30776.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52213/30776.png
+ClientException: Request to https://tile.openstreetmap.org/16/52213/30777.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52213/30777.png
+ClientException: Request to https://tile.openstreetmap.org/16/52213/30773.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52213/30773.png
+ClientException: Request to https://tile.openstreetmap.org/16/52209/30777.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52209/30777.png
+ClientException: Request to https://tile.openstreetmap.org/16/52209/30773.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52209/30773.png
+ClientException: Request to https://tile.openstreetmap.org/16/52211/30772.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52211/30772.png
+ClientException: Request to https://tile.openstreetmap.org/16/52211/30778.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52211/30778.png
+ClientException: Request to https://tile.openstreetmap.org/16/52212/30772.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52212/30772.png
+ClientException: Request to https://tile.openstreetmap.org/16/52210/30772.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52210/30772.png
+ClientException: Request to https://tile.openstreetmap.org/16/52210/30778.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52210/30778.png
+ClientException: Request to https://tile.openstreetmap.org/16/52212/30778.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52212/30778.png
+ClientException: Request to https://tile.openstreetmap.org/16/52209/30772.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52209/30772.png
+ClientException: Request to https://tile.openstreetmap.org/16/52213/30772.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52213/30772.png
+ClientException: Request to https://tile.openstreetmap.org/16/52209/30778.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52209/30778.png
+ClientException: Request to https://tile.openstreetmap.org/16/52213/30778.png failed with status 400: ., uri=https://tile.openstreetmap.org/16/52213/30778.png
+00:09 +80: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC04: Confirming location navigates to CheckoutScreen with delivery data
+00:09 +81: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC04: Confirming location navigates to CheckoutScreen with delivery data
+00:09 +82: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC04: Confirming location navigates to CheckoutScreen with delivery data
+00:09 +83: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) Responsive & Overflow Test: Standard Android (360x800) with textScale 1.0 and 1.3 without RenderFlex error
+00:10 +84: D:/Đồ án/LangFood/langfood-flutter/test/ui_05_cart_screen_test.dart: UI-05 CartScreen Tests (LF-05 Stitch Implementation) TC10: Responsive layout testing across 4 viewports without RenderFlex overflow
+00:10 +85: D:/Đồ án/LangFood/langfood-flutter/test/ui_05_cart_screen_test.dart: UI-05 CartScreen Tests (LF-05 Stitch Implementation) TC10: Responsive layout testing across 4 viewports without RenderFlex overflow
+00:10 +86: D:/Đồ án/LangFood/langfood-flutter/test/ui_05_cart_screen_test.dart: UI-05 CartScreen Tests (LF-05 Stitch Implementation) TC10: Responsive layout testing across 4 viewports without RenderFlex overflow
+00:10 +87: D:/Đồ án/LangFood/langfood-flutter/test/ui_05_cart_screen_test.dart: UI-05 CartScreen Tests (LF-05 Stitch Implementation) TC10: Responsive layout testing across 4 viewports without RenderFlex overflow
+00:10 +88: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) Responsive & Overflow Test: iPhone Standard (393x852) with textScale 1.0 and 1.3 without RenderFlex error
+00:10 +89: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) Responsive & Overflow Test: iPhone Standard (393x852) with textScale 1.0 and 1.3 without RenderFlex error
+00:10 +90: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) Responsive & Overflow Test: iPhone Standard (393x852) with textScale 1.0 and 1.3 without RenderFlex error
+00:10 +91: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC07: Opening payment method bottom sheet allows selecting MoMo / VietQR / COD
+00:10 +92: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC07: Opening payment method bottom sheet allows selecting MoMo / VietQR / COD
+00:10 +93: D:/Đồ án/LangFood/langfood-flutter/test/ui_05_cart_screen_test.dart: UI-05 CartScreen Tests (LF-05 Stitch Implementation) TC12: Multi-shop co-delivery banner and savings pill show when 2 shops are present
+00:10 +94: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) Responsive & Overflow Test: Large Pro Max (430x932) with textScale 1.0 and 1.3 without RenderFlex error
+00:11 +95: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) Responsive & Overflow Test: Large Pro Max (430x932) with textScale 1.0 and 1.3 without RenderFlex error
+00:11 +96: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) Responsive & Overflow Test: Large Pro Max (430x932) with textScale 1.0 and 1.3 without RenderFlex error
+00:11 +97: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) Responsive & Overflow Test: Large Pro Max (430x932) with textScale 1.0 and 1.3 without RenderFlex error
+00:11 +98: D:/Đồ án/LangFood/langfood-flutter/test/ui_02_home_screen_test.dart: UI-02 HomeScreen Tests (LF-01 Stitch Implementation) Responsive & Overflow Test: Large Pro Max (430x932) with textScale 1.0 and 1.3 without RenderFlex error
+00:11 +99: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC11: Dark Mode renders cleanly with LangFood dark theme tokens
+00:11 +100: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC12: Responsive layout testing across 4 viewports without RenderFlex overflow
+00:11 +101: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC13: Navigating back preserves cart items intact
+00:11 +102: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC14: Quick note tags in LocationPicker append tags smoothly
+00:12 +103: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC15: simulated orders never leak into the real shipper list
+OrderTestService.createOrderTest server error: Không thể tạo đơn test (400)
+OrderTestService.createOrderTest error: Exception: Không thể tạo đơn test (400)
+00:12 +104: D:/Đồ án/LangFood/langfood-flutter/test/ui_06_checkout_and_location_test.dart: UI-06 LocationPicker & CheckoutScreen Tests (LF-06 & LF-07 Stitch) TC16: 3-role switcher bottom sheet opens and displays all 3 roles
+00:12 +105: All tests passed!

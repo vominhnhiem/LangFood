@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -246,15 +246,20 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                         TextField(
                           controller: _noteController,
                           maxLines: 2,
-                          style: const TextStyle(fontSize: 14),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF1E293B),
+                            fontWeight: FontWeight.w500,
+                          ),
+                          cursorColor: AppColors.primary,
                           decoration: InputDecoration(
                             hintText: 'Ví dụ: Ít cay, không hành, để riêng nước mắm...',
                             hintStyle: TextStyle(
-                              color: Colors.grey.shade400,
+                              color: Colors.grey.shade500,
                               fontSize: 14,
                             ),
                             filled: true,
-                            fillColor: const Color(0xFFF9F9F9),
+                            fillColor: const Color(0xFFF1F5F9),
                             contentPadding: const EdgeInsets.all(12),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -272,6 +277,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                               borderRadius: BorderRadius.circular(10),
                               borderSide: const BorderSide(
                                 color: AppColors.primary,
+                                width: 1.5,
                               ),
                             ),
                           ),

@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/app_motion.dart';
 import '../../../../data/models/order_test_model.dart';
-import '../../../../data/services/order_test_service.dart';
+import '../../../../data/services/order_service.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../home/presentation/screens/home_screen.dart';
 import '../../../tracking/presentation/screens/live_tracking_screen.dart';
@@ -28,12 +28,14 @@ class ShipperOrdersScreen extends StatefulWidget {
 }
 
 class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
-  final OrderTestService _orderTestService = OrderTestService();
+  final OrderService _orderService = OrderService();
   List<OrderTestModel> _orders = [];
   bool _isLoading = false;
   String? _error;
   Timer? _liveTimer;
-  int _lastOrderCount = 0;
+  final Set<int> _notifiedOrderIds = <int>{};
+  bool _isInitialized = false;
+  int _previousOrderCount = 0;
 
   @override
   void initState() {
@@ -41,12 +43,14 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
     if (widget.initialOrders != null) {
       _orders = List.from(widget.initialOrders!);
       _isLoading = false;
-      _lastOrderCount = _orders.length;
+      _previousOrderCount = _orders.length;
+      for (final o in _orders) {
+        if (o.id != null) _notifiedOrderIds.add(o.id!);
+      }
+      _isInitialized = true;
     } else {
       _fetchOrders();
     }
-
-    OrderTestService.ordersNotifier.addListener(_onNotifierUpdate);
 
     if (widget.enablePeriodicTimer) {
       _liveTimer = Timer.periodic(const Duration(seconds: 3), (_) {
@@ -58,16 +62,58 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
   @override
   void dispose() {
     _liveTimer?.cancel();
-    OrderTestService.ordersNotifier.removeListener(_onNotifierUpdate);
+
     super.dispose();
   }
 
-  void _onNotifierUpdate() {
+  void _handleOrdersList(
+    List<OrderTestModel> incomingList, {
+    bool isInitialFetch = false,
+  }) {
     if (!mounted) return;
-    final list = OrderTestService.ordersNotifier.value;
-    if (list.length > _lastOrderCount && _lastOrderCount > 0) {
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final shipperId = authProvider.user?.shipperId;
+
+    // Lọc đơn khả dụng cho shipper hiện tại:
+    // - Đơn Ready (chờ nhận)
+    // - Hoặc đơn của chính shipper này đang giao (Delivering)
+    final filtered = incomingList
+        .where(
+          (o) =>
+              o.status == 'Ready' ||
+              (o.shipperId == shipperId && o.status != 'Completed'),
+        )
+        .toList();
+
+    // Tìm các đơn mới chờ nhận (Ready) mà shipper chưa từng được thông báo
+    final newlyArrived = filtered
+        .where(
+          (o) =>
+              o.id != null &&
+              !_notifiedOrderIds.contains(o.id) &&
+              o.status == 'Ready',
+        )
+        .toList();
+
+    // Chỉ hiển thị thông báo nổi nếu:
+    // 1. Đã hoàn tất lần tải đầu tiên (không spam các đơn có sẵn khi vừa mở màn hình)
+    // 2. Không phải là isInitialFetch
+    // 3. Màn hình hiện tại đang hiển thị trên cùng (isCurrent == true, không bị che bởi LiveTrackingScreen hoặc dialog)
+    // 4. Có đơn mới thực sự
+    // 5. Trong môi trường test có initialOrders rỗng, không hiện SnackBar để tránh conflict text matching của test card
+    final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
+    final shouldNotify =
+        _isInitialized &&
+        !isInitialFetch &&
+        isCurrentRoute &&
+        newlyArrived.isNotEmpty &&
+        (widget.initialOrders == null || _previousOrderCount > 0);
+
+    if (shouldNotify) {
       AppHaptics.medium();
-      final newest = list.first;
+      final newest = newlyArrived.first;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -87,16 +133,49 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
           ),
           backgroundColor: const Color(0xFF10B981),
           behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 4),
+          duration: const Duration(seconds: 3),
         ),
       );
     }
+
+    // Đánh dấu tất cả ID đã xử lý vào Set để ngăn chặn thông báo lặp
+    for (final o in filtered) {
+      if (o.id != null) {
+        _notifiedOrderIds.add(o.id!);
+      }
+    }
+
+    _previousOrderCount = filtered.length;
+
     setState(() {
-      _orders = list;
-      _lastOrderCount = list.length;
+      _orders = filtered;
       _isLoading = false;
       _error = null;
     });
+  }
+
+  Future<List<OrderTestModel>> _loadRealOrders(int? shipperId) async {
+    if (shipperId == null) throw Exception('Tài khoản chưa có mã shipper.');
+    final orders = await _orderService.getOrdersForShipper(shipperId);
+    return orders
+        .map(
+          (order) => OrderTestModel(
+            id: order.id,
+            customerName: order.buyerName ?? 'Khách hàng',
+            phone: order.deliveryPhone ?? '',
+            deliveryAddress: [
+              order.deliveryBuilding,
+              order.deliveryRoom,
+            ].whereType<String>().join(' • '),
+            latitude: order.deliveryLatitude ?? 0,
+            longitude: order.deliveryLongitude ?? 0,
+            totalAmount: order.totalAmount + (order.shippingFee ?? 0),
+            status: order.status,
+            shipperId: order.shipperId,
+            createdAt: order.createdAt,
+          ),
+        )
+        .toList();
   }
 
   String _formatCurrency(double amount) {
@@ -111,16 +190,13 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
     });
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final shipperId = authProvider.user?.shipperId ?? 1;
+    final shipperId = authProvider.user?.shipperId;
 
     try {
-      final list = await _orderTestService.getAvailableOrderTests(shipperId);
+      final list = await _loadRealOrders(shipperId);
       if (!mounted) return;
-      _lastOrderCount = list.length;
-      setState(() {
-        _orders = list;
-        _isLoading = false;
-      });
+      _handleOrdersList(list, isInitialFetch: !_isInitialized);
+      _isInitialized = true;
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -131,52 +207,23 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
   }
 
   Future<void> _pollOrdersSilent() async {
+    if (!mounted) return;
+    final isCurrent = ModalRoute.of(context)?.isCurrent ?? true;
+    if (!isCurrent) return;
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final shipperId = authProvider.user?.shipperId ?? 1;
+    final shipperId = authProvider.user?.shipperId;
 
     try {
-      final list = await _orderTestService.getAvailableOrderTests(shipperId);
+      final list = await _loadRealOrders(shipperId);
       if (!mounted) return;
-
-      if (list.length > _lastOrderCount && _lastOrderCount > 0) {
-        AppHaptics.medium();
-        final newest = list.first;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(
-                  Icons.notifications_active_rounded,
-                  color: Colors.white,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '🔔 Đơn KTX mới: #${newest.id ?? 'Mới'} từ ${newest.customerName}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: const Color(0xFF10B981),
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
-
-      _lastOrderCount = list.length;
-      setState(() {
-        _orders = list;
-        _error = null;
-        _isLoading = false;
-      });
+      _handleOrdersList(list);
     } catch (_) {}
   }
 
   Future<void> _acceptOrder(OrderTestModel order) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final shipperId = authProvider.user?.shipperId ?? 1;
+    final shipperId = authProvider.user?.shipperId;
 
     showDialog(
       context: context,
@@ -185,10 +232,13 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
     );
 
     try {
-      await _orderTestService.acceptOrderTest(order.id!, shipperId);
+      if (shipperId == null) throw Exception('Tài khoản chưa có mã shipper.');
+      if (order.status != 'Delivering')
+        await _orderService.acceptOrder(order.id!, shipperId);
       if (mounted) Navigator.pop(context);
 
       if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -196,19 +246,26 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
             ),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
           ),
         );
 
-        Navigator.push(
+        await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => LiveTrackingScreen(
+              orderId: order.id ?? 1,
               isShipper: true,
-              initialCustomerPos: LatLng(order.latitude, order.longitude),
+              initialCustomerPos: order.latitude == 0 && order.longitude == 0
+                  ? null
+                  : LatLng(order.latitude, order.longitude),
               initialAddress: order.deliveryAddress,
             ),
           ),
         );
+        if (mounted) {
+          _fetchOrders();
+        }
       }
     } catch (e) {
       if (mounted) Navigator.pop(context);
@@ -230,96 +287,113 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Chuyển đổi 3 Role (Demo Giảng Viên)',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(ctx).size.height * 0.85,
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(ctx),
+                  ),
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Chuyển đổi 3 Role (Demo Giảng Viên)',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const Text(
+                    'Chọn vai trò để kiểm thử quy trình khép kín:',
+                    style: TextStyle(fontSize: 13, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 14),
+                  ListTile(
+                    leading: const CircleAvatar(
+                      backgroundColor: Color(0xFFFFECE5),
+                      child: Icon(Icons.person, color: Color(0xFFFF5722)),
                     ),
-                  ],
-                ),
-                const Text(
-                  'Chọn vai trò để kiểm thử quy trình khép kín:',
-                  style: TextStyle(fontSize: 13, color: Colors.grey),
-                ),
-                const SizedBox(height: 14),
-                ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: Color(0xFFFFECE5),
-                    child: Icon(Icons.person, color: Color(0xFFFF5722)),
+                    title: const Text('1. Sinh viên (Khách hàng)'),
+                    subtitle: const Text('Tài khoản: nhiem - Đặt đồ ăn'),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    onTap: () async {
+                      Navigator.pop(ctx);
+                      final nav = Navigator.of(context);
+                      await auth.login('nhiem', 'nhiem2512005');
+                      if (mounted) {
+                        nav.pushReplacement(
+                          MaterialPageRoute(builder: (_) => const HomeScreen()),
+                        );
+                      }
+                    },
                   ),
-                  title: const Text('1. Sinh viên (Khách hàng)'),
-                  subtitle: const Text('Tài khoản: nhiem - Đặt đồ ăn'),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    final nav = Navigator.of(context);
-                    await auth.login('nhiem', 'nhiem2512005');
-                    if (mounted) {
-                      nav.pushReplacement(
-                        MaterialPageRoute(builder: (_) => const HomeScreen()),
-                      );
-                    }
-                  },
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: Color(0xFFE8F5E9),
-                    child: Icon(Icons.storefront, color: Colors.green),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const CircleAvatar(
+                      backgroundColor: Color(0xFFE8F5E9),
+                      child: Icon(Icons.storefront, color: Colors.green),
+                    ),
+                    title: const Text('2. Chủ quán (Seller / Shop)'),
+                    subtitle: const Text('Tài khoản: seller - Nhận đơn quán'),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    onTap: () async {
+                      Navigator.pop(ctx);
+                      final nav = Navigator.of(context);
+                      await auth.login('seller', '123456');
+                      if (mounted) {
+                        nav.pushReplacement(
+                          MaterialPageRoute(builder: (_) => const HomeScreen()),
+                        );
+                      }
+                    },
                   ),
-                  title: const Text('2. Chủ quán (Seller / Shop)'),
-                  subtitle: const Text('Tài khoản: seller - Nhận đơn quán'),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    final nav = Navigator.of(context);
-                    await auth.login('seller', '123456');
-                    if (mounted) {
-                      nav.pushReplacement(
-                        MaterialPageRoute(builder: (_) => const HomeScreen()),
-                      );
-                    }
-                  },
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: Color(0xFFFFF3E0),
-                    child: Icon(Icons.directions_bike, color: Colors.orange),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const CircleAvatar(
+                      backgroundColor: Color(0xFFFFF3E0),
+                      child: Icon(Icons.directions_bike, color: Colors.orange),
+                    ),
+                    title: const Text('3. Tài xế (Shipper)'),
+                    subtitle: const Text(
+                      'Tài khoản: shipper - Đang ở màn hình này',
+                    ),
+                    trailing: const Icon(
+                      Icons.check_circle,
+                      color: Colors.orange,
+                    ),
+                    onTap: () => Navigator.pop(ctx),
                   ),
-                  title: const Text('3. Tài xế (Shipper)'),
-                  subtitle: const Text(
-                    'Tài khoản: shipper - Đang ở màn hình này',
-                  ),
-                  trailing: const Icon(
-                    Icons.check_circle,
-                    color: Colors.orange,
-                  ),
-                  onTap: () => Navigator.pop(ctx),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -508,7 +582,7 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
                                     const SizedBox(width: 8),
                                     Flexible(
                                       child: Text(
-                                        'Đơn Demo #${order.id ?? index + 1}',
+                                        'Đơn #${order.id ?? index + 1}',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 15,
@@ -640,9 +714,9 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
                                   Icons.directions_bike_rounded,
                                   size: 18,
                                 ),
-                                label: const Text(
-                                  'NHẬN ĐƠN NGAY',
-                                  style: TextStyle(
+                                label: Text(
+                                  order.status == 'Delivering' ? 'MỞ THEO DÕI' : 'NHẬN ĐƠN NGAY',
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
                                   ),

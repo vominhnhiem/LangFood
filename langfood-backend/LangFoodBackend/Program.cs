@@ -31,10 +31,7 @@ int portToUse = IsPortAvailable(desiredPort) ? desiredPort : 5289;
 
 builder.WebHost.ConfigureKestrel(options =>
 {
-    if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
-    {
-        options.ListenAnyIP(portToUse);
-    }
+    options.ListenAnyIP(portToUse);
 });
 
 builder.Services.AddMemoryCache();
@@ -44,20 +41,27 @@ builder.Services.AddSignalR();
 
 
 var app = builder.Build();
+
+// Luôn kích hoạt Swagger & Swagger UI để kiểm thử API thuận tiện
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "LangFood API v1");
+    c.RoutePrefix = "swagger";
+});
+
+// Điều hướng trang gốc "/" thẳng vào giao diện Swagger Web API
+app.MapGet("/", () => Results.Redirect("/swagger"));
+
 // Mánh Hub (đặt trước app.Run())
 app.MapHub<LocationHub>("/locationHub");
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
 
 app.UseCors();
 app.UseStaticFiles();
 app.UseAuthorization();
 app.MapControllers();
 
-Console.WriteLine($"Server running on port {portToUse}");
+Console.WriteLine($"Server running on port {portToUse} -> http://localhost:{portToUse}/swagger");
 
 await app.RunAsync();
 

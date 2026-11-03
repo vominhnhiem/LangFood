@@ -1,13 +1,48 @@
 import '../../core/network/api_client.dart';
 import '../models/cart_item_model.dart';
+import 'product_service.dart';
 
 class CartService {
   Future<List<CartItemModel>> getCart(String userId) async {
     final data = ApiClient.decodeResponse(
       await ApiClient.get('api/Cart/$userId'),
     ) as List;
-    return data
+    final items = data
         .map((row) => CartItemModel.fromJson(Map<String, dynamic>.from(row)))
+        .toList();
+    // Cart API includes Product but omits its Shop navigation property.
+    final missingShops = items
+        .where(
+          (item) =>
+              item.product.shopName == 'Quán ăn Làng Food' &&
+              item.product.shopId > 0,
+        )
+        .map((item) => item.product.shopId)
+        .toSet();
+    final names = <int, String>{};
+    await Future.wait(
+      missingShops.map((shopId) async {
+        try {
+          names[shopId] = (await ProductService().getShopById(shopId)).name;
+        } catch (_) {
+          names[shopId] = 'Quán #$shopId';
+        }
+      }),
+    );
+    return items
+        .map(
+          (item) => names.containsKey(item.product.shopId)
+              ? CartItemModel(
+                  product: item.product.copyWith(
+                    shopName: names[item.product.shopId],
+                  ),
+                  quantity: item.quantity,
+                  note: item.note,
+                  selectedOptionsJson: item.selectedOptionsJson,
+                  unitPrice: item.unitPrice,
+                )
+              : item,
+        )
         .toList();
   }
 

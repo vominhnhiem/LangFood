@@ -19,22 +19,30 @@ class OrderService {
     ApiClient.decodeResponse(await ApiClient.delete('api/Orders/$orderId'));
   }
 
-  // Tạo đơn hàng mới đẩy lên SQL Database Backend
   Future<OrderModel?> createOrder(OrderModel order) async {
+    if (order.buyerId.isEmpty ||
+        order.shopId <= 0 ||
+        order.orderItems.isEmpty) {
+      throw Exception('Thông tin đơn hàng không hợp lệ.');
+    }
+    late final dynamic response;
     try {
-      final response = await ApiClient.post('api/Orders', body: order.toJson());
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        return OrderModel.fromJson(data);
-      } else {
-        final err = jsonDecode(response.body);
-        throw Exception(
-          err['message'] ?? 'Không thể tạo đơn hàng (${response.statusCode})',
-        );
-      }
-    } catch (e) {
-      debugPrint('OrderService.createOrder error: $e');
-      rethrow;
+      response = await ApiClient.post('api/Orders', body: order.toJson());
+    } catch (_) {
+      throw const OrderSubmissionUncertain(
+        'Mất kết nối khi gửi đơn, chưa xác định máy chủ đã nhận hay chưa.',
+      );
+    }
+    if (response.statusCode >= 500) {
+      throw const OrderSubmissionUncertain('Máy chủ gặp lỗi khi xử lý đơn.');
+    }
+    final data = ApiClient.decodeResponse(response);
+    try {
+      final created = OrderModel.fromJson(Map<String, dynamic>.from(data));
+      if (created.id == null || created.id! <= 0) throw const FormatException();
+      return created;
+    } catch (_) {
+      throw const OrderSubmissionUncertain('Máy chủ chưa trả mã đơn hợp lệ.');
     }
   }
 
@@ -45,7 +53,7 @@ class OrderService {
         'api/Orders/available-for-shipper/$shipperId',
       );
       if (response.statusCode == 200) {
-        final List list = jsonDecode(response.body);
+        final List list = jsonDecode(utf8.decode(response.bodyBytes));
         return list.map((json) => OrderModel.fromJson(json)).toList();
       } else {
         throw Exception('Lỗi lấy danh sách đơn hàng (${response.statusCode})');
@@ -56,19 +64,11 @@ class OrderService {
     }
   }
 
-  // Lấy chi tiết đơn hàng theo ID (Dùng cho khách hàng theo dõi realtime)
   Future<OrderModel?> getOrderById(int orderId) async {
-    try {
-      final response = await ApiClient.get('api/Orders/$orderId');
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return OrderModel.fromJson(data);
-      }
-      return null;
-    } catch (e) {
-      debugPrint('OrderService.getOrderById error: $e');
-      return null;
-    }
+    final response = await ApiClient.get('api/Orders/$orderId');
+    if (response.statusCode == 404) return null;
+    final data = ApiClient.decodeResponse(response);
+    return OrderModel.fromJson(Map<String, dynamic>.from(data));
   }
 
   // Lấy danh sách đơn hàng của Quán ăn
@@ -76,7 +76,7 @@ class OrderService {
     try {
       final response = await ApiClient.get('api/Orders/shop/$shopId');
       if (response.statusCode == 200) {
-        final List list = jsonDecode(response.body);
+        final List list = jsonDecode(utf8.decode(response.bodyBytes));
         return list.map((json) => OrderModel.fromJson(json)).toList();
       }
       return [];
@@ -119,7 +119,7 @@ class OrderService {
       } else {
         String msg = 'Không thể nhận đơn hàng này';
         try {
-          final data = jsonDecode(response.body);
+          final data = jsonDecode(utf8.decode(response.bodyBytes));
           if (data is String) msg = data;
           if (data is Map && data['message'] != null) msg = data['message'];
         } catch (_) {}
@@ -177,7 +177,8 @@ class OrderService {
     try {
       final response = await ApiClient.get('api/Orders/$orderId/location');
       if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
+        return jsonDecode(utf8.decode(response.bodyBytes))
+            as Map<String, dynamic>;
       }
       return null;
     } catch (e) {
@@ -185,4 +186,11 @@ class OrderService {
       return null;
     }
   }
+}
+
+class OrderSubmissionUncertain implements Exception {
+  final String message;
+  const OrderSubmissionUncertain(this.message);
+  @override
+  String toString() => message;
 }

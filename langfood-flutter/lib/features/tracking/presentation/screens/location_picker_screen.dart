@@ -19,6 +19,7 @@ class CampusDeliveryLocation {
   final String dropOffOptionLabel;
   final double extraFee;
   final String shipperNote;
+  final String room;
 
   const CampusDeliveryLocation({
     required this.position,
@@ -28,6 +29,7 @@ class CampusDeliveryLocation {
     required this.dropOffOptionLabel,
     this.extraFee = 0.0,
     this.shipperNote = '',
+    this.room = '',
   });
 
   CampusDeliveryLocation copyWith({
@@ -38,6 +40,7 @@ class CampusDeliveryLocation {
     String? dropOffOptionLabel,
     double? extraFee,
     String? shipperNote,
+    String? room,
   }) {
     return CampusDeliveryLocation(
       position: position ?? this.position,
@@ -47,6 +50,7 @@ class CampusDeliveryLocation {
       dropOffOptionLabel: dropOffOptionLabel ?? this.dropOffOptionLabel,
       extraFee: extraFee ?? this.extraFee,
       shipperNote: shipperNote ?? this.shipperNote,
+      room: room ?? this.room,
     );
   }
 }
@@ -63,11 +67,13 @@ class CampusDeliveryLocation {
 class LocationPickerScreen extends StatefulWidget {
   final CampusDeliveryLocation? initialLocation;
   final TileProvider? tileProvider;
+  final bool returnResult;
 
   const LocationPickerScreen({
     super.key,
     this.initialLocation,
     this.tileProvider,
+    this.returnResult = false,
   });
 
   @override
@@ -88,6 +94,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
   late String _subAddress;
   String _dropOffOption = 'g'; // 'g', 'gate', 'door'
   double _dropOffExtraFee = 0.0;
+  final TextEditingController _roomController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
 
@@ -133,6 +140,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
       _dropOffOption = widget.initialLocation!.dropOffOptionKey;
       _dropOffExtraFee = widget.initialLocation!.extraFee;
       _noteController.text = widget.initialLocation!.shipperNote;
+      _roomController.text = widget.initialLocation!.room;
       _searchController.text = _buildingName;
     } else {
       _selectedPosition = _defaultKtxB;
@@ -145,6 +153,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
   @override
   void dispose() {
     _noteController.dispose();
+    _roomController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -304,7 +313,15 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
     if (_dropOffOption == 'gate') {
       dropOffLabel = 'Cổng bảo vệ tòa nhà';
     } else if (_dropOffOption == 'door') {
-      dropOffLabel = 'Giao tận cửa phòng KTX (+5k)';
+      if (_roomController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Vui lòng nhập số phòng để giao tận cửa.'),
+          ),
+        );
+        return;
+      }
+      dropOffLabel = 'Giao tận cửa phòng ${_roomController.text.trim()} (+5k)';
     }
 
     final locationData = CampusDeliveryLocation(
@@ -315,10 +332,14 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
       dropOffOptionLabel: dropOffLabel,
       extraFee: _dropOffExtraFee,
       shipperNote: _noteController.text.trim(),
+      room: _dropOffOption == 'door' ? _roomController.text.trim() : '',
     );
 
-    // Chuyển tiếp sang CheckoutScreen (LF-07) theo đúng luồng UI-06
-    Navigator.push(
+    if (widget.returnResult) {
+      Navigator.pop(context, locationData);
+      return;
+    }
+    Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (_) => CheckoutScreen(
@@ -758,7 +779,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                         ),
                         const SizedBox(width: 2),
                         Text(
-                          '15 - 20 phút',
+                          'Điểm nhận',
                           style: AppTypography.labelSm.copyWith(
                             color: AppColors.tertiary,
                             fontWeight: FontWeight.bold,
@@ -882,7 +903,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                                   ),
                                 ),
                                 child: Text(
-                                  'Đúng tuyến',
+                                  'Đã chọn',
                                   style: AppTypography.labelSm.copyWith(
                                     color: AppColors.tertiary,
                                     fontSize: 10,
@@ -927,7 +948,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                 title: 'Sảnh tầng G (Chân thang máy)',
                 subTitle: 'Khu nhận đồ ăn tập trung của tòa nhà',
                 badgeText: 'KHUYÊN DÙNG',
-                feeText: 'Miễn phí',
+                feeText: 'Phụ phí 0đ',
                 fee: 0.0,
                 isFree: true,
               ),
@@ -939,7 +960,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                 keyName: 'gate',
                 title: 'Cổng bảo vệ tòa nhà',
                 subTitle: 'Gửi bảo vệ nếu bạn đang bận học/thi cử',
-                feeText: 'Miễn phí',
+                feeText: 'Phụ phí 0đ',
                 fee: 0.0,
                 isFree: true,
               ),
@@ -957,6 +978,17 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
               ),
               const SizedBox(height: 16),
 
+              if (_dropOffOption == 'door') ...[
+                TextField(
+                  controller: _roomController,
+                  textInputAction: TextInputAction.done,
+                  decoration: const InputDecoration(
+                    labelText: 'Số phòng nhận món',
+                    hintText: 'Ví dụ: 512',
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               // Ghi chú chi tiết cho tài xế KTX
               Wrap(
                 alignment: WrapAlignment.spaceBetween,
@@ -996,7 +1028,9 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                 ),
                 child: TextField(
                   controller: _noteController,
+                  cursorColor: AppColors.primary,
                   style: AppTypography.bodySm.copyWith(
+                    fontWeight: FontWeight.w500,
                     color: theme.textPrimary,
                   ),
                   decoration: InputDecoration(

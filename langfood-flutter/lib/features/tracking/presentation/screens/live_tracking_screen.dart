@@ -3,9 +3,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
 
+import '../../../../providers/auth_provider.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/display_format.dart';
+
+import '../../../../core/constants/app_colors.dart';
 import '../../../../data/models/order_model.dart';
 import '../../../../data/services/order_service.dart';
+
 import '../../../../data/services/routing_service.dart';
 
 // Màn hình Chọn Vai Trò (Shipper hoặc Khách Hàng) để test bản đồ
@@ -72,8 +80,10 @@ class RoleChooserScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            const LiveTrackingScreen(isShipper: true, orderId: 1),
+                        builder: (context) => const LiveTrackingScreen(
+                          isShipper: true,
+                          orderId: 105,
+                        ),
                       ),
                     );
                   },
@@ -110,8 +120,10 @@ class RoleChooserScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            const LiveTrackingScreen(isShipper: false, orderId: 1),
+                        builder: (context) => const LiveTrackingScreen(
+                          isShipper: false,
+                          orderId: 105,
+                        ),
                       ),
                     );
                   },
@@ -131,179 +143,314 @@ class LiveTrackingScreen extends StatefulWidget {
   final LatLng? initialCustomerPos;
   final String? initialAddress;
   final bool isLocationLocked;
-
+  final OrderService? service;
+  final TileProvider? tileProvider;
+  final bool enablePeriodicTimer;
   const LiveTrackingScreen({
     super.key,
-    this.orderId = 1,
+    required this.orderId,
     this.isShipper = false,
     this.initialCustomerPos,
     this.initialAddress,
     this.isLocationLocked = false,
+    this.service,
+    this.tileProvider,
+    this.enablePeriodicTimer = true,
   });
-
   @override
   State<LiveTrackingScreen> createState() => _LiveTrackingScreenState();
 }
 
 class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
-  final _map = MapController();
-  final _service = OrderService();
-  Timer? _refreshTimer;
+  final MapController _map = MapController();
+  late final OrderService _service = widget.service ?? OrderService();
+  Timer? _timer;
+  StreamSubscription<Position>? _gps;
   OrderModel? _order;
   LatLng? _shipper;
-  LatLng? _routeOrigin;
-  LatLng? _routeDestination;
   RoadRoute? _route;
-  DateTime? _routeRequestedAt;
-  DateTime? _locationTime;
-  bool _loading = true;
-  bool _refreshing = false;
-  bool _routing = false;
-  bool _mapReady = false;
-  bool _centered = false;
   String? _error;
   String? _routeError;
+  DateTime? _locationTime;
+  LatLng? _routeOrigin;
+  bool _loading = true;
+  bool _fetching = false;
+  bool _sharing = false;
+  bool _sendingLocation = false;
+  bool _completing = false;
+  bool _mapReady = false;
 
   LatLng? get _destination {
-    if (widget.initialCustomerPos != null) return widget.initialCustomerPos;
     final lat = _order?.deliveryLatitude;
     final lng = _order?.deliveryLongitude;
-    return lat == null || lng == null ? null : LatLng(lat, lng);
+    if (lat != null && lng != null) return LatLng(lat, lng);
+    return widget.initialCustomerPos;
   }
 
   @override
   void initState() {
     super.initState();
     _refresh();
-    // This timer only fetches server data; it never moves a marker by itself.
-    _refreshTimer = Timer.periodic(
-      const Duration(seconds: 3),
-      (_) => _refresh(),
-    );
+    if (widget.enablePeriodicTimer) {
+      _timer = Timer.periodic(const Duration(seconds: 5), (_) => _refresh());
+    }
   }
 
   @override
   void dispose() {
-    _refreshTimer?.cancel();
+    _timer?.cancel();
+    _gps?.cancel();
     _map.dispose();
     super.dispose();
   }
 
   Future<void> _refresh() async {
-    if (_refreshing) return;
-    _refreshing = true;
+    if (_fetching) return;
+    _fetching = true;
     try {
       final order = await _service.getOrderById(widget.orderId);
-      final location = await _service.getShipperLocation(widget.orderId);
+      if (order == null)
+        throw Exception('Không tìm thấy đơn hàng #${widget.orderId}.');
+      final location = order.status == 'Delivering'
+          ? await _service.getShipperLocation(widget.orderId)
+          : null;
       if (!mounted) return;
-      if (order == null) throw Exception('Không tải được thông tin đơn hàng.');
+      LatLng? position;
+      if (location?['latitude'] is num && location?['longitude'] is num) {
+        final lat = (location!['latitude'] as num).toDouble();
+        final lng = (location['longitude'] as num).toDouble();
+        if (lat.isFinite &&
+            lng.isFinite &&
+            lat.abs() <= 90 &&
+            lng.abs() <= 180) {
+          position = LatLng(lat, lng);
+        }
+      }
       setState(() {
         _order = order;
-        _shipper = location == null
-            ? null
-            : LatLng(
-                (location['latitude'] as num).toDouble(),
-                (location['longitude'] as num).toDouble(),
-              );
-        _locationTime = location == null
-            ? null
-            : DateTime.tryParse(location['updatedAt']?.toString() ?? '');
+        _shipper = position;
         _loading = false;
         _error = null;
-        if (_shipper == null) _route = null;
+        _locationTime = DateTime.tryParse(
+          location?['updatedAt']?.toString() ?? '',
+        );
+        if (position == null || order.status != 'Delivering') _route = null;
       });
-      _centerMap();
-      if (order.status == 'Completed') {
-        _refreshTimer?.cancel();
-      } else {
-        await _loadRoute();
+      if (order.isFinished) {
+        _timer?.cancel();
+        await _gps?.cancel();
+        if (mounted) setState(() => _sharing = false);
       }
-    } catch (e) {
-      if (mounted) {
+      if (position != null &&
+          _destination != null &&
+          order.status == 'Delivering') {
+        if (_routeOrigin == null ||
+            const Distance().as(LengthUnit.Meter, _routeOrigin!, position) >=
+                30) {
+          try {
+            final route = await RoutingService.getRoute(
+              position,
+              _destination!,
+            );
+            if (mounted)
+              setState(() {
+                _route = route;
+                _routeOrigin = position;
+                _routeError = null;
+              });
+          } catch (_) {
+            if (mounted)
+              setState(() {
+                _route = null;
+                _routeError =
+                    'Chưa tải được tuyến đường. Vị trí vẫn được cập nhật.';
+              });
+          }
+        }
+      }
+    } catch (error) {
+      if (mounted)
         setState(() {
           _loading = false;
-          _error = e.toString().replaceFirst('Exception: ', '');
+          _error = error.toString().replaceFirst('Exception: ', '');
         });
-      }
     } finally {
-      _refreshing = false;
+      _fetching = false;
     }
   }
 
   void _centerMap() {
-    if (!_mapReady || _centered) return;
-    final center = _shipper ?? _destination;
-    if (center == null) return;
-    _map.move(center, 16);
-    _centered = true;
+    if (!_mapReady) return;
+    if (_shipper != null && _destination != null) {
+      _map.fitCamera(
+        CameraFit.bounds(
+          bounds: LatLngBounds.fromPoints([_shipper!, _destination!]),
+          padding: const EdgeInsets.fromLTRB(40, 80, 40, 300),
+        ),
+      );
+    } else if (_destination != null) {
+      _map.move(_destination!, 15);
+    }
   }
 
-  Future<void> _loadRoute({bool force = false}) async {
-    final from = _shipper;
-    final to = _destination;
-    if (from == null || to == null || _routing) return;
-    final sameDestination = _routeDestination == to;
-    if (!force &&
-        sameDestination &&
-        _route != null &&
-        _routeOrigin != null &&
-        const Distance().as(LengthUnit.Meter, _routeOrigin!, from) < 50) {
+  Future<void> _shareGps() async {
+    if (_sharing) {
+      await _gps?.cancel();
+      if (mounted) setState(() => _sharing = false);
       return;
     }
-    if (!force &&
-        _routeRequestedAt != null &&
-        DateTime.now().difference(_routeRequestedAt!).inSeconds < 10) {
+    final shipperId = context.read<AuthProvider>().user?.shipperId;
+    if (shipperId == null ||
+        _order?.shipperId != shipperId ||
+        _order?.status != 'Delivering')
       return;
-    }
-    _routing = true;
-    _routeRequestedAt = DateTime.now();
     try {
-      final route = await RoutingService.getRoute(from, to);
-      if (!mounted) return;
-      setState(() {
-        _route = route;
-        _routeOrigin = from;
-        _routeDestination = to;
-        _routeError = null;
-      });
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _route = null;
-          _routeError = e.toString().replaceFirst('Exception: ', '');
-        });
+      if (!await Geolocator.isLocationServiceEnabled())
+        throw Exception('Vui lòng bật GPS.');
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied)
+        permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        throw Exception('Chưa được cấp quyền vị trí.');
       }
+      if (!mounted) return;
+      setState(() => _sharing = true);
+      _gps =
+          Geolocator.getPositionStream(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              distanceFilter: 10,
+            ),
+          ).listen(
+            (position) async {
+              if (_sendingLocation || !mounted || !_sharing) return;
+              _sendingLocation = true;
+              assert(() {
+                debugPrint('GPS_SAMPLE order=${widget.orderId} '
+                    'accuracyMeters=${position.accuracy.toStringAsFixed(1)} '
+                    'mocked=${position.isMocked} timestamp=${position.timestamp}');
+                return true;
+              }());
+              try {
+                final uploadTimer = Stopwatch()..start();
+                final saved = await _service.updateShipperLocation(
+                  orderId: widget.orderId,
+                  latitude: position.latitude,
+                  longitude: position.longitude,
+                  shipperId: shipperId,
+                  headingDegree: position.heading,
+                  speedKmh: position.speed * 3.6,
+                );
+                assert(() {
+                  debugPrint('GPS_UPLOAD order=${widget.orderId} '
+                      'success=$saved elapsedMs=${uploadTimer.elapsedMilliseconds}');
+                  return true;
+                }());
+                if (!saved) throw Exception('Không gửi được vị trí.');
+                await _refresh();
+              } catch (error) {
+                if (mounted) setState(() => _error = error.toString());
+              } finally {
+                _sendingLocation = false;
+              }
+            },
+            onError: (Object error) {
+              if (mounted)
+                setState(() {
+                  _sharing = false;
+                  _error = 'Không đọc được GPS: $error';
+                });
+            },
+          );
+    } catch (error) {
+      if (mounted)
+        setState(() {
+          _sharing = false;
+          _error = error.toString().replaceFirst('Exception: ', '');
+        });
+    }
+  }
+
+  Future<void> _complete() async {
+    if (_completing) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xác nhận đã giao món?'),
+        content: const Text('Chỉ xác nhận khi khách đã nhận đầy đủ món.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Quay lại'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Đã giao xong'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _completing = true);
+    try {
+      if (!await _service.completeOrder(widget.orderId))
+        throw Exception('Không thể hoàn tất đơn. Vui lòng thử lại.');
+      await _refresh();
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
     } finally {
-      _routing = false;
+      if (mounted) setState(() => _completing = false);
     }
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text(
-        '${widget.isShipper ? 'Chỉ đường giao' : 'Theo dõi'} #${widget.orderId}',
+  Widget build(BuildContext context) {
+    final theme = context.langFoodTheme;
+    final destination = _destination;
+    final ownsDelivery =
+        widget.isShipper &&
+        _order?.status == 'Delivering' &&
+        _order?.shipperId != null &&
+        _order?.shipperId == context.read<AuthProvider>().user?.shipperId;
+    return Scaffold(
+      backgroundColor: theme.canvas,
+      appBar: AppBar(
+        title: Text('Theo dõi #${widget.orderId}'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: 'Tải lại',
+            onPressed: _refresh,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
       ),
-      actions: [
-        IconButton(
-          tooltip: 'Tải lại',
-          onPressed: _refresh,
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-    ),
-    body: _loading
-        ? const Center(child: CircularProgressIndicator())
-        : Column(
-            children: [
-              Expanded(
-                child: FlutterMap(
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _order == null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(_error ?? 'Không tải được đơn hàng.'),
+                    TextButton(
+                      onPressed: _refresh,
+                      child: const Text('Thử lại'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : Stack(
+              children: [
+                FlutterMap(
                   mapController: _map,
                   options: MapOptions(
                     initialCenter:
-                        _destination ??
-                        _shipper ??
-                        const LatLng(10.8805, 106.8048),
+                        destination ?? const LatLng(10.8800, 106.8050),
                     initialZoom: 15,
                     onMapReady: () {
                       _mapReady = true;
@@ -314,29 +461,30 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                     TileLayer(
                       urlTemplate:
                           'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.example.langfood_flutter',
+                      userAgentPackageName: 'com.langfood.app',
+                      tileProvider: widget.tileProvider,
                     ),
                     if (_route != null)
                       PolylineLayer(
                         polylines: [
                           Polyline(
                             points: _route!.points,
-                            color: Colors.blue,
                             strokeWidth: 5,
+                            color: AppColors.primary,
                           ),
                         ],
                       ),
                     MarkerLayer(
                       markers: [
-                        if (_destination != null)
+                        if (destination != null)
                           Marker(
-                            point: _destination!,
-                            width: 48,
-                            height: 48,
+                            point: destination,
+                            width: 44,
+                            height: 44,
                             child: const Icon(
                               Icons.location_on,
-                              color: Colors.red,
                               size: 42,
+                              color: AppColors.primary,
                             ),
                           ),
                         if (_shipper != null)
@@ -344,10 +492,12 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                             point: _shipper!,
                             width: 48,
                             height: 48,
-                            child: const Icon(
-                              Icons.delivery_dining,
-                              color: Colors.blue,
-                              size: 38,
+                            child: const CircleAvatar(
+                              backgroundColor: Colors.white,
+                              child: Icon(
+                                Icons.delivery_dining,
+                                color: AppColors.tertiary,
+                              ),
                             ),
                           ),
                       ],
@@ -359,45 +509,122 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                     ),
                   ],
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (_error != null)
-                      Text(_error!, style: const TextStyle(color: Colors.red)),
-                    Text(
-                      _order?.deliveryBuilding ??
-                          widget.initialAddress ??
-                          'Chưa có địa chỉ',
-                    ),
-                    Text('Trạng thái: ${_order?.status ?? ''}'),
-                    if (_shipper == null)
-                      const Text('Chưa nhận được vị trí GPS của shipper.'),
-                    if (_destination == null)
-                      const Text('Đơn này chưa có tọa độ giao hàng.'),
-                    if (_locationTime != null)
-                      Text('GPS cập nhật: ${_locationTime!.toLocal()}'),
-                    if (_route != null)
-                      Text(
-                        '${(_route!.distanceMeters / 1000).toStringAsFixed(1)} km • khoảng ${(_route!.durationSeconds / 60).ceil()} phút',
-                      ),
-                    if (_routeError != null)
-                      Text(
-                        _routeError!,
-                        style: const TextStyle(color: Colors.red),
-                      ),
-                    if (_shipper != null && _destination != null)
-                      TextButton.icon(
-                        onPressed: () => _loadRoute(force: true),
-                        icon: const Icon(Icons.directions),
-                        label: const Text('Tải lại chỉ đường'),
-                      ),
-                  ],
+                Positioned(
+                  right: 16,
+                  top: 16,
+                  child: FloatingActionButton.small(
+                    heroTag: null,
+                    tooltip: 'Căn chỉnh bản đồ',
+                    onPressed: _centerMap,
+                    child: const Icon(Icons.center_focus_strong),
+                  ),
                 ),
-              ),
-            ],
-          ),
-  );
+                DraggableScrollableSheet(
+                  initialChildSize: .32,
+                  minChildSize: .25,
+                  maxChildSize: .85,
+                  builder: (context, controller) => Container(
+                    decoration: BoxDecoration(
+                      color: theme.card,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(24),
+                      ),
+                    ),
+                    child: ListView(
+                      controller: controller,
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 40,
+                            height: 4,
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: theme.borderSubtle,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                        Text(
+                          _order!.statusLabel,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(color: AppColors.primary),
+                        ),
+                        const SizedBox(height: 8),
+                        if (_order!.status == 'Delivering' && _shipper == null)
+                          const Text('Đang chờ vị trí từ tài xế.'),
+                        if (_locationTime != null)
+                          Text(
+                            'Vị trí cập nhật: ${dateText(_locationTime!.toIso8601String())}',
+                          ),
+                        if (_route != null)
+                          Text(
+                            'Lộ trình tham khảo: ${(_route!.distanceMeters / 1000).toStringAsFixed(1)} km • ${(_route!.durationSeconds / 60).ceil()} phút',
+                          ),
+                        if (_routeError != null) Text(_routeError!),
+                        if (_error != null)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                              _error!,
+                              style: const TextStyle(color: AppColors.error),
+                            ),
+                          ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _order!.deliveryBuilding ?? 'Chưa có địa chỉ giao',
+                        ),
+                        if (_order!.deliveryRoom?.isNotEmpty == true)
+                          Text(_order!.deliveryRoom!),
+                        const Divider(height: 24),
+                        ..._order!.orderItems.map(
+                          (item) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${item.quantity}x ${item.productName ?? 'Món #${item.productId}'}',
+                                ),
+                                if (item.optionsSummary?.isNotEmpty == true)
+                                  Text(item.optionsSummary!),
+                                if (item.note?.isNotEmpty == true)
+                                  Text(item.note!),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Text('Tiền món: ${money(_order!.totalAmount)}'),
+                        Text('Phí giao: ${money(_order!.shippingFee)}'),
+                        Text(
+                          'Tổng: ${money(_order!.totalAmount + (_order!.shippingFee ?? 0))}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        if (ownsDelivery) ...[
+                          const SizedBox(height: 16),
+                          OutlinedButton.icon(
+                            onPressed: _shareGps,
+                            icon: const Icon(Icons.my_location),
+                            label: Text(
+                              _sharing
+                                  ? 'Dừng chia sẻ GPS'
+                                  : 'Chia sẻ GPS khi giao hàng',
+                            ),
+                          ),
+                          FilledButton(
+                            onPressed: _completing ? null : _complete,
+                            child: const Text('Đã giao xong'),
+                          ),
+                        ],
+                        SizedBox(
+                          height: MediaQuery.paddingOf(context).bottom + 16,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
 }

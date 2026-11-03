@@ -5,6 +5,8 @@ class OrderItemModel {
   final int quantity;
   final double unitPrice;
   final String? note;
+  final String? optionsSummary;
+  final double optionsPrice;
 
   OrderItemModel({
     this.id,
@@ -13,6 +15,8 @@ class OrderItemModel {
     required this.quantity,
     required this.unitPrice,
     this.note,
+    this.optionsSummary,
+    this.optionsPrice = 0.0,
   });
 
   factory OrderItemModel.fromJson(Map<String, dynamic> json) {
@@ -25,6 +29,8 @@ class OrderItemModel {
       quantity: json['quantity'] as int? ?? 1,
       unitPrice: (json['unitPrice'] as num?)?.toDouble() ?? 0.0,
       note: json['note'] as String?,
+      optionsSummary: json['optionsSummary'] as String?,
+      optionsPrice: (json['optionsPrice'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -35,6 +41,9 @@ class OrderItemModel {
       'quantity': quantity,
       'unitPrice': unitPrice,
       'note': note ?? '',
+      if (optionsSummary != null && optionsSummary!.isNotEmpty)
+        'optionsSummary': optionsSummary,
+      if (optionsPrice > 0) 'optionsPrice': optionsPrice,
     };
   }
 }
@@ -49,6 +58,7 @@ class OrderModel {
   final double totalAmount;
   final double? shippingFee;
   final String? deliveryBuilding;
+  final String? deliveryRoom;
   final String? deliveryPhone;
   final double? deliveryLatitude;
   final double? deliveryLongitude;
@@ -81,6 +91,7 @@ class OrderModel {
     required this.totalAmount,
     this.shippingFee,
     this.deliveryBuilding,
+    this.deliveryRoom,
     this.deliveryPhone,
     this.deliveryLatitude,
     this.deliveryLongitude,
@@ -109,6 +120,7 @@ class OrderModel {
       totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0.0,
       shippingFee: (json['shippingFee'] as num?)?.toDouble(),
       deliveryBuilding: json['deliveryBuilding'] as String?,
+      deliveryRoom: json['deliveryRoom'] as String?,
       deliveryPhone: json['deliveryPhone'] as String?,
       deliveryLatitude: (json['deliveryLatitude'] as num?)?.toDouble(),
       deliveryLongitude: (json['deliveryLongitude'] as num?)?.toDouble(),
@@ -130,6 +142,7 @@ class OrderModel {
       if (shippingFee != null) 'shippingFee': shippingFee,
       'paymentMethod': paymentMethod,
       'deliveryBuilding': deliveryBuilding,
+      if (deliveryRoom != null) 'deliveryRoom': deliveryRoom,
       'deliveryPhone': deliveryPhone,
       if (deliveryLatitude != null) 'deliveryLatitude': deliveryLatitude,
       if (deliveryLongitude != null) 'deliveryLongitude': deliveryLongitude,

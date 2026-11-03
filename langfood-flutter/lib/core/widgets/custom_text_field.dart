@@ -71,7 +71,12 @@ class _CustomTextFieldState extends State<CustomTextField> {
           validator: widget.validator,
           maxLines: widget.isPassword ? 1 : widget.maxLines,
           readOnly: widget.readOnly,
-          style: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
+          style: const TextStyle(
+            fontSize: 15,
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w500,
+          ),
+          cursorColor: AppColors.primary,
           decoration: InputDecoration(
             hintText: widget.hintText,
             hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),

@@ -1,0 +1,12 @@
+00:00 +0: loading D:/Đồ án/LangFood/langfood-flutter/test/customer_checkout_regression_test.dart
+00:00 +0: door delivery requires room and returns without another checkout
+00:01 +1: empty checkout has no submit button or invented subtotal
+00:01 +2: selected snapshot creates only selected lines and preserves other cart items
+00:02 +3: partial multi-shop failure retries only the uncreated shop
+00:02 +4: double tap sends once while a request is pending
+00:02 +5: uncertain network outcome keeps cart and prevents immediate duplicate submission
+00:02 +6: pending tracking never invents a driver or queries GPS
+00:03 +7: selection remains stable after cart quantity changes
+00:03 +8: missing Orders response never falls back to OrderTests
+00:03 +9: rejected Orders submission is reported with no second API write
+00:03 +10: All tests passed!

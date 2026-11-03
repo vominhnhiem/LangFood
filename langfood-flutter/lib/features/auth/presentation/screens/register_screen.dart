@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../data/services/auth_service.dart';
@@ -175,7 +175,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   counterText: '',
                   filled: true,
-                  fillColor: AppColors.background,
+                  fillColor: const Color(0xFFF1F5F9),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -473,7 +473,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           setState(() => _obscurePassword = !_obscurePassword),
                     ),
                     filled: true,
-                    fillColor: AppColors.background,
+                    fillColor: const Color(0xFFF1F5F9),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide.none,
@@ -526,7 +526,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     filled: true,
-                    fillColor: AppColors.background,
+                    fillColor: const Color(0xFFF1F5F9),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide.none,
@@ -624,9 +624,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   InputDecoration _inputDecoration(String hint, IconData icon) {
     return InputDecoration(
       hintText: hint,
+      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
       prefixIcon: Icon(icon, color: AppColors.primary),
       filled: true,
-      fillColor: AppColors.background,
+      fillColor: const Color(0xFFF1F5F9),
       contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),

@@ -125,9 +125,9 @@ class ProductService {
   Future<ProductModel> createProduct(Map<String, dynamic> productData) async {
     final response = await ApiClient.post('api/Products', body: productData);
     if (response.statusCode == 200 || response.statusCode == 201) {
-      return ProductModel.fromJson(jsonDecode(response.body));
+      return ProductModel.fromJson(jsonDecode(utf8.decode(response.bodyBytes)));
     }
-    final error = jsonDecode(response.body);
+    final error = jsonDecode(utf8.decode(response.bodyBytes));
     throw Exception(error['message'] ?? 'Không thể tạo món ăn mới');
   }
 
@@ -137,7 +137,7 @@ class ProductService {
         'api/ProductOptions/product/$productId',
       );
       if (response.statusCode == 200) {
-        final List data = jsonDecode(response.body);
+        final List data = jsonDecode(utf8.decode(response.bodyBytes));
         return data
             .map((json) => ProductOptionGroupModel.fromJson(json))
             .toList();

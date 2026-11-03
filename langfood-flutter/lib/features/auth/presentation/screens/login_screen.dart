@@ -9,6 +9,7 @@ import '../../../../providers/auth_provider.dart';
 import 'register_screen.dart';
 import '../../../home/presentation/screens/home_screen.dart';
 import '../../../shipper/presentation/screens/shipper_orders_screen.dart';
+import '../../../restaurant/presentation/screens/shop_orders_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -64,6 +65,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Widget targetScreen = isShipper
           ? const ShipperOrdersScreen()
+          : user?.isSeller == true
+          ? const ShopOrdersScreen()
           : const HomeScreen();
 
       Navigator.pushReplacement(

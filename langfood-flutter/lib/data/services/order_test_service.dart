@@ -28,7 +28,17 @@ class OrderTestService {
     ordersNotifier.value = List.unmodifiable(_inMemoryOrders);
   }
 
+  /// Tạo đơn test.
+  ///
+  /// Hành vi:
+  /// - Luôn thêm đơn vào [_inMemoryOrders] ngay (optimistic update) để
+  ///   [ShipperOrdersScreen] hiển thị tức thì qua [ordersNotifier].
+  /// - Nếu server phản hồi 200/201: cập nhật đơn với dữ liệu từ server và trả về.
+  /// - Nếu server lỗi hoặc mạng lỗi: đơn giả lập vẫn GIỮ NGUYÊN trong in-memory
+  ///   (shipper vẫn thấy), nhưng ném [Exception] để [CheckoutScreen] biết không
+  ///   xóa giỏ hàng và hiện thông báo lỗi cho người dùng.
   Future<OrderTestModel?> createOrderTest(OrderTestModel order) async {
+    // Thêm đơn giả lập vào in-memory ngay (optimistic update cho shipper screen)
     final simulated = OrderTestModel(
       id: order.id ?? (DateTime.now().millisecondsSinceEpoch % 10000),
       customerName: order.customerName,
@@ -46,18 +56,46 @@ class OrderTestService {
     try {
       final response =
           await ApiClient.post('api/OrderTests', body: order.toJson());
+      // Đọc body và trim để tránh FormatException khi body rỗng
+      final body = utf8.decode(response.bodyBytes).trim();
+
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        final created = OrderTestModel.fromJson(data);
-        _inMemoryOrders[0] = created;
-        _notifyChange();
-        return created;
+        // Parse JSON nếu body không rỗng, cập nhật đơn giả lập với dữ liệu thực
+        if (body.isNotEmpty) {
+          try {
+            final data = jsonDecode(body);
+            final created = OrderTestModel.fromJson(data);
+            _inMemoryOrders[0] = created;
+            _notifyChange();
+            return created;
+          } catch (_) {
+            // Body không phải JSON hợp lệ → trả đơn giả lập (thành công về UX)
+          }
+        }
+        // Body rỗng nhưng status 200/201 → thành công, trả đơn giả lập
+        return simulated;
       } else {
-        final err = jsonDecode(response.body);
-        throw Exception(
-            err['message'] ?? 'Không thể tạo đơn test (${response.statusCode})');
+        // Lỗi server (4xx/5xx):
+        // - Đơn giả lập VẪN GIỮ trong in-memory (shipper vẫn thấy)
+        // - Throw để checkout_screen biết thất bại → giữ giỏ hàng + hiện lỗi
+        String errMessage =
+            'Không thể tạo đơn test (${response.statusCode})';
+        if (body.isNotEmpty) {
+          try {
+            final err = jsonDecode(body);
+            errMessage =
+                (err is Map ? err['message'] as String? : null) ?? errMessage;
+          } catch (_) {
+            if (body.length < 200) errMessage = body;
+          }
+        }
+        debugPrint('OrderTestService.createOrderTest server error: $errMessage');
+        throw Exception(errMessage);
       }
     } catch (e) {
+      // Lỗi mạng (timeout, offline, 400 từ test framework):
+      // - Đơn giả lập VẪN GIỮ trong in-memory (shipper vẫn thấy, optimistic UX)
+      // - Rethrow để checkout_screen giữ giỏ hàng + hiện lỗi
       debugPrint('OrderTestService.createOrderTest error: $e');
       rethrow;
     }
@@ -70,20 +108,23 @@ class OrderTestService {
       final response =
           await ApiClient.get('api/OrderTests/available', queryParams: query);
       if (response.statusCode == 200) {
-        final List list = jsonDecode(response.body);
-        final apiOrders =
-            list.map((json) => OrderTestModel.fromJson(json)).toList();
-        if (apiOrders.isNotEmpty) {
-          for (final ao in apiOrders) {
-            final idx = _inMemoryOrders.indexWhere((o) => o.id == ao.id);
-            if (idx == -1) {
-              _inMemoryOrders.add(ao);
-            } else {
-              _inMemoryOrders[idx] = ao;
+        final body = utf8.decode(response.bodyBytes).trim();
+        if (body.isNotEmpty) {
+          final List list = jsonDecode(body);
+          final apiOrders =
+              list.map((json) => OrderTestModel.fromJson(json)).toList();
+          if (apiOrders.isNotEmpty) {
+            for (final ao in apiOrders) {
+              final idx = _inMemoryOrders.indexWhere((o) => o.id == ao.id);
+              if (idx == -1) {
+                _inMemoryOrders.add(ao);
+              } else {
+                _inMemoryOrders[idx] = ao;
+              }
             }
+            _notifyChange();
+            return apiOrders;
           }
-          _notifyChange();
-          return apiOrders;
         }
       }
     } catch (e) {
@@ -130,4 +171,3 @@ class OrderTestService {
     return true;
   }
 }
-

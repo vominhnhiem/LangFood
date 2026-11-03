@@ -20,10 +20,11 @@ class ApiClient {
 
   static dynamic decodeResponse(http.Response response) {
     dynamic data;
+    final bodyString = utf8.decode(response.bodyBytes);
     try {
-      data = jsonDecode(response.body);
+      data = jsonDecode(bodyString);
     } catch (_) {
-      data = response.body;
+      data = bodyString;
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final message = data is Map ? (data['message'] ?? data['title']) : data;

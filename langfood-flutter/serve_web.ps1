@@ -1,6 +1,6 @@
 param (
     [int]$Port = 8080,
-    [string]$Path = "d:\Mon THu 4\LangFood\langfood-flutter\build\web"
+    [string]$Path = "$PSScriptRoot\build\web"
 )
 
 $listener = New-Object System.Net.HttpListener
@@ -50,8 +50,8 @@ try {
                 $contentType = $mimeMap[$ext]
             }
 
-            $response.ContentType = $contentType
             $bytes = [System.IO.File]::ReadAllBytes($filePath)
+            $response.ContentType = $contentType
             $response.ContentLength64 = $bytes.Length
             $response.OutputStream.Write($bytes, 0, $bytes.Length)
         } else {

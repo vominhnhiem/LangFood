@@ -6,7 +6,7 @@ import '../../../../core/widgets/action_helpers.dart';
 import '../../../../data/models/order_model.dart';
 import '../../../../data/services/order_service.dart';
 import '../../../../providers/auth_provider.dart';
-import '../../../tracking/presentation/screens/realtime_order_tracking_screen.dart';
+import '../../../tracking/presentation/screens/live_tracking_screen.dart';
 
 class MyOrdersScreen extends StatefulWidget {
   final OrderService? service;
@@ -172,7 +172,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
                                                   context,
                                                   MaterialPageRoute(
                                                     builder: (_) =>
-                                                        RealtimeOrderTrackingScreen(
+                                                        LiveTrackingScreen(
                                                           orderId: order.id!,
                                                         ),
                                                   ),

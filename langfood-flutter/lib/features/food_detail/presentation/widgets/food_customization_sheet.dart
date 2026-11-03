@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
@@ -978,7 +978,8 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                 Expanded(
                   child: TextField(
                     controller: _noteController,
-                    style: TextStyle(fontSize: 12.5, color: theme.textPrimary),
+                    cursorColor: AppColors.primary,
+                    style: TextStyle(fontSize: 12.5, color: theme.textPrimary, fontWeight: FontWeight.w500),
                     decoration: InputDecoration(
                       hintText: 'Ví dụ: Ít cay, da giòn, dưa leo cắt mỏng...',
                       hintStyle: TextStyle(

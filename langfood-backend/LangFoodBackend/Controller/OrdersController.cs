@@ -54,6 +54,10 @@ namespace LangFoodBackend.Controllers
             try
             {
                 order.CreatedAt = DateTime.Now;
+                if (order.CommissionFee <= 0)
+                {
+                    order.CommissionFee = 2000;
+                }
 
                 if (string.IsNullOrWhiteSpace(order.BuyerId) || !await _context.Users.AnyAsync(u => u.Id == order.BuyerId))
                     return BadRequest(new { message = "Invalid buyer." });

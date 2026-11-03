@@ -1,3 +1,4 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -9,8 +10,10 @@ import 'package:langfood_flutter/features/cart/presentation/screens/cart_screen.
 import 'package:langfood_flutter/providers/auth_provider.dart';
 import 'package:langfood_flutter/providers/cart_provider.dart';
 import 'package:langfood_flutter/providers/theme_provider.dart';
+import 'package:langfood_flutter/features/tracking/presentation/screens/location_picker_screen.dart';
 
 void main() {
+  setUp(() => dotenv.loadFromString(envString: 'SHIPPING_FEE=10000'));
   group('UI-05 CartScreen Tests (LF-05 Stitch Implementation)', () {
     // Fixture: Quán 1 - Cơm Gà Xối Mỡ Bà Tám
     final productShop1Item1 = ProductModel(
@@ -116,7 +119,7 @@ void main() {
         expect(find.text('Giỏ hàng KTX đang trống!'), findsOneWidget);
         expect(
           find.text(
-            'Bạn chưa chọn món nào từ các quán quen Khu A & Khu B. Chọn ngay để nhận ưu đãi ghép đơn nhé!',
+            'Bạn chưa chọn món nào. Khám phá thực đơn và thêm món vào giỏ nhé!',
           ),
           findsOneWidget,
         );
@@ -151,7 +154,7 @@ void main() {
         // Check shop headers
         expect(find.text('Cơm Gà Da Giòn Bà Tám'), findsOneWidget);
         expect(find.text('Trà Sữa Nướng Vân Nam'), findsOneWidget);
-        expect(find.text('Đơn ghép đa quán KTX'), findsOneWidget);
+        expect(find.text('Giỏ hàng theo quán'), findsOneWidget);
 
         // Check items
         expect(find.text('Cơm Gà Xối Mỡ (Đùi góc tư)'), findsOneWidget);
@@ -247,17 +250,17 @@ void main() {
         await tester.drag(find.byType(ListView), const Offset(0, -500));
         await tester.pumpAndSettle();
 
-        expect(find.text('Tổng tiền món (4 món)'), findsOneWidget);
+        expect(find.text('Tiền món (4 món)'), findsOneWidget);
         expect(find.text('111.000₫'), findsWidgets);
 
         // Campus delivery fee with 2 shops = 5.000₫
-        expect(find.text('5.000₫'), findsOneWidget);
+        expect(find.text('20.000₫'), findsOneWidget);
 
         // Voucher LANGFOODPAIR (-20.000₫)
-        expect(find.text('-20.000₫'), findsWidgets);
+        expect(find.text('-20.000₫'), findsNothing);
 
         // Grand total = 111.000 + 5.000 - 20.000 = 96.000₫
-        expect(find.text('96.000₫'), findsOneWidget);
+        expect(find.text('131.000₫'), findsOneWidget);
       },
     );
 
@@ -358,8 +361,8 @@ void main() {
         await tester.tap(ctaBtn);
         await tester.pumpAndSettle();
 
-        expect(find.text('Xác nhận đặt đơn'), findsOneWidget);
-        expect(find.text('Xác nhận & Set định vị'), findsOneWidget);
+        expect(find.byType(LocationPickerScreen), findsOneWidget);
+        expect(find.text('Xác nhận & Set định vị'), findsNothing);
       },
     );
 
@@ -453,11 +456,11 @@ void main() {
         await tester.pumpWidget(buildTestableCartScreen(cartProvider: cart));
         await tester.pumpAndSettle();
 
-        expect(find.text('Đơn ghép đa quán KTX'), findsOneWidget);
-        expect(find.text('Tối đa 2 quán'), findsOneWidget);
-        expect(find.text('Ghép 2 quán tiết kiệm 15.000₫ ship'), findsOneWidget);
-        expect(find.text('Đã áp dụng'), findsOneWidget);
-        expect(find.text('Tiết kiệm 35.000₫'), findsOneWidget);
+        expect(find.text('Giỏ hàng theo quán'), findsOneWidget);
+        expect(find.text('Đơn riêng từng quán'), findsOneWidget);
+        expect(find.text('Ghép 2 quán tiết kiệm 15.000₫ ship'), findsNothing);
+        expect(find.text('Đã áp dụng'), findsNothing);
+        expect(find.text('Tiết kiệm 35.000₫'), findsNothing);
       },
     );
   });

@@ -199,6 +199,24 @@ class CartProvider extends ChangeNotifier {
     _queueSave();
   }
 
+  /// Remove only quantities successfully ordered, keeping other cart lines.
+  void removePurchased(List<CartItemModel> purchased, String buyerId) {
+    if (_currentUserId != buyerId || isLoading || !canEdit) return;
+    for (final bought in purchased) {
+      final index = _items.indexWhere(
+        (item) =>
+            item.product.id == bought.product.id &&
+            item.selectedOptionsJson == bought.selectedOptionsJson &&
+            item.note == bought.note &&
+            item.effectiveUnitPrice == bought.effectiveUnitPrice,
+      );
+      if (index < 0) continue;
+      _items[index].quantity -= bought.quantity;
+      if (_items[index].quantity <= 0) _items.removeAt(index);
+    }
+    _queueSave();
+  }
+
   void _queueSave() {
     final snapshot = _clone(_items);
     final userId = _currentUserId;
