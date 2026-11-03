@@ -1,9 +1,24 @@
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+
 import '../../core/network/api_client.dart';
 import '../models/order_model.dart';
 
 class OrderService {
+  Future<List<OrderModel>> getBuyerOrders(String buyerId) async {
+    final data = ApiClient.decodeResponse(
+      await ApiClient.get('api/Orders/buyer/$buyerId'),
+    ) as List;
+    return data
+        .map((row) => OrderModel.fromJson(Map<String, dynamic>.from(row)))
+        .toList();
+  }
+
+  Future<void> cancelOrder(int orderId) async {
+    ApiClient.decodeResponse(await ApiClient.delete('api/Orders/$orderId'));
+  }
+
   // Tạo đơn hàng mới đẩy lên SQL Database Backend
   Future<OrderModel?> createOrder(OrderModel order) async {
     try {
@@ -13,7 +28,9 @@ class OrderService {
         return OrderModel.fromJson(data);
       } else {
         final err = jsonDecode(response.body);
-        throw Exception(err['message'] ?? 'Không thể tạo đơn hàng (${response.statusCode})');
+        throw Exception(
+          err['message'] ?? 'Không thể tạo đơn hàng (${response.statusCode})',
+        );
       }
     } catch (e) {
       debugPrint('OrderService.createOrder error: $e');
@@ -24,7 +41,9 @@ class OrderService {
   // Lấy danh sách đơn hàng dành cho Shipper
   Future<List<OrderModel>> getOrdersForShipper(int shipperId) async {
     try {
-      final response = await ApiClient.get('api/Orders/available-for-shipper/$shipperId');
+      final response = await ApiClient.get(
+        'api/Orders/available-for-shipper/$shipperId',
+      );
       if (response.statusCode == 200) {
         final List list = jsonDecode(response.body);
         return list.map((json) => OrderModel.fromJson(json)).toList();
@@ -33,7 +52,7 @@ class OrderService {
       }
     } catch (e) {
       debugPrint('OrderService.getOrdersForShipper error: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -63,7 +82,7 @@ class OrderService {
       return [];
     } catch (e) {
       debugPrint('OrderService.getOrdersByShop error: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -92,7 +111,9 @@ class OrderService {
   // Shipper bấm Nhận đơn hàng (Chuyển sang "Delivering")
   Future<bool> acceptOrder(int orderId, int shipperId) async {
     try {
-      final response = await ApiClient.put('api/Orders/accept/$orderId?shipperId=$shipperId');
+      final response = await ApiClient.put(
+        'api/Orders/accept/$orderId?shipperId=$shipperId',
+      );
       if (response.statusCode == 200) {
         return true;
       } else {

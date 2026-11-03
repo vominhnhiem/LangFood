@@ -1,4 +1,26 @@
 class UserModel {
+  UserModel copyWith({
+    String? fullName,
+    String? phoneNumber,
+    int? buildingId,
+    String? ktxRoom,
+    String? avatarUrl,
+    bool replaceBuilding = false,
+  }) => UserModel(
+    id: id,
+    username: username,
+    fullName: fullName ?? this.fullName,
+    email: email,
+    phoneNumber: phoneNumber ?? this.phoneNumber,
+    roleId: roleId,
+    buildingId: replaceBuilding ? buildingId : (buildingId ?? this.buildingId),
+    ktxRoom: ktxRoom ?? this.ktxRoom,
+    avatarUrl: avatarUrl ?? this.avatarUrl,
+    isApproved: isApproved,
+    shopId: shopId,
+    shopName: shopName,
+    shipperId: shipperId,
+  );
   final String id;
   final String username;
   final String? fullName;
@@ -40,7 +62,7 @@ class UserModel {
         return 'Chủ quán (Seller)';
       case 3:
         return 'Tài xế (Shipper)';
-      case 4:
+      case 0:
         return 'Quản trị viên (Admin)';
       default:
         return 'Người dùng';
@@ -89,6 +111,9 @@ class UserModel {
       'ktxRoom': ktxRoom,
       'avatarUrl': avatarUrl,
       'isApproved': isApproved,
+      'shopId': shopId,
+      'shopName': shopName,
+      'shipperId': shipperId,
     };
   }
 }

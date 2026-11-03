@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Brand Colors
-  static const Color primary = Color(0xFFFF5722); // Deep Orange (Làng Food Theme)
+  static const Color primary = Color(
+    0xFFFF5722,
+  ); // Deep Orange (Làng Food Theme)
   static const Color primaryDark = Color(0xFFE64A19);
   static const Color primaryLight = Color(0xFFFFCCBC);
   static const Color accent = Color(0xFFFF9800);

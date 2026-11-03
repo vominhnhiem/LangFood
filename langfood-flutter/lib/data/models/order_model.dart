@@ -18,8 +18,10 @@ class OrderItemModel {
   factory OrderItemModel.fromJson(Map<String, dynamic> json) {
     return OrderItemModel(
       id: json['id'] as int?,
-      productId: json['productId'] as int? ?? 1,
-      productName: json['product'] != null ? json['product']['name'] as String? : json['productName'] as String?,
+      productId: json['productId'] as int? ?? 0,
+      productName: json['product'] != null
+          ? json['product']['name'] as String?
+          : json['productName'] as String?,
       quantity: json['quantity'] as int? ?? 1,
       unitPrice: (json['unitPrice'] as num?)?.toDouble() ?? 0.0,
       note: json['note'] as String?,
@@ -29,8 +31,8 @@ class OrderItemModel {
   Map<String, dynamic> toJson() {
     return {
       if (id != null) 'id': id,
-      'productId': productId > 0 ? productId : 1,
-      'quantity': quantity > 0 ? quantity : 1,
+      'productId': productId,
+      'quantity': quantity,
       'unitPrice': unitPrice,
       'note': note ?? '',
     };
@@ -45,7 +47,7 @@ class OrderModel {
   final int? shipperId;
   final String status;
   final double totalAmount;
-  final double shippingFee;
+  final double? shippingFee;
   final String? deliveryBuilding;
   final String? deliveryPhone;
   final double? deliveryLatitude;
@@ -53,6 +55,21 @@ class OrderModel {
   final int paymentMethod;
   final String? createdAt;
   final List<OrderItemModel> orderItems;
+  bool get canCancel => status == 'Pending' || status == 'PendingPayment';
+  bool get isFinished =>
+      status == 'Completed' || status == 'Cancelled' || status == 'Canceled';
+
+  String get statusLabel => switch (status) {
+    'PendingPayment' => 'Chờ thanh toán',
+    'Pending' => 'Chờ quán xác nhận',
+    'Preparing' => 'Quán đang chuẩn bị',
+    'Ready' => 'Chờ shipper nhận đơn',
+    'Delivering' => 'Đang giao hàng',
+    'Completed' => 'Đã giao hàng',
+    'Cancelled' || 'Canceled' => 'Đã hủy',
+    'Unknown' => 'Chưa xác định trạng thái',
+    _ => status,
+  };
 
   OrderModel({
     this.id,
@@ -62,7 +79,7 @@ class OrderModel {
     this.shipperId,
     this.status = 'Pending',
     required this.totalAmount,
-    this.shippingFee = 10000.0,
+    this.shippingFee,
     this.deliveryBuilding,
     this.deliveryPhone,
     this.deliveryLatitude,
@@ -83,12 +100,14 @@ class OrderModel {
     return OrderModel(
       id: json['id'] as int?,
       buyerId: json['buyerId'] as String? ?? '',
-      buyerName: json['buyerName'] as String? ?? (json['buyer'] != null ? json['buyer']['fullName'] as String? : null),
-      shopId: json['shopId'] as int? ?? 1,
+      buyerName:
+          json['buyerName'] as String? ??
+          (json['buyer'] != null ? json['buyer']['fullName'] as String? : null),
+      shopId: json['shopId'] as int? ?? 0,
       shipperId: json['shipperId'] as int?,
-      status: json['status'] as String? ?? 'Pending',
+      status: json['status'] as String? ?? 'Unknown',
       totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0.0,
-      shippingFee: (json['shippingFee'] as num?)?.toDouble() ?? 10000.0,
+      shippingFee: (json['shippingFee'] as num?)?.toDouble(),
       deliveryBuilding: json['deliveryBuilding'] as String?,
       deliveryPhone: json['deliveryPhone'] as String?,
       deliveryLatitude: (json['deliveryLatitude'] as num?)?.toDouble(),
@@ -102,18 +121,16 @@ class OrderModel {
   Map<String, dynamic> toJson() {
     return {
       if (id != null) 'id': id,
-      'buyerId': (buyerId.isNotEmpty && buyerId != 'demo-buyer-id' && buyerId != 'guest-student')
-          ? buyerId
-          : '2A16828F-7451-410C-9174-1AE06CB01186',
+      'buyerId': buyerId,
       'buyerName': buyerName ?? 'Khách hàng',
-      'shopId': shopId > 0 ? shopId : 1,
+      'shopId': shopId,
       if (shipperId != null) 'shipperId': shipperId,
       'status': status,
-      'totalAmount': totalAmount > 0 ? totalAmount : 35000.0,
-      'shippingFee': shippingFee,
+      'totalAmount': totalAmount,
+      if (shippingFee != null) 'shippingFee': shippingFee,
       'paymentMethod': paymentMethod,
-      'deliveryBuilding': deliveryBuilding ?? 'Sảnh KTX Khu B, Thủ Đức',
-      'deliveryPhone': deliveryPhone ?? '0987654321',
+      'deliveryBuilding': deliveryBuilding,
+      'deliveryPhone': deliveryPhone,
       if (deliveryLatitude != null) 'deliveryLatitude': deliveryLatitude,
       if (deliveryLongitude != null) 'deliveryLongitude': deliveryLongitude,
       'orderItems': orderItems.map((e) => e.toJson()).toList(),

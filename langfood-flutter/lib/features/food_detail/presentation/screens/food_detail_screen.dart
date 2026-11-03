@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../data/models/product_model.dart';
@@ -12,10 +13,7 @@ import '../../../cart/presentation/screens/cart_screen.dart';
 class FoodDetailScreen extends StatefulWidget {
   final ProductModel product;
 
-  const FoodDetailScreen({
-    super.key,
-    required this.product,
-  });
+  const FoodDetailScreen({super.key, required this.product});
 
   @override
   State<FoodDetailScreen> createState() => _FoodDetailScreenState();
@@ -77,10 +75,18 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
   }
 
   void _handleAddToCart() {
-    if (!widget.product.isShopOpen) return;
+    if (!widget.product.isShopOpen || !widget.product.isAvailable) return;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
+    if (cartProvider.isLoading || !cartProvider.canEdit) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đang khôi phục giỏ hàng. Vui lòng thử lại sau.'),
+        ),
+      );
+      return;
+    }
 
     // Collect selected options names for cart item note
     final List<String> selectedNames = [];
@@ -103,7 +109,9 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
     cartProvider.addToCart(
       product: prod,
       quantity: _quantity,
-      note: _noteController.text.trim().isNotEmpty ? _noteController.text.trim() : null,
+      note: _noteController.text.trim().isNotEmpty
+          ? _noteController.text.trim()
+          : null,
       selectedOptionsJson: optionsJson,
       unitPrice: itemPriceWithCustomization,
       userId: authProvider.user?.id,
@@ -111,7 +119,9 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Đã thêm $_quantity x "${widget.product.name}" vào giỏ hàng!'),
+        content: Text(
+          'Đã thêm $_quantity x "${widget.product.name}" vào giỏ hàng!',
+        ),
         backgroundColor: AppColors.primary,
         action: SnackBarAction(
           label: 'Xem giỏ',
@@ -193,7 +203,9 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                             ),
                           ),
                           const SizedBox(height: 10),
-                          ..._optionGroups.map((group) => _buildOptionGroup(group)),
+                          ..._optionGroups.map(
+                            (group) => _buildOptionGroup(group),
+                          ),
                           _buildDivider(),
                         ],
 
@@ -222,15 +234,21 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                             contentPadding: const EdgeInsets.all(12),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide(color: Colors.grey.shade300),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade300,
+                              ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide(color: Colors.grey.shade300),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade300,
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: AppColors.primary),
+                              borderSide: const BorderSide(
+                                color: AppColors.primary,
+                              ),
                             ),
                           ),
                         ),
@@ -250,7 +268,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                         Text(
                           widget.product.description?.isNotEmpty == true
                               ? widget.product.description!
-                              : 'Món ăn thơm ngon, chuẩn vị sinh viên KTX được chế biến từ nguyên liệu tươi sạch mỗi ngày.',
+                              : 'Chưa có mô tả.',
                           style: const TextStyle(
                             fontSize: 14,
                             color: Color(0xFF757575),
@@ -304,7 +322,8 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
     return SizedBox(
       width: double.infinity,
       height: 260,
-      child: widget.product.imageUrl != null && widget.product.imageUrl!.isNotEmpty
+      child:
+          widget.product.imageUrl != null && widget.product.imageUrl!.isNotEmpty
           ? Image.network(
               widget.product.imageUrl!.startsWith('http')
                   ? widget.product.imageUrl!
@@ -349,7 +368,11 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
           CircleAvatar(
             radius: 20,
             backgroundColor: AppColors.primaryLight.withOpacity(0.5),
-            child: const Icon(Icons.storefront_rounded, color: AppColors.primary, size: 22),
+            child: const Icon(
+              Icons.storefront_rounded,
+              color: AppColors.primary,
+              size: 22,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -369,10 +392,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                 const SizedBox(height: 2),
                 const Text(
                   'Xem gian hàng quán >',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF9E9E9E),
-                  ),
+                  style: TextStyle(fontSize: 12, color: Color(0xFF9E9E9E)),
                 ),
               ],
             ),
@@ -408,7 +428,10 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade200,
                     borderRadius: BorderRadius.circular(10),
@@ -441,14 +464,19 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                 });
               },
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 child: Row(
                   children: [
                     if (group.isMultiple)
                       Checkbox(
                         value: option.isSelected,
                         activeColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                         onChanged: (val) {
                           setState(() {
                             option.isSelected = val ?? false;
@@ -458,10 +486,12 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                     else
                       Radio<int>(
                         value: option.id,
-                        groupValue: group.options.firstWhere(
-                          (o) => o.isSelected,
-                          orElse: () => group.options.first,
-                        ).id,
+                        groupValue: group.options
+                            .firstWhere(
+                              (o) => o.isSelected,
+                              orElse: () => group.options.first,
+                            )
+                            .id,
                         activeColor: AppColors.primary,
                         onChanged: (val) {
                           setState(() {
@@ -481,11 +511,15 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                       ),
                     ),
                     Text(
-                      option.price > 0 ? '+${_formatCurrency(option.price)}' : 'Miễn phí',
+                      option.price > 0
+                          ? '+${_formatCurrency(option.price)}'
+                          : 'Miễn phí',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: option.price > 0 ? AppColors.primary : Colors.grey.shade600,
+                        color: option.price > 0
+                            ? AppColors.primary
+                            : Colors.grey.shade600,
                       ),
                     ),
                   ],
@@ -527,7 +561,9 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.remove, size: 18),
-                    color: _quantity > 1 ? AppColors.primary : Colors.grey.shade400,
+                    color: _quantity > 1
+                        ? AppColors.primary
+                        : Colors.grey.shade400,
                     onPressed: _quantity > 1
                         ? () {
                             setState(() {
@@ -565,7 +601,9 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                 child: ElevatedButton(
                   onPressed: isOpen ? _handleAddToCart : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isOpen ? AppColors.primary : Colors.grey.shade400,
+                    backgroundColor: isOpen
+                        ? AppColors.primary
+                        : Colors.grey.shade400,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(

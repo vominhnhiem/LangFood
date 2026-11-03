@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'product_model.dart';
 
 class CartItemModel {
@@ -21,16 +23,37 @@ class CartItemModel {
     return effectiveUnitPrice * quantity;
   }
 
-  String get selectedOptionsSummary => note ?? '';
+  String get selectedOptionsSummary => selectedOptionsJson ?? '';
+  String get serverOptions => jsonEncode({
+    'summary': selectedOptionsSummary,
+    'unitPrice': effectiveUnitPrice,
+  });
 
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
-    final prod = ProductModel.fromJson(json['product'] ?? json['Product'] ?? {});
-    final double? parsedPrice = (json['unitPrice'] ?? json['UnitPrice'] ?? json['price'] ?? json['Price'])?.toDouble();
+    final prod = ProductModel.fromJson(
+      json['product'] ?? json['Product'] ?? {},
+    );
+    final rawOptions =
+        json['selectedOptionsJson'] ??
+        json['SelectedOptionsJson'] ??
+        json['selectedOptions'];
+    Map? metadata;
+    try {
+      final decoded = jsonDecode(rawOptions ?? '');
+      if (decoded is Map) metadata = decoded;
+    } catch (_) {}
+    final double? parsedPrice =
+        (json['unitPrice'] ??
+                json['UnitPrice'] ??
+                json['price'] ??
+                json['Price'] ??
+                metadata?['unitPrice'])
+            ?.toDouble();
     return CartItemModel(
       product: parsedPrice != null ? prod.copyWith(price: parsedPrice) : prod,
       quantity: json['quantity'] ?? json['Quantity'] ?? 1,
       note: json['note'] ?? json['Note'],
-      selectedOptionsJson: json['selectedOptionsJson'] ?? json['SelectedOptionsJson'],
+      selectedOptionsJson: metadata?['summary']?.toString() ?? rawOptions,
       unitPrice: parsedPrice,
     );
   }

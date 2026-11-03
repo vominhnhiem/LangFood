@@ -1,67 +1,95 @@
-# 🍔 Làng Food - Bản đồ & Định vị Thời gian thực (Real-time Map & Tracking)
+# Làng Food
 
-> *Giải pháp không gian khép kín cho dự án Làng Food KTX Khu B.*  
-> **Môn học**: Lập trình trên thiết bị di động  
-> **Nhóm thực hiện**: Nhóm 13 | **GVHD**: Nguyễn Mạnh Hùng
+Ứng dụng đặt món cho khu ký túc xá: Flutter, ASP.NET Core Web API, Web Admin và SQL Server.
 
----
+## Chức năng hiện có
 
-## 🌟 Giới thiệu Dự án
-**Làng Food** là ứng dụng đặt đồ ăn và giao nhận chuyên biệt dành cho khu vực có mật độ cao như KTX Khu B. Dự án tích hợp hệ thống **Bản đồ & Định vị Thời gian thực** giải quyết các bài toán thực chiến:
-* **Lọc thô siêu tốc**: Sử dụng thuật toán toán học **Haversine** tính khoảng cách mặt cầu trên RAM/CPU nội bộ (~1ms, hoàn toàn miễn phí).
-* **Định tuyến chuẩn xác**: Tích hợp **OSRM API** để vẽ đường đi (`Polyline`) bám sát đường xá thực tế và tính toán thời gian giao hàng dự kiến (ETA).
-* **Đồng bộ Realtime**: Sử dụng **ASP.NET Core SignalR (WebSockets)** triệt tiêu cơ chế Polling cũ, giúp cập nhật vị trí Shipper liên tục mỗi 5 giây mà không gây nghẽn băng thông hay tốn pin.
+- Đăng ký email qua OTP, đăng nhập và điều hướng theo vai trò.
+- Danh sách món/danh mục/menu quán từ API, tìm kiếm bằng văn bản.
+- Chi tiết món, tùy chọn món có trong dữ liệu API, giỏ hàng và tạo đơn.
+- Quán xác nhận chế biến và báo món sẵn sàng.
+- Shipper nhận đơn, chia sẻ GPS từ thiết bị và xác nhận đã giao.
+- Khách xem trạng thái đơn, vị trí shipper và tuyến đường OSRM.
+- Web Admin quản lý dữ liệu, duyệt giao dịch, đối tác và xem thống kê.
 
----
+Không còn danh sách món/topping mẫu, di chuyển giả, tìm giọng nói, quét QR menu, chat, gọi điện hoặc nhận hộ.
+Giao diện chọn phương thức thanh toán vẫn được giữ; chưa tích hợp cổng MoMo/ZaloPay thực tế.
+Phần xử lý đơn nhiều quán được giữ theo hiện trạng, chưa tách đơn theo quán.
 
-## 🛠️ Công nghệ Sử dụng (Tech Stack)
+## Chạy backend
 
-### 📱 Frontend (Flutter)
-* **`flutter_map`**: Render bản đồ mã nguồn mở (tối ưu hóa hiệu năng 60 FPS).
-* **Esri ArcGIS Tile Layer**: Lớp nền bản đồ không bị chặn ở Việt Nam (`server.arcgisonline.com`).
-* **`geolocator`**: Giao tiếp phần cứng GPS định vị thời gian thực (`High Accuracy`).
-* **`signalr_netcore`**: Duy trì kết nối WebSocket hai chiều với server.
-* **`latlong2` & `http`**: Quản lý tọa độ và kết nối RESTful APIs / OSRM routing.
+Cấu hình kết nối SQL Server trong appsettings của backend và admin, sau đó:
 
-### 🖥️ Backend (.NET C#)
-* **ASP.NET Core Web API**: Xây dựng các RESTful APIs quản lý đơn hàng (`OrderTestsController`).
-* **ASP.NET Core SignalR Hub**: Trung gian broadcast tọa độ real-time (`LocationHub`).
-* **Entity Framework Core & SQL Server**: Quản lý cơ sở dữ liệu và ánh xạ dữ liệu (`OrderTest.cs`, `LangFoodDbContext.cs`).
+```powershell
+cd langfood-backend
+dotnet restore LangFoodBackend.slnx
+dotnet ef database update --project LangFood.Shared --startup-project LangFoodBackend
+dotnet run --project LangFoodBackend
+```
 
----
+API sử dụng cổng 5289. Có thể chạy Web Admin bằng:
 
-## 🚀 Hướng dẫn Cài đặt & Chạy Ứng dụng
+```powershell
+dotnet run --project LangFoodAdmin
+```
 
-### 1. Cài đặt và Chạy Backend (.NET C#)
-1. Mở thư mục backend (`langfood-backend`) bằng Visual Studio hoặc Terminal.
-2. Cấu hình chuỗi kết nối cơ sở dữ liệu SQL Server trong `appsettings.json`.
-3. Chạy lệnh Migration để khởi tạo bảng dữ liệu demo:
-   ```bash
-   dotnet ef database update --project LangFood.Shared --startup-project LangFoodBackend
-   ```
-4. Khởi động Backend (cho phép lắng nghe mọi IP trong mạng LAN):
-   ```bash
-   cd LangFoodBackend
-   dotnet run --urls "http://0.0.0.0:5289"
-   ```
+## Chạy Flutter
 
-### 2. Cài đặt và Chạy Frontend (Flutter)
-1. Mở thư mục `langfood-flutter` trong Android Studio hoặc VS Code.
-2. Tải các thư viện phụ thuộc:
-   ```bash
-   flutter pub get
-   ```
-3. **Cấu hình IP Backend**:
-   * Mở file `lib/core/constants/app_constants.dart`.
-   * Cập nhật biến `baseUrl` trỏ tới địa chỉ IPv4 của máy tính (Ví dụ: `http://10.X.X.X:5289/`). *(Đảm bảo điện thoại và máy tính kết nối chung 1 mạng Wi-Fi hoặc dùng cáp USB Tethering).*
-4. Chạy ứng dụng trên thiết bị thật:
-   ```bash
-   flutter run
-   ```
+```powershell
+cd langfood-flutter
+flutter pub get
+flutter run
+```
 
----
+Tạo file cấu hình trước khi chạy (theo mẫu LTDD Tuần 7):
 
-## 👥 Hướng dẫn Luồng Demo (User Flow)
-1. **Khách hàng**: Đăng nhập, chọn món ăn, chọn điểm nhận hàng trên bản đồ (`LocationPickerScreen`) và chốt đơn (`POST /api/OrderTests`).
-2. **Shipper**: Đăng nhập tài khoản Shipper, mở danh sách đơn hàng (`ShipperOrdersScreen`), bấm **Tải lại** và chọn **Nhận đơn ngay** (`PUT /api/OrderTests/accept/{id}`).
-3. **Live Tracking (Realtime)**: Màn hình dẫn đường mở ra, vị trí của Shipper sẽ tự động truyền tải lên Server qua SignalR mỗi 5 giây và hiển thị trực quan chuyển động trên bản đồ của Khách hàng!
+```powershell
+Copy-Item .env.example .env
+```
+
+Sửa BASE_URL trong langfood-flutter/.env:
+- Android Emulator: http://10.0.2.2:5289/api/
+- Web: http://localhost:5289/api/
+- Điện thoại: dùng IP LAN của máy chạy backend, giữ đuôi /api/.
+
+Ứng dụng nạp .env trước runApp; lib/config/config_url.dart cung cấp URL cho ApiClient.
+Đường dẫn ảnh được lấy từ gốc máy chủ, không ghép nhầm vào /api/.
+Không commit .env; .env.example được giữ để các thành viên tự cấu hình.
+Phí giao hàng nằm ở SHIPPING_FEE trong .env (VND), hiện giữ mức 10000. API Settings chưa có trường phí nên giao diện ghi rõ đây là phí theo cấu hình.
+Sau khi đổi URL hoặc phí, dừng và chạy lại ứng dụng.
+
+## Thử luồng GPS và chỉ đường
+
+1. Khách thêm món thật từ API, chọn điểm trên bản đồ và nhập địa chỉ nhận.
+2. Đặt đơn; quán xác nhận chế biến rồi báo món đã sẵn sàng.
+3. Shipper nhận đơn và cấp quyền vị trí. Có thể bật/tắt công tắc chia sẻ GPS.
+4. GPS được gửi cho các đơn đang giao khi thiết bị thay đổi vị trí ít nhất 10 mét.
+5. Khách mở bản đồ của đúng đơn. Ứng dụng lấy vị trí từ API mỗi 3 giây và xin tuyến OSRM khi cần.
+6. Khi giao xong hoặc tắt chia sẻ, ứng dụng dừng gửi GPS.
+
+Chia sẻ GPS hoạt động khi ứng dụng shipper ở phía trước. Chưa triển khai dịch vụ theo dõi chạy nền.
+Android Emulator lấy vị trí do hệ điều hành giả lập cung cấp; dùng Extended Controls > Location để kiểm thử.
+Ứng dụng không tự tạo tọa độ hoặc tự di chuyển marker. Đơn cũ chưa lưu tọa độ sẽ báo thiếu điểm giao.
+Bản đồ và chỉ đường cần Internet; khi lỗi chỉ đường, ứng dụng báo lỗi và không vẽ tuyến giả.
+OSRM đang dùng cấu hình driving của máy chủ công cộng, chưa phải định tuyến riêng cho xe máy.
+
+## Kiểm tra
+
+```powershell
+dotnet build langfood-backend/LangFoodBackend.slnx
+cd langfood-flutter
+flutter analyze
+flutter test
+```
+
+Các migration và model OrderTest cũ được giữ để bảo toàn lịch sử schema; API và mã Flutter thử nghiệm tương ứng đã bỏ.
+
+## Chức năng mới theo vai trò
+
+- Khách: nút Đơn hàng của tôi trên trang chủ, lọc đơn đang xử lý/đã kết thúc, mở lại chi tiết và hủy đơn khi còn chờ.
+- Giỏ hàng: tự khôi phục sau đăng nhập/mở app, lưu riêng theo tài khoản, gộp giỏ khách vào tài khoản khi đăng nhập. Lỗi đồng bộ được hiển thị cùng nút thử lại.
+- Tài khoản: menu hình người ở góc trên, sửa họ tên/SĐT/tòa/phòng và tải ảnh đại diện từ thư viện.
+- Chủ quán: nút menu trên màn hình đơn của quán để thêm/sửa/xóa món; khi thêm món có thể chọn ảnh tải lên hoặc URL. Món sửa sẽ chờ admin duyệt lại.
+- Shipper: nút ví trên màn hình giao hàng, xem số dư/giao dịch, gửi yêu cầu nạp/rút và xem trạng thái, biên lai do admin cung cấp. Không tự duyệt hoặc tự tăng số dư.
+
+Giới hạn của API hiện có: hủy đơn sẽ xóa khỏi lịch sử; ảnh món đang có được thay bằng URL; API sửa món chưa hỗ trợ bật/tắt bán. Các thao tác nạp/rút cần admin đối soát và xử lý thủ công. Mỗi giỏ đồng bộ bằng ảnh chụp dữ liệu vì API hiện chưa cập nhật được từng biến thể món. Backend và phần tách đơn nhiều quán được giữ nguyên trong đợt bổ sung này.

@@ -55,31 +55,12 @@ namespace LangFoodBackend.Controllers
             {
                 order.CreatedAt = DateTime.Now;
 
-                // 1. Kiểm tra & đảm bảo BuyerId hợp lệ với bảng Users
                 if (string.IsNullOrWhiteSpace(order.BuyerId) || !await _context.Users.AnyAsync(u => u.Id == order.BuyerId))
-                {
-                    var validBuyer = await _context.Users.FirstOrDefaultAsync(u => u.RoleId == 1)
-                                  ?? await _context.Users.FirstOrDefaultAsync();
-                    if (validBuyer != null)
-                    {
-                        order.BuyerId = validBuyer.Id;
-                        if (string.IsNullOrWhiteSpace(order.BuyerName))
-                        {
-                            order.BuyerName = validBuyer.FullName ?? validBuyer.Username;
-                        }
-                    }
-                }
-
-                // 2. Kiểm tra & đảm bảo ShopId hợp lệ với bảng Shops
+                    return BadRequest(new { message = "Invalid buyer." });
                 if (order.ShopId <= 0 || !await _context.Shops.AnyAsync(s => s.Id == order.ShopId))
-                {
-                    var validShop = await _context.Shops.FirstOrDefaultAsync();
-                    if (validShop != null)
-                    {
-                        order.ShopId = validShop.Id;
-                    }
-                }
-
+                    return BadRequest(new { message = "Invalid shop." });
+                if (order.OrderItems == null || !order.OrderItems.Any())
+                    return BadRequest(new { message = "The cart is empty." });
                 // 3. Kiểm tra BuildingId nếu có
                 if (order.BuildingId.HasValue && !await _context.Buildings.AnyAsync(b => b.Id == order.BuildingId.Value))
                 {
@@ -95,17 +76,11 @@ namespace LangFoodBackend.Controllers
                 // 4. Kiểm tra & đảm bảo từng OrderItem có ProductId hợp lệ
                 if (order.OrderItems != null && order.OrderItems.Any())
                 {
-                    var fallbackProduct = await _context.Products.FirstOrDefaultAsync(p => p.ShopId == order.ShopId)
-                                       ?? await _context.Products.FirstOrDefaultAsync();
-
                     foreach (var item in order.OrderItems)
                     {
                         if (item.ProductId <= 0 || !await _context.Products.AnyAsync(p => p.Id == item.ProductId))
                         {
-                            if (fallbackProduct != null)
-                            {
-                                item.ProductId = fallbackProduct.Id;
-                            }
+                            return BadRequest(new { message = "Invalid product." });
                         }
                         item.Product = null;
                         item.Order = null;
@@ -388,6 +363,15 @@ namespace LangFoodBackend.Controllers
         {
             if (dto == null) return BadRequest(new { message = "Dữ liệu tọa độ không hợp lệ." });
 
+            if (!double.IsFinite(dto.Latitude) || !double.IsFinite(dto.Longitude) ||
+                dto.Latitude < -90 || dto.Latitude > 90 || dto.Longitude < -180 || dto.Longitude > 180)
+                return BadRequest(new { message = "Invalid GPS coordinates." });
+
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound(new { message = "Order not found." });
+            if (order.Status != "Delivering" || !dto.ShipperId.HasValue || order.ShipperId != dto.ShipperId)
+                return BadRequest(new { message = "GPS updates require the assigned shipper and an active delivery." });
+
             var result = new ShipperLocationResultDto
             {
                 OrderId = id,
@@ -396,7 +380,7 @@ namespace LangFoodBackend.Controllers
                 Longitude = dto.Longitude,
                 Bearing = dto.Bearing ?? 0,
                 Speed = dto.Speed ?? 0,
-                UpdatedAt = DateTime.Now
+                UpdatedAt = DateTime.UtcNow
             };
 
             _shipperLocations[id] = result;
@@ -424,16 +408,8 @@ namespace LangFoodBackend.Controllers
                 return Ok(loc);
             }
 
-            // Tọa độ mặc định: Cổng sau KTX Khu B / Quán ăn
-            return Ok(new ShipperLocationResultDto
-            {
-                OrderId = id,
-                Latitude = 10.8818,
-                Longitude = 106.8042,
-                Bearing = 0,
-                Speed = 0,
-                UpdatedAt = DateTime.Now
-            });
+            // Never invent a location before the first GPS update.
+            return NotFound(new { message = "No GPS location has been received for this order." });
         }
     }
 }
