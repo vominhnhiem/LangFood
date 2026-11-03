@@ -57,9 +57,18 @@ class AppColors {
 
   // Border & Dividers
   static const Color border = Color(0xFFEEEEEE);
+  static const Color borderLight = Color(0xFFE5E5EA);
+  static const Color borderDark = Color(0xFF38383A);
   static const Color divider = Color(0xFFE0E0E0);
   static const Color borderSubtleLight = Color(0xFFE5E5EA);
   static const Color borderSubtleDark = Color(0xFF38383A);
+
+  // Shimmer
+  static const Color shimmerBase = Color(0xFFE0E0E0);
+  static const Color shimmerHighlight = Color(0xFFF5F5F5);
+
+  // Extra colors
+  static const Color white = Colors.white;
 
   // Translucent / Glassmorphism Materials
   static const Color glassLight = Color(

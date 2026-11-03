@@ -48,27 +48,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  void _setFallbackBuildings() {
+    _buildings = [
+      {'id': 1, 'name': 'Tòa A1'},
+      {'id': 2, 'name': 'Tòa A2'},
+      {'id': 3, 'name': 'Tòa B1'},
+      {'id': 4, 'name': 'Tòa B2'},
+      {'id': 5, 'name': 'Tòa C1'},
+    ];
+    _isBuildingFromApi = false;
+    _selectedBuildingId = 1;
+  }
+
   Future<void> _loadBuildings() async {
-    final list = await _authService.getBuildings();
-    if (!mounted) return;
-    setState(() {
-      if (list.isNotEmpty) {
-        _buildings = list;
-        _isBuildingFromApi = true;
-        _selectedBuildingId =
-            (_buildings.first['id'] ?? _buildings.first['Id']) as int?;
-      } else {
-        _buildings = [
-          {'id': 1, 'name': 'Tòa A1'},
-          {'id': 2, 'name': 'Tòa A2'},
-          {'id': 3, 'name': 'Tòa B1'},
-          {'id': 4, 'name': 'Tòa B2'},
-          {'id': 5, 'name': 'Tòa C1'},
-        ];
-        _isBuildingFromApi = false;
-        _selectedBuildingId = 1;
-      }
-    });
+    try {
+      final list = await _authService.getBuildings();
+      if (!mounted) return;
+      setState(() {
+        if (list.isNotEmpty) {
+          _buildings = list;
+          _isBuildingFromApi = true;
+          _selectedBuildingId =
+              (_buildings.first['id'] ?? _buildings.first['Id']) as int?;
+        } else {
+          _setFallbackBuildings();
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _setFallbackBuildings();
+      });
+    }
   }
 
   Future<void> _handleStartRegister() async {
@@ -321,8 +332,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Icons.person_outline_rounded,
                   ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty)
+                    if (v == null || v.trim().isEmpty) {
                       return 'Vui lòng nhập tên đăng nhập';
+                    }
                     if (v.trim().length < 3) return 'Tối thiểu 3 ký tự';
                     return null;
                   },
@@ -339,10 +351,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Icons.mail_outline_rounded,
                   ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty)
+                    if (v == null || v.trim().isEmpty) {
                       return 'Vui lòng nhập email';
-                    if (!v.contains('@') || !v.contains('.'))
+                    }
+                    if (!v.contains('@') || !v.contains('.')) {
                       return 'Email không hợp lệ';
+                    }
                     return null;
                   },
                 ),
@@ -358,10 +372,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Icons.phone_outlined,
                   ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty)
+                    if (v == null || v.trim().isEmpty) {
                       return 'Vui lòng nhập số điện thoại';
-                    if (v.trim().length != 10 || !v.trim().startsWith('0'))
+                    }
+                    if (v.trim().length != 10 || !v.trim().startsWith('0')) {
                       return 'SĐT phải có 10 chữ số bắt đầu bằng 0';
+                    }
                     return null;
                   },
                 ),
@@ -475,10 +491,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty)
+                    if (v == null || v.trim().isEmpty) {
                       return 'Vui lòng nhập mật khẩu';
-                    if (v.trim().length < 4)
+                    }
+                    if (v.trim().length < 4) {
                       return 'Mật khẩu tối thiểu 4 ký tự';
+                    }
                     return null;
                   },
                 ),
@@ -526,8 +544,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   validator: (v) {
-                    if (v != _passwordController.text)
+                    if (v != _passwordController.text) {
                       return 'Mật khẩu xác nhận không khớp';
+                    }
                     return null;
                   },
                 ),

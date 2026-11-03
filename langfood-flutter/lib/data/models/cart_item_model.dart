@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'product_model.dart';
 
 class CartItemModel {
@@ -5,33 +7,64 @@ class CartItemModel {
   int quantity;
   String? note;
   String? selectedOptionsJson;
+  double? unitPrice;
 
   CartItemModel({
     required this.product,
     this.quantity = 1,
     this.note,
     this.selectedOptionsJson,
+    this.unitPrice,
   });
 
+  double get effectiveUnitPrice => unitPrice ?? product.price;
+
   double get totalPrice {
-    return product.price * quantity;
+    return effectiveUnitPrice * quantity;
   }
 
+  String get selectedOptionsSummary => selectedOptionsJson ?? '';
+  String get serverOptions => jsonEncode({
+    'summary': selectedOptionsSummary,
+    'unitPrice': effectiveUnitPrice,
+  });
+
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
+    final prod = ProductModel.fromJson(
+      json['product'] ?? json['Product'] ?? {},
+    );
+    final rawOptions =
+        json['selectedOptionsJson'] ??
+        json['SelectedOptionsJson'] ??
+        json['selectedOptions'];
+    Map? metadata;
+    try {
+      final decoded = jsonDecode(rawOptions ?? '');
+      if (decoded is Map) metadata = decoded;
+    } catch (_) {}
+    final double? parsedPrice =
+        (json['unitPrice'] ??
+                json['UnitPrice'] ??
+                json['price'] ??
+                json['Price'] ??
+                metadata?['unitPrice'])
+            ?.toDouble();
     return CartItemModel(
-      product: ProductModel.fromJson(json['product'] ?? json['Product'] ?? {}),
+      product: parsedPrice != null ? prod.copyWith(price: parsedPrice) : prod,
       quantity: json['quantity'] ?? json['Quantity'] ?? 1,
       note: json['note'] ?? json['Note'],
-      selectedOptionsJson: json['selectedOptionsJson'] ?? json['SelectedOptionsJson'],
+      selectedOptionsJson: metadata?['summary']?.toString() ?? rawOptions,
+      unitPrice: parsedPrice,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'product': product.toJson(),
+      'product': product.copyWith(price: effectiveUnitPrice).toJson(),
       'quantity': quantity,
       'note': note,
       'selectedOptionsJson': selectedOptionsJson,
+      'unitPrice': effectiveUnitPrice,
     };
   }
 }

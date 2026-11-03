@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import '../../core/network/api_client.dart';
 import '../models/user_model.dart';
 
@@ -102,13 +103,10 @@ class AuthService {
   }
 
   Future<List<Map<String, dynamic>>> getBuildings() async {
-    try {
-      final response = await ApiClient.get('api/Buildings');
-      if (response.statusCode == 200) {
-        final List data = jsonDecode(response.body);
-        return data.map((e) => Map<String, dynamic>.from(e)).toList();
-      }
-    } catch (_) {}
-    return [];
+    final response = await ApiClient.get('api/Buildings');
+    if (response.statusCode != 200)
+      throw Exception('Không tải được danh sách tòa nhà.');
+    final List data = jsonDecode(response.body);
+    return data.map((e) => Map<String, dynamic>.from(e)).toList();
   }
 }

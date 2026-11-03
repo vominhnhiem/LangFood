@@ -13,6 +13,13 @@ class ProductModel {
   final String? categoryName;
   final List<ProductOptionGroupModel> optionGroups;
   final bool isShopOpen;
+  final int? status;
+  String get statusLabel => switch (status) {
+    0 => 'Chờ duyệt',
+    1 => 'Đã duyệt',
+    2 => 'Từ chối',
+    _ => 'Chưa xác định',
+  };
 
   ProductModel({
     required this.id,
@@ -27,15 +34,23 @@ class ProductModel {
     this.categoryName,
     this.optionGroups = const [],
     this.isShopOpen = true,
+    this.status,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     int sId = json['shopId'] ?? json['ShopId'] ?? 0;
-    String sName = (json['shopName'] ?? json['ShopName'] ?? '').toString();
+    String sName =
+        (json['shopName'] ??
+                json['ShopName'] ??
+                json['sellerName'] ??
+                json['SellerName'] ??
+                '')
+            .toString();
 
     if (json['shop'] != null && json['shop'] is Map<String, dynamic>) {
       if (sId <= 0) sId = json['shop']['id'] ?? json['shop']['Id'] ?? 0;
-      if (sName.isEmpty) sName = json['shop']['name'] ?? json['shop']['Name'] ?? '';
+      if (sName.isEmpty)
+        sName = json['shop']['name'] ?? json['shop']['Name'] ?? '';
     }
     if (sName.isEmpty) sName = 'Quán ăn Làng Food';
 
@@ -43,7 +58,9 @@ class ProductModel {
     var rawGroups = json['optionGroups'] ?? json['OptionGroups'];
     if (rawGroups is List) {
       parsedOptionGroups = rawGroups
-          .map((g) => ProductOptionGroupModel.fromJson(g as Map<String, dynamic>))
+          .map(
+            (g) => ProductOptionGroupModel.fromJson(g as Map<String, dynamic>),
+          )
           .toList();
     }
 
@@ -60,6 +77,7 @@ class ProductModel {
       categoryName: json['categoryName'] ?? json['CategoryName'],
       optionGroups: parsedOptionGroups,
       isShopOpen: json['isShopOpen'] ?? json['IsShopOpen'] ?? true,
+      status: json['status'] ?? json['Status'],
     );
   }
 
@@ -75,6 +93,39 @@ class ProductModel {
       'shopName': shopName,
       'categoryId': categoryId,
       'categoryName': categoryName,
+      'status': status,
     };
+  }
+
+  ProductModel copyWith({
+    int? id,
+    String? name,
+    String? description,
+    double? price,
+    String? imageUrl,
+    bool? isAvailable,
+    int? shopId,
+    String? shopName,
+    int? categoryId,
+    String? categoryName,
+    List<ProductOptionGroupModel>? optionGroups,
+    bool? isShopOpen,
+    int? status,
+  }) {
+    return ProductModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      price: price ?? this.price,
+      imageUrl: imageUrl ?? this.imageUrl,
+      isAvailable: isAvailable ?? this.isAvailable,
+      shopId: shopId ?? this.shopId,
+      shopName: shopName ?? this.shopName,
+      categoryId: categoryId ?? this.categoryId,
+      categoryName: categoryName ?? this.categoryName,
+      optionGroups: optionGroups ?? this.optionGroups,
+      isShopOpen: isShopOpen ?? this.isShopOpen,
+      status: status ?? this.status,
+    );
   }
 }

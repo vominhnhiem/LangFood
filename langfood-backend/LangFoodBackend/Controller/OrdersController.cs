@@ -1,24 +1,50 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using LangFood.Shared.DTOs;
 using LangFood.Shared.DTOs.LangFood.Shared.DTOs;
 using LangFood.Shared.Models;
+using LangFoodBackend.Hubs;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace LangFoodBackend.Controllers
 {
+    public class ShipperLocationUpdateDto
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+        public double? Bearing { get; set; }
+        public double? Speed { get; set; }
+        public int? ShipperId { get; set; }
+    }
+
+    public class ShipperLocationResultDto
+    {
+        public int OrderId { get; set; }
+        public int? ShipperId { get; set; }
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+        public double Bearing { get; set; }
+        public double Speed { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
     [Route("api/[controller]")]
     [ApiController]
     public class OrdersController : ControllerBase
     {
         private readonly LangFoodDbContext _context;
+        private readonly IHubContext<LocationHub>? _hubContext;
+        private static readonly ConcurrentDictionary<int, ShipperLocationResultDto> _shipperLocations = new();
 
-        public OrdersController(LangFoodDbContext context)
+        public OrdersController(LangFoodDbContext context, IHubContext<LocationHub>? hubContext = null)
         {
             _context = context;
+            _hubContext = hubContext;
         }
 
         // --- 1. TẠO ĐƠN HÀNG MỚI ---
@@ -28,6 +54,38 @@ namespace LangFoodBackend.Controllers
             try
             {
                 order.CreatedAt = DateTime.Now;
+
+                if (string.IsNullOrWhiteSpace(order.BuyerId) || !await _context.Users.AnyAsync(u => u.Id == order.BuyerId))
+                    return BadRequest(new { message = "Invalid buyer." });
+                if (order.ShopId <= 0 || !await _context.Shops.AnyAsync(s => s.Id == order.ShopId))
+                    return BadRequest(new { message = "Invalid shop." });
+                if (order.OrderItems == null || !order.OrderItems.Any())
+                    return BadRequest(new { message = "The cart is empty." });
+                // 3. Kiểm tra BuildingId nếu có
+                if (order.BuildingId.HasValue && !await _context.Buildings.AnyAsync(b => b.Id == order.BuildingId.Value))
+                {
+                    order.BuildingId = null;
+                }
+
+                // Hủy liên kết navigation object để EF Core không cố tạo mới hay track xung đột
+                order.Buyer = null;
+                order.Shop = null;
+                order.Shipper = null;
+                order.Building = null;
+
+                // 4. Kiểm tra & đảm bảo từng OrderItem có ProductId hợp lệ
+                if (order.OrderItems != null && order.OrderItems.Any())
+                {
+                    foreach (var item in order.OrderItems)
+                    {
+                        if (item.ProductId <= 0 || !await _context.Products.AnyAsync(p => p.Id == item.ProductId))
+                        {
+                            return BadRequest(new { message = "Invalid product." });
+                        }
+                        item.Product = null;
+                        item.Order = null;
+                    }
+                }
 
                 // Nếu chọn Chuyển khoản (PaymentMethod = 1) -> Trạng thái Chờ thanh toán
                 // Nếu chọn Tiền mặt (PaymentMethod = 0) -> Trạng thái Chờ xác nhận (Pending)
@@ -40,7 +98,8 @@ namespace LangFoodBackend.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = "Lỗi tạo đơn: " + ex.Message });
+                var fullError = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                return BadRequest(new { message = "Lỗi tạo đơn: " + fullError });
             }
         }
 
@@ -61,7 +120,22 @@ namespace LangFoodBackend.Controllers
             return BadRequest(new { message = "Không thể hủy đơn hàng đã được phía quán nhận hoặc đang giao." });
         }
 
-        // --- 3. LẤY LỊCH SỬ CHO NGƯỜI MUA ---
+        // --- 2.1 LẤY CHI TIẾT ĐƠN HÀNG THEO ID ---
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Order>> GetOrder(int id)
+        {
+            var order = await _context.Orders
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                .Include(o => o.Shop)
+                .Include(o => o.Shipper)
+                    .ThenInclude(s => s.User)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (order == null) return NotFound(new { message = "Không tìm thấy đơn hàng." });
+            return Ok(order);
+        }
+
         [HttpGet("buyer/{buyerId}")]
         public async Task<ActionResult<IEnumerable<Order>>> GetOrdersByBuyer(string buyerId)
         {
@@ -280,6 +354,62 @@ namespace LangFoodBackend.Controllers
             {
                 return BadRequest(new { message = "Lỗi lấy thống kê: " + ex.Message });
             }
+        }
+
+        // --- 10. CẬP NHẬT VỊ TRÍ THỰC CỦA SHIPPER CHO ĐƠN HÀNG ---
+        [HttpPost("{id}/location")]
+        [HttpPut("{id}/location")]
+        public async Task<IActionResult> UpdateShipperLocation(int id, [FromBody] ShipperLocationUpdateDto dto)
+        {
+            if (dto == null) return BadRequest(new { message = "Dữ liệu tọa độ không hợp lệ." });
+
+            if (!double.IsFinite(dto.Latitude) || !double.IsFinite(dto.Longitude) ||
+                dto.Latitude < -90 || dto.Latitude > 90 || dto.Longitude < -180 || dto.Longitude > 180)
+                return BadRequest(new { message = "Invalid GPS coordinates." });
+
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound(new { message = "Order not found." });
+            if (order.Status != "Delivering" || !dto.ShipperId.HasValue || order.ShipperId != dto.ShipperId)
+                return BadRequest(new { message = "GPS updates require the assigned shipper and an active delivery." });
+
+            var result = new ShipperLocationResultDto
+            {
+                OrderId = id,
+                ShipperId = dto.ShipperId,
+                Latitude = dto.Latitude,
+                Longitude = dto.Longitude,
+                Bearing = dto.Bearing ?? 0,
+                Speed = dto.Speed ?? 0,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _shipperLocations[id] = result;
+
+            // Phát SignalR realtime tới tất cả client đang theo dõi bản đồ
+            if (_hubContext != null)
+            {
+                try
+                {
+                    string sender = dto.ShipperId?.ToString() ?? $"order_{id}";
+                    await _hubContext.Clients.All.SendAsync("ReceiveLocation", sender, dto.Latitude, dto.Longitude);
+                }
+                catch { }
+            }
+
+            return Ok(result);
+        }
+
+        // --- 11. LẤY VỊ TRÍ THỰC HIỆN TẠI CỦA SHIPPER ---
+        [HttpGet("{id}/location")]
+        public ActionResult<ShipperLocationResultDto> GetShipperLocation(int id)
+        {
+            if (_shipperLocations.TryGetValue(id, out var loc))
+            {
+                return Ok(loc);
+            }
+
+            // Never invent a location before the first GPS update.
+            return NotFound(new { message = "No GPS location has been received for this order." });
         }
     }
 }

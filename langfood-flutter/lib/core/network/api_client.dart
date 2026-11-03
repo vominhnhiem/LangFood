@@ -3,27 +3,57 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../../config/config_url.dart';
 import '../constants/app_constants.dart';
 
 class ApiClient {
-  static final http.Client _client = http.Client();
+  static http.Client _client = http.Client();
+
+  @visibleForTesting
+  static void useClient(http.Client client) {
+    _client.close();
+    _client = client;
+  }
+
+  static dynamic decodeResponse(http.Response response) {
+    dynamic data;
+    try {
+      data = jsonDecode(response.body);
+    } catch (_) {
+      data = response.body;
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final message = data is Map ? (data['message'] ?? data['title']) : data;
+      throw Exception(
+        message?.toString().isNotEmpty == true
+            ? message.toString()
+            : 'Yêu cầu thất bại (${response.statusCode}).',
+      );
+    }
+    return data;
+  }
+
+  static Future<http.Response> upload(
+    String endpoint, {
+    required Map<String, String> fields,
+    required List<int> bytes,
+    required String filename,
+  }) async {
+    final request = http.MultipartRequest('POST', ConfigUrl.apiUri(endpoint))
+      ..fields.addAll(fields)
+      ..files.add(
+        http.MultipartFile.fromBytes('image', bytes, filename: filename),
+      );
+    return http.Response.fromStream(
+      await _client.send(request).timeout(const Duration(seconds: 30)),
+    );
+  }
 
   static Uri _buildUri(String endpoint, [Map<String, dynamic>? queryParams]) {
-    String base = AppConstants.baseUrl.replaceAll(' ', '').trim();
-    if (!base.endsWith('/')) base = '$base/';
-    String path = endpoint.trim();
-    if (path.startsWith('/')) path = path.substring(1);
-
-    Uri baseUri = Uri.parse('$base$path');
-    if (queryParams != null && queryParams.isNotEmpty) {
-      final stringParams = queryParams.map(
-        (key, value) => MapEntry(key, value?.toString() ?? ''),
-      );
-      return baseUri.replace(queryParameters: stringParams);
-    }
-    return baseUri;
+    return ConfigUrl.apiUri(endpoint, queryParams: queryParams);
   }
 
   static Exception _handleException(dynamic error, Uri uri) {
@@ -36,7 +66,7 @@ class ApiClient {
     if (error is SocketException) {
       return Exception(
         'Không thể kết nối tới ${uri.host}:${uri.port}.\n'
-        'Vui lòng kiểm tra địa chỉ IP trong AppConstants hoặc Wi-Fi.',
+        'Vui lòng kiểm tra địa chỉ IP trong file .env hoặc Wi-Fi.',
       );
     }
     if (error is Exception) {
@@ -78,7 +108,7 @@ class ApiClient {
     Map<String, dynamic>? queryParams,
     String? token,
   }) async {
-    final uri = _buildUri(endpoint, queryParams);
+    var uri = _buildUri(endpoint, queryParams);
     developer.log('GET -> $uri', name: 'ApiClient');
     try {
       final response = await _client
@@ -101,8 +131,8 @@ class ApiClient {
     Map<String, dynamic>? queryParams,
     String? token,
   }) async {
-    final uri = _buildUri(endpoint, queryParams);
-    developer.log('POST -> $uri, Body: $body', name: 'ApiClient');
+    var uri = _buildUri(endpoint, queryParams);
+    developer.log('POST -> ${uri.path}', name: 'ApiClient');
     try {
       final response = await _client
           .post(
@@ -130,8 +160,8 @@ class ApiClient {
     Map<String, dynamic>? queryParams,
     String? token,
   }) async {
-    final uri = _buildUri(endpoint, queryParams);
-    developer.log('PUT -> $uri, Body: $body', name: 'ApiClient');
+    var uri = _buildUri(endpoint, queryParams);
+    developer.log('PUT -> ${uri.path}', name: 'ApiClient');
     try {
       final response = await _client
           .put(
@@ -158,7 +188,7 @@ class ApiClient {
     Map<String, dynamic>? queryParams,
     String? token,
   }) async {
-    final uri = _buildUri(endpoint, queryParams);
+    var uri = _buildUri(endpoint, queryParams);
     developer.log('DELETE -> $uri', name: 'ApiClient');
     try {
       final response = await _client

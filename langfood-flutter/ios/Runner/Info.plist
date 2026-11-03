@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Làng Food sử dụng vị trí để chọn điểm giao và chia sẻ GPS khi shipper đang giao hàng.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Chọn ảnh đại diện và ảnh món ăn để tải lên Làng Food.</string>
 </dict>
 </plist>

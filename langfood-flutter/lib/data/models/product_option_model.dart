@@ -18,18 +18,19 @@ class ProductOptionModel {
       id: json['id'] ?? json['Id'] ?? 0,
       groupId: json['groupId'] ?? json['GroupId'],
       name: (json['name'] ?? json['Name'] ?? '').toString(),
-      price: (json['price'] ?? json['Price'] ?? 0).toDouble(),
+      price:
+          (json['additionalPrice'] ??
+                  json['AdditionalPrice'] ??
+                  json['price'] ??
+                  json['Price'] ??
+                  0)
+              .toDouble(),
       isSelected: json['isSelected'] ?? json['IsSelected'] ?? false,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'groupId': groupId,
-      'name': name,
-      'price': price,
-    };
+    return {'id': id, 'groupId': groupId, 'name': name, 'price': price};
   }
 }
 
@@ -53,7 +54,12 @@ class ProductOptionGroupModel {
     List<ProductOptionModel> parsedOptions = [];
     if (rawOptions is List) {
       parsedOptions = rawOptions
-          .map((opt) => ProductOptionModel.fromJson(opt as Map<String, dynamic>))
+          .where(
+            (opt) => opt['isAvailable'] != false && opt['IsAvailable'] != false,
+          )
+          .map(
+            (opt) => ProductOptionModel.fromJson(opt as Map<String, dynamic>),
+          )
           .toList();
     }
 
@@ -61,7 +67,10 @@ class ProductOptionGroupModel {
       id: json['id'] ?? json['Id'] ?? 0,
       productId: json['productId'] ?? json['ProductId'],
       name: (json['name'] ?? json['Name'] ?? '').toString(),
-      isMultiple: json['isMultiple'] ?? json['IsMultiple'] ?? false,
+      isMultiple:
+          json['isMultiple'] ??
+          json['IsMultiple'] ??
+          ((json['maxSelectable'] ?? json['MaxSelectable'] ?? 1) > 1),
       options: parsedOptions,
     );
   }

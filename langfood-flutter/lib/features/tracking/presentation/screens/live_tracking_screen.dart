@@ -1,15 +1,14 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
-import 'package:signalr_netcore/signalr_client.dart';
-import '../../../../core/constants/app_constants.dart';
 
-// Màn hình Chọn Vai Trò (Shipper hoặc Khách Hàng)
+import '../../../../data/models/order_model.dart';
+import '../../../../data/services/order_service.dart';
+import '../../../../data/services/routing_service.dart';
+
+// Màn hình Chọn Vai Trò (Shipper hoặc Khách Hàng) để test bản đồ
 class RoleChooserScreen extends StatelessWidget {
   const RoleChooserScreen({super.key});
 
@@ -32,7 +31,11 @@ class RoleChooserScreen extends StatelessWidget {
               const SizedBox(height: 16),
               const Text(
                 "LangFood Live Tracking",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.deepOrange),
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.deepOrange,
+                ),
               ),
               const SizedBox(height: 8),
               const Text(
@@ -48,18 +51,29 @@ class RoleChooserScreen extends StatelessWidget {
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  icon: const Icon(Icons.directions_bike, color: Colors.white, size: 28),
+                  icon: const Icon(
+                    Icons.directions_bike,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                   label: const Text(
                     "Tôi là Shipper (Giao Hàng)",
-                    style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const LiveTrackingScreen(isShipper: true),
+                        builder: (context) =>
+                            const LiveTrackingScreen(isShipper: true, orderId: 1),
                       ),
                     );
                   },
@@ -75,18 +89,29 @@ class RoleChooserScreen extends StatelessWidget {
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  icon: const Icon(Icons.person_pin_circle, color: Colors.white, size: 28),
+                  icon: const Icon(
+                    Icons.person_pin_circle,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                   label: const Text(
                     "Tôi là Khách Hàng (Đặt Đồ)",
-                    style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const LiveTrackingScreen(isShipper: false),
+                        builder: (context) =>
+                            const LiveTrackingScreen(isShipper: false, orderId: 1),
                       ),
                     );
                   },
@@ -100,80 +125,17 @@ class RoleChooserScreen extends StatelessWidget {
   }
 }
 
-// Thuật toán Haversine đo khoảng cách mặt cầu giữa 2 tọa độ (Slide 4)
-double calculateHaversineDistance(LatLng p1, LatLng p2) {
-  const double R = 6371.0; // Bán kính Trái Đất (km)
-  double dLat = _degreesToRadians(p2.latitude - p1.latitude);
-  double dLng = _degreesToRadians(p2.longitude - p1.longitude);
-
-  double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-      math.cos(_degreesToRadians(p1.latitude)) *
-          math.cos(_degreesToRadians(p2.latitude)) *
-          math.sin(dLng / 2) *
-          math.sin(dLng / 2);
-
-  double c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-  return R * c; // Khoảng cách Haversine tính bằng km
-}
-
-double _degreesToRadians(double degrees) {
-  return degrees * math.pi / 180.0;
-}
-
-class RouteDetails {
-  final List<LatLng> points;
-  final double distanceKm;
-  final double durationMinutes;
-
-  RouteDetails({
-    required this.points,
-    required this.distanceKm,
-    required this.durationMinutes,
-  });
-}
-
-// Hàm lấy đường đi ngắn nhất + khoảng cách & thời gian từ OSRM API
-Future<RouteDetails?> getShortestRouteDetails(LatLng start, LatLng end) async {
-  final url = Uri.parse(
-    'https://router.project-osrm.org/route/v1/driving/'
-    '${start.longitude},${start.latitude};${end.longitude},${end.latitude}'
-    '?overview=full&geometries=geojson'
-  );
-
-  try {
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final route = data['routes'][0];
-      final List coordinates = route['geometry']['coordinates'];
-      final double distanceMeters = (route['distance'] as num).toDouble();
-      final double durationSeconds = (route['duration'] as num).toDouble();
-
-      final points = coordinates.map((coord) {
-        return LatLng(coord[1].toDouble(), coord[0].toDouble());
-      }).toList();
-
-      return RouteDetails(
-        points: points,
-        distanceKm: distanceMeters / 1000.0,
-        durationMinutes: durationSeconds / 60.0,
-      );
-    }
-  } catch (e) {
-    debugPrint("Lỗi lấy đường đi: $e");
-  }
-  return null;
-}
-
 class LiveTrackingScreen extends StatefulWidget {
-  final bool isShipper; // True: Máy Shipper, False: Máy Khách hàng
+  final int orderId;
+  final bool isShipper;
   final LatLng? initialCustomerPos;
   final String? initialAddress;
   final bool isLocationLocked;
 
   const LiveTrackingScreen({
     super.key,
-    required this.isShipper,
+    this.orderId = 1,
+    this.isShipper = false,
     this.initialCustomerPos,
     this.initialAddress,
     this.isLocationLocked = false,
@@ -184,379 +146,258 @@ class LiveTrackingScreen extends StatefulWidget {
 }
 
 class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
-  final MapController _mapController = MapController();
-  StreamSubscription<Position>? _positionStreamSubscription;
-  Timer? _shipperPeriodicTimer;
+  final _map = MapController();
+  final _service = OrderService();
+  Timer? _refreshTimer;
+  OrderModel? _order;
+  LatLng? _shipper;
+  LatLng? _routeOrigin;
+  LatLng? _routeDestination;
+  RoadRoute? _route;
+  DateTime? _routeRequestedAt;
+  DateTime? _locationTime;
+  bool _loading = true;
+  bool _refreshing = false;
+  bool _routing = false;
+  bool _mapReady = false;
+  bool _centered = false;
+  String? _error;
+  String? _routeError;
 
-  LatLng shipperPos = const LatLng(10.8751, 106.7997);   // Vị trí Shipper
-  LatLng customerPos = const LatLng(10.8800, 106.8050);  // Vị trí Khách hàng đặt đồ ăn
-  String customerAddress = 'Sảnh KTX Khu B, Thủ Đức';
-
-  List<LatLng> routePoints = [];
-  double distanceKm = 0;
-  double durationMinutes = 0;
-
-  late HubConnection _hubConnection;
-  bool _isConnected = false;
+  LatLng? get _destination {
+    if (widget.initialCustomerPos != null) return widget.initialCustomerPos;
+    final lat = _order?.deliveryLatitude;
+    final lng = _order?.deliveryLongitude;
+    return lat == null || lng == null ? null : LatLng(lat, lng);
+  }
 
   @override
   void initState() {
     super.initState();
-    if (widget.initialCustomerPos != null) {
-      customerPos = widget.initialCustomerPos!;
-    }
-    if (widget.initialAddress != null) {
-      customerAddress = widget.initialAddress!;
-    }
-    _fetchRoute();
-    _initSignalR();
-
-    if (widget.isShipper) {
-      _initRealGPS();
-      _startShipper5sTimer();
-    }
+    _refresh();
+    // This timer only fetches server data; it never moves a marker by itself.
+    _refreshTimer = Timer.periodic(
+      const Duration(seconds: 3),
+      (_) => _refresh(),
+    );
   }
 
   @override
   void dispose() {
-    _positionStreamSubscription?.cancel();
-    _shipperPeriodicTimer?.cancel();
+    _refreshTimer?.cancel();
+    _map.dispose();
     super.dispose();
   }
 
-  // Khởi chạy Timer 5s tự động cập nhật vị trí GPS thực tế của Shipper
-  void _startShipper5sTimer() {
-    _shipperPeriodicTimer?.cancel();
-    _shipperPeriodicTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
-      if (!mounted || !widget.isShipper) return;
-
-      try {
-        Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high,
-          timeLimit: const Duration(seconds: 4),
-        );
-        _onNewPosition(position);
-      } catch (e) {
-        // Nếu GPS chưa kịp phản hồi, gửi vị trí hiện tại qua SignalR
-        if (_isConnected) {
-          _hubConnection.invoke("UpdateLocation", args: ["Shipper_Phone", shipperPos.latitude, shipperPos.longitude]);
-        }
+  Future<void> _refresh() async {
+    if (_refreshing) return;
+    _refreshing = true;
+    try {
+      final order = await _service.getOrderById(widget.orderId);
+      final location = await _service.getShipperLocation(widget.orderId);
+      if (!mounted) return;
+      if (order == null) throw Exception('Không tải được thông tin đơn hàng.');
+      setState(() {
+        _order = order;
+        _shipper = location == null
+            ? null
+            : LatLng(
+                (location['latitude'] as num).toDouble(),
+                (location['longitude'] as num).toDouble(),
+              );
+        _locationTime = location == null
+            ? null
+            : DateTime.tryParse(location['updatedAt']?.toString() ?? '');
+        _loading = false;
+        _error = null;
+        if (_shipper == null) _route = null;
+      });
+      _centerMap();
+      if (order.status == 'Completed') {
+        _refreshTimer?.cancel();
+      } else {
+        await _loadRoute();
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
+    } finally {
+      _refreshing = false;
+    }
   }
 
-  // Xin quyền & lấy vị trí GPS thực tế của điện thoại
-  Future<void> _initRealGPS() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      debugPrint("GPS chưa được bật trên thiết bị!");
+  void _centerMap() {
+    if (!_mapReady || _centered) return;
+    final center = _shipper ?? _destination;
+    if (center == null) return;
+    _map.move(center, 16);
+    _centered = true;
+  }
+
+  Future<void> _loadRoute({bool force = false}) async {
+    final from = _shipper;
+    final to = _destination;
+    if (from == null || to == null || _routing) return;
+    final sameDestination = _routeDestination == to;
+    if (!force &&
+        sameDestination &&
+        _route != null &&
+        _routeOrigin != null &&
+        const Distance().as(LengthUnit.Meter, _routeOrigin!, from) < 50) {
       return;
     }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return;
+    if (!force &&
+        _routeRequestedAt != null &&
+        DateTime.now().difference(_routeRequestedAt!).inSeconds < 10) {
+      return;
     }
-
-    if (permission == LocationPermission.deniedForever) return;
-
-    Position position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
-    _onNewPosition(position);
-
-    const locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 3,
-    );
-
-    _positionStreamSubscription = Geolocator.getPositionStream(locationSettings: locationSettings)
-        .listen((Position position) {
-      _onNewPosition(position);
-    });
-  }
-
-  void _onNewPosition(Position position) {
-    if (!mounted) return;
-    updateShipperLocation(position.latitude, position.longitude);
-    _mapController.move(LatLng(position.latitude, position.longitude), 16.0);
-  }
-
-  // Khởi tạo kết nối SignalR với Backend C# (.NET)
-  Future<void> _initSignalR() async {
-    // Tự động lấy URL từ AppConstants.baseUrl
-    final baseUrl = AppConstants.baseUrl.replaceAll(RegExp(r'/$'), '');
-    final serverUrl = "$baseUrl/locationHub";
-
-    _hubConnection = HubConnectionBuilder()
-        .withUrl(serverUrl, options: HttpConnectionOptions())
-        .build();
-
-    // Lắng nghe sự kiện từ Backend
-    _hubConnection.on("ReceiveLocation", (arguments) {
-      if (arguments != null && arguments.length >= 3) {
-        final senderId = arguments[0] as String;
-        final lat = (arguments[1] as num).toDouble();
-        final lng = (arguments[2] as num).toDouble();
-
-        if (senderId == "Customer_Phone" && widget.isShipper) {
-          // Shipper nhận vị trí điểm giao đồ ăn do Khách đặt
-          setState(() {
-            customerPos = LatLng(lat, lng);
-          });
-          _fetchRoute();
-        } else if (senderId == "Shipper_Phone" && !widget.isShipper) {
-          // Khách nhận vị trí Shipper đang di chuyển
-          setState(() {
-            shipperPos = LatLng(lat, lng);
-          });
-          _fetchRoute();
-        }
-      }
-    });
-
+    _routing = true;
+    _routeRequestedAt = DateTime.now();
     try {
-      await _hubConnection.start();
+      final route = await RoutingService.getRoute(from, to);
+      if (!mounted) return;
       setState(() {
-        _isConnected = true;
+        _route = route;
+        _routeOrigin = from;
+        _routeDestination = to;
+        _routeError = null;
       });
-      debugPrint("Đã kết nối SignalR thành công!");
     } catch (e) {
-      debugPrint("Lỗi kết nối SignalR: $e");
-    }
-  }
-
-  // Gọi API OSRM lấy đường đi + khoảng cách & thời gian
-  Future<void> _fetchRoute() async {
-    RouteDetails? details = await getShortestRouteDetails(shipperPos, customerPos);
-    if (mounted && details != null) {
-      setState(() {
-        routePoints = details.points;
-        distanceKm = details.distanceKm;
-        durationMinutes = details.durationMinutes;
-      });
-    }
-  }
-
-  // Cập nhật vị trí Shipper
-  void updateShipperLocation(double newLat, double newLng) {
-    setState(() {
-      shipperPos = LatLng(newLat, newLng);
-    });
-    _fetchRoute();
-
-    if (widget.isShipper && _isConnected) {
-      _hubConnection.invoke("UpdateLocation", args: ["Shipper_Phone", newLat, newLng]);
-    }
-  }
-
-  // Cập nhật điểm giao đồ ăn do Khách chọn
-  void updateCustomerLocation(LatLng newPos) {
-    setState(() {
-      customerPos = newPos;
-    });
-    _fetchRoute();
-
-    // Bắn vị trí điểm giao hàng mới sang cho Shipper qua SignalR
-    if (!widget.isShipper && _isConnected) {
-      _hubConnection.invoke("UpdateLocation", args: ["Customer_Phone", newPos.latitude, newPos.longitude]);
+      if (mounted) {
+        setState(() {
+          _route = null;
+          _routeError = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
+    } finally {
+      _routing = false;
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.isShipper 
-            ? 'Shipper (${_isConnected ? "Online" : "Connecting..."})' 
-            : 'Khách Đặt Đồ (${_isConnected ? "Online" : "Connecting..."})',
-        ),
-        backgroundColor: widget.isShipper ? Colors.orange : Colors.green,
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: Text(
+        '${widget.isShipper ? 'Chỉ đường giao' : 'Theo dõi'} #${widget.orderId}',
       ),
-      body: Stack(
-        children: [
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: customerPos,
-              initialZoom: 16.0,
-              // Cho phép chạm bản đồ để chọn điểm giao hàng (chỉ khi chưa bị khóa)
-              onTap: (tapPosition, point) {
-                if (!widget.isShipper) {
-                  if (widget.isLocationLocked) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('🔒 Điểm giao hàng đã được chốt cố định, không thể dời đi nơi khác!'),
-                        backgroundColor: Colors.orange,
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  } else {
-                    updateCustomerLocation(point);
-                  }
-                }
-              },
-            ),
+      actions: [
+        IconButton(
+          tooltip: 'Tải lại',
+          onPressed: _refresh,
+          icon: const Icon(Icons.refresh),
+        ),
+      ],
+    ),
+    body: _loading
+        ? const Center(child: CircularProgressIndicator())
+        : Column(
             children: [
-              TileLayer(
-                urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-                userAgentPackageName: 'com.langfood.app',
+              Expanded(
+                child: FlutterMap(
+                  mapController: _map,
+                  options: MapOptions(
+                    initialCenter:
+                        _destination ??
+                        _shipper ??
+                        const LatLng(10.8805, 106.8048),
+                    initialZoom: 15,
+                    onMapReady: () {
+                      _mapReady = true;
+                      _centerMap();
+                    },
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.example.langfood_flutter',
+                    ),
+                    if (_route != null)
+                      PolylineLayer(
+                        polylines: [
+                          Polyline(
+                            points: _route!.points,
+                            color: Colors.blue,
+                            strokeWidth: 5,
+                          ),
+                        ],
+                      ),
+                    MarkerLayer(
+                      markers: [
+                        if (_destination != null)
+                          Marker(
+                            point: _destination!,
+                            width: 48,
+                            height: 48,
+                            child: const Icon(
+                              Icons.location_on,
+                              color: Colors.red,
+                              size: 42,
+                            ),
+                          ),
+                        if (_shipper != null)
+                          Marker(
+                            point: _shipper!,
+                            width: 48,
+                            height: 48,
+                            child: const Icon(
+                              Icons.delivery_dining,
+                              color: Colors.blue,
+                              size: 38,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const RichAttributionWidget(
+                      attributions: [
+                        TextSourceAttribution('OpenStreetMap contributors'),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              PolylineLayer(
-                polylines: [
-                  Polyline(
-                    points: routePoints,
-                    strokeWidth: 5.0,
-                    color: Colors.blueAccent,
-                  ),
-                ],
-              ),
-              MarkerLayer(
-                markers: [
-                  // Marker Shipper
-                  Marker(
-                    point: shipperPos,
-                    width: 50,
-                    height: 50,
-                    child: const Icon(Icons.directions_bike, color: Colors.red, size: 40),
-                  ),
-                  // Marker Khách hàng (Điểm giao đồ ăn)
-                  Marker(
-                    point: customerPos,
-                    width: 50,
-                    height: 50,
-                    child: const Icon(Icons.location_on, color: Colors.green, size: 45),
-                  ),
-                ],
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_error != null)
+                      Text(_error!, style: const TextStyle(color: Colors.red)),
+                    Text(
+                      _order?.deliveryBuilding ??
+                          widget.initialAddress ??
+                          'Chưa có địa chỉ',
+                    ),
+                    Text('Trạng thái: ${_order?.status ?? ''}'),
+                    if (_shipper == null)
+                      const Text('Chưa nhận được vị trí GPS của shipper.'),
+                    if (_destination == null)
+                      const Text('Đơn này chưa có tọa độ giao hàng.'),
+                    if (_locationTime != null)
+                      Text('GPS cập nhật: ${_locationTime!.toLocal()}'),
+                    if (_route != null)
+                      Text(
+                        '${(_route!.distanceMeters / 1000).toStringAsFixed(1)} km • khoảng ${(_route!.durationSeconds / 60).ceil()} phút',
+                      ),
+                    if (_routeError != null)
+                      Text(
+                        _routeError!,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    if (_shipper != null && _destination != null)
+                      TextButton.icon(
+                        onPressed: () => _loadRoute(force: true),
+                        icon: const Icon(Icons.directions),
+                        label: const Text('Tải lại chỉ đường'),
+                      ),
+                  ],
+                ),
               ),
             ],
           ),
-
-          // Banner trạng thái kết nối & cập nhật vị trí
-          Positioned(
-            top: 16,
-            left: 16,
-            right: 16,
-            child: Card(
-              color: widget.isShipper ? Colors.orange.shade800 : Colors.green.shade800,
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.wifi_tethering,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        widget.isShipper
-                            ? '🛰️ GPS Shipper tự động gửi vị trí thực tế mỗi 5 giây'
-                            : '🟢 Nhận vị trí Shipper realtime từ Server (5s/lần)',
-                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Card thông tin giao hàng bên dưới màn hình
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 24,
-            child: Card(
-              elevation: 8,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.fastfood, color: Colors.orange, size: 30),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.isShipper ? "Đang giao đến khách" : "Điểm giao đồ ăn của bạn",
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                widget.isShipper 
-                                  ? "Lat: ${customerPos.latitude.toStringAsFixed(4)}, Lng: ${customerPos.longitude.toStringAsFixed(4)}"
-                                  : (widget.isLocationLocked
-                                      ? "🔒 Địa chỉ đã chốt: $customerAddress"
-                                      : "Chạm vào bản đồ để chọn/đổi điểm giao"),
-                                style: TextStyle(
-                                  color: widget.isLocationLocked ? Colors.black87 : Colors.grey,
-                                  fontSize: 12,
-                                  fontWeight: widget.isLocationLocked ? FontWeight.w500 : FontWeight.normal,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Divider(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.straighten, color: Colors.blue, size: 20),
-                            const SizedBox(width: 6),
-                            Text(
-                              "${distanceKm.toStringAsFixed(2)} km",
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            const Icon(Icons.timer, color: Colors.red, size: 20),
-                            const SizedBox(width: 6),
-                            Text(
-                              "${durationMinutes.ceil()} phút",
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 110),
-        child: FloatingActionButton(
-          backgroundColor: Colors.orange,
-          child: Icon(widget.isShipper ? Icons.my_location : Icons.gps_fixed),
-          onPressed: () {
-            if (widget.isShipper) {
-              _initRealGPS();
-            } else {
-              _mapController.move(customerPos, 16.0);
-            }
-          },
-        ),
-      ),
-    );
-  }
+  );
 }

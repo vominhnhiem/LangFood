@@ -1,20 +1,14 @@
+import '../../config/config_url.dart';
+
 class AppConstants {
   static const String appName = 'Làng Food';
   static const String appSlogan = 'Ship đồ ngon - Giá sinh viên';
 
-  // Backend Port (Fixed at 5289 as recommended)
   static const int apiPort = 5289;
 
-  /// Default Base URL
-  /// - Real LAN IP: http://192.168.2.11:5289/
-  /// - Android Emulator: http://10.0.2.2:5289/
-  /// - iOS Simulator / Desktop / Web: http://localhost:5289/
-  static String get defaultBaseUrl {
-    return 'http://192.168.2.11:$apiPort/';
-  }
+  static String get defaultBaseUrl => ConfigUrl.serverUrl;
 
-  // Active Base URL (Can be changed dynamically if running on real device)
-  static String baseUrl = 'http://192.168.2.11:$apiPort/';
+  static String get baseUrl => ConfigUrl.serverUrl;
 
   // SharedPreferences Keys
   static const String keyUserId = 'USER_ID';

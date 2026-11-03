@@ -1,37 +1,40 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 
 import 'core/constants/app_constants.dart';
+import 'core/showcase/design_system_showcase.dart';
+import 'core/theme/app_theme.dart';
+import 'features/auth/presentation/screens/login_screen.dart';
+import 'features/home/presentation/screens/home_screen.dart';
+import 'features/restaurant/presentation/screens/shop_orders_screen.dart';
+import 'features/shipper/presentation/screens/shipper_orders_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/theme_provider.dart';
-import 'features/auth/presentation/screens/login_screen.dart';
-import 'features/home/presentation/screens/home_screen.dart';
-import 'features/shipper/presentation/screens/shipper_orders_screen.dart';
-import 'core/theme/app_theme.dart';
-import 'core/showcase/design_system_showcase.dart';
 
 void main() {
   runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+      try {
+        await dotenv.load(fileName: '.env');
+      } catch (_) {}
 
       // Bắt toàn bộ lỗi từ Flutter framework rendering
       FlutterError.onError = (FlutterErrorDetails details) {
         FlutterError.presentError(details);
-        debugPrint('=== [FLUTTER FRAMEWORK ERROR] ===');
-        debugPrint(details.exceptionAsString());
-        debugPrint(details.stack.toString());
+        debugPrint(
+          'FLUTTER_FRAMEWORK_ERROR: ${details.exceptionAsString()}\n${details.stack}',
+        );
       };
 
       runApp(const LangFoodApp());
     },
-    (error, stackTrace) {
-      debugPrint('=== [UNCAUGHT ASYNC / RUNTIME ERROR] ===');
-      debugPrint(error.toString());
-      debugPrint(stackTrace.toString());
+    (Object error, StackTrace stack) {
+      debugPrint('UNCAUGHT_ASYNC_ZONE_ERROR: $error\n$stack');
     },
   );
 }
@@ -44,7 +47,14 @@ class LangFoodApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, CartProvider>(
+          create: (_) => CartProvider(),
+          update: (_, auth, cart) {
+            final provider = cart ?? CartProvider();
+            provider.bindUser(auth.user?.id);
+            return provider;
+          },
+        ),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: Consumer<ThemeProvider>(
@@ -71,15 +81,20 @@ class AuthWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
 
-    // If already logged in from SharedPreferences, direct to appropriate screen
+    // If logged in, direct to appropriate dashboard based on role
     if (authProvider.isLoggedIn) {
       final user = authProvider.user;
       final isShipper =
+          user?.isShipper == true ||
           user?.roleId == 3 ||
           user?.shipperId != null ||
           user?.username.toLowerCase() == 'shipper';
+      final isShop = user?.isSeller == true || user?.roleId == 2;
+
       if (isShipper) {
         return const ShipperOrdersScreen();
+      } else if (isShop) {
+        return const ShopOrdersScreen();
       }
       return const HomeScreen();
     }

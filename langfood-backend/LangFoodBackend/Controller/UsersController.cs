@@ -79,11 +79,20 @@ namespace LangFoodBackend.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<User>> Login([FromBody] User loginRequest)
         {
+            string sha256Hash = "";
+            if (!string.IsNullOrEmpty(loginRequest.PasswordHash))
+            {
+                using var sha256 = System.Security.Cryptography.SHA256.Create();
+                var bytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(loginRequest.PasswordHash));
+                sha256Hash = Convert.ToHexString(bytes).ToLower();
+            }
+
             var user = await _context.Users
                 .Include(u => u.Wallet)
                 .Include(u => u.Shop)    // Thêm Shop để lấy ShopId ngay khi login
                 .Include(u => u.Shipper) // Thêm Shipper để lấy ShipperId ngay khi login
-                .FirstOrDefaultAsync(u => u.Username == loginRequest.Username && u.PasswordHash == loginRequest.PasswordHash);
+                .FirstOrDefaultAsync(u => u.Username == loginRequest.Username && 
+                    (u.PasswordHash == loginRequest.PasswordHash || u.PasswordHash == sha256Hash));
 
             if (user == null) return Unauthorized(new { message = "Sai tài khoản hoặc mật khẩu!" });
             return Ok(user);
