@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -189,6 +189,8 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
   bool _startingGps = false;
   String? _gpsError;
 
+  static const double maxGeofenceDistanceMeters = 200.0;
+
   LatLng? get _destination {
     if (_order?.status == 'PickingUp') {
       return _pickupPosition;
@@ -197,6 +199,19 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
     final lng = _order?.deliveryLongitude;
     if (lat != null && lng != null) return LatLng(lat, lng);
     return widget.initialCustomerPos;
+  }
+
+  double? get _distanceToTargetMeters {
+    final shipperPos = _shipper;
+    final destPos = _destination;
+    if (shipperPos == null || destPos == null) return null;
+    return const Distance().as(LengthUnit.Meter, shipperPos, destPos);
+  }
+
+  bool get _isWithinGeofence {
+    final dist = _distanceToTargetMeters;
+    if (dist == null) return true;
+    return dist <= maxGeofenceDistanceMeters;
   }
 
   @override
@@ -426,20 +441,207 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
     }
   }
 
+  Future<LatLng?> _resolveShipperPosition() async {
+    if (_shipper != null) return _shipper;
+    try {
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 4),
+      );
+      final resolved = LatLng(pos.latitude, pos.longitude);
+      if (mounted) setState(() => _shipper = resolved);
+      return resolved;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Widget _buildGeofenceStatusCard() {
+    final isPickingUp = _order?.status == 'PickingUp';
+    final targetName = isPickingUp ? 'quán lấy món' : 'điểm giao hàng';
+    final dist = _distanceToTargetMeters;
+
+    if (_destination == null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.info_outline, size: 18, color: Colors.grey),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Chưa có tọa độ GPS của $targetName. Có thể xác nhận trực tiếp.',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_shipper == null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.amber.shade50,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.amber.shade300),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.gps_fixed, size: 20, color: Colors.amber),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Chưa bật chia sẻ GPS',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.amber.shade900,
+                    ),
+                  ),
+                  Text(
+                    'Bật chia sẻ GPS bên dưới để hệ thống kiểm tra bạn đã đến gần $targetName (< 200m).',
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade800),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final isNear = dist! <= maxGeofenceDistanceMeters;
+    final color = isNear ? AppColors.success : Colors.orange.shade800;
+    final bgColor = isNear ? AppColors.success.withValues(alpha: 0.1) : Colors.orange.shade50;
+    final icon = isNear ? Icons.check_circle_rounded : Icons.fmd_bad_rounded;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 22, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isNear
+                      ? 'Đã vào phạm vi (Cách $targetName: ${dist.round()}m)'
+                      : 'Chưa vào phạm vi (Cách $targetName: ${dist.round()}m)',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+                Text(
+                  isNear
+                      ? 'Cự ly hợp lệ (< 200m). Bạn có thể bấm xác nhận.'
+                      : 'Cần di chuyển lại gần dưới ${maxGeofenceDistanceMeters.toInt()}m để bấm xác nhận.',
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _confirmPickup() async {
     final shipperId = context.read<AuthProvider>().user?.shipperId;
     if (shipperId == null || _confirmingPickup) return;
 
-    setState(() => _confirmingPickup = true);
-    try {
-      if (!await _service.confirmPickup(widget.orderId, shipperId)) {
-        throw Exception('Không thể xác nhận lấy món. Vui lòng thử lại.');
-      }
-      await _refresh();
-    } catch (_) {
+    final currentShipper = await _resolveShipperPosition();
+    if (_destination != null && currentShipper == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Chưa xác nhận được. Hãy tải lại đơn.')),
+          const SnackBar(
+            content: Text('Vui lòng bật chia sẻ GPS để hệ thống kiểm tra bạn đã đến quán.'),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (currentShipper != null && _destination != null) {
+      final distance = const Distance().as(LengthUnit.Meter, currentShipper, _destination!);
+      if (distance > maxGeofenceDistanceMeters) {
+        if (mounted) {
+          showDialog<void>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(Icons.location_off_rounded, color: Colors.orange),
+                  SizedBox(width: 8),
+                  Text('Chưa đến gần quán'),
+                ],
+              ),
+              content: Text(
+                'Bạn đang cách điểm lấy món ${distance.round()}m.\n\n'
+                'Vui lòng di chuyển lại gần quán (dưới ${maxGeofenceDistanceMeters.toInt()}m) để bấm xác nhận đã lấy món.',
+              ),
+              actions: [
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Đã hiểu'),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    setState(() => _confirmingPickup = true);
+    try {
+      final success = await _service.confirmPickup(
+        widget.orderId,
+        shipperId,
+        lat: currentShipper?.latitude,
+        lng: currentShipper?.longitude,
+      );
+      if (!success) {
+        throw Exception('Không thể xác nhận lấy món. Vui lòng thử lại.');
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã xác nhận lấy món thành công! Bắt đầu giao đến KTX.'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      await _refresh();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } finally {
@@ -449,11 +651,59 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
 
   Future<void> _complete() async {
     if (_completing) return;
+
+    final currentShipper = await _resolveShipperPosition();
+    if (_destination != null && currentShipper == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Vui lòng bật chia sẻ GPS để hệ thống kiểm tra bạn đã đến điểm giao.'),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
+    double? distance;
+    if (currentShipper != null && _destination != null) {
+      distance = const Distance().as(LengthUnit.Meter, currentShipper, _destination!);
+      if (distance > maxGeofenceDistanceMeters) {
+        if (mounted) {
+          showDialog<void>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(Icons.location_off_rounded, color: Colors.orange),
+                  SizedBox(width: 8),
+                  Text('Chưa đến điểm giao'),
+                ],
+              ),
+              content: Text(
+                'Bạn đang cách điểm giao hàng ${distance!.round()}m.\n\n'
+                'Vui lòng di chuyển lại gần điểm giao (dưới ${maxGeofenceDistanceMeters.toInt()}m) để bấm xác nhận giao hàng.',
+              ),
+              actions: [
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Đã hiểu'),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    final distanceNotice = distance != null ? ' (Khoảng cách: ${distance.round()}m)' : '';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Xác nhận đã giao món?'),
-        content: const Text('Chỉ xác nhận khi khách đã nhận đầy đủ món.'),
+        content: Text('Chỉ xác nhận khi khách đã nhận đầy đủ món$distanceNotice.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -469,11 +719,34 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
     if (confirmed != true || !mounted) return;
     setState(() => _completing = true);
     try {
-      if (!await _service.completeOrder(widget.orderId))
+      final success = await _service.completeOrder(
+        widget.orderId,
+        lat: currentShipper?.latitude,
+        lng: currentShipper?.longitude,
+      );
+      if (!success) {
         throw Exception('Không thể hoàn tất đơn. Vui lòng thử lại.');
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Giao hàng thành công! Đơn hàng #${widget.orderId} đã hoàn tất.'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
       await _refresh();
     } catch (error) {
-      if (mounted) setState(() => _error = error.toString());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _completing = false);
     }
@@ -682,7 +955,9 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                             if (_pickupPosition == null)
                               const Text('Chưa có tọa độ quán để chỉ đường.'),
                           ],
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
+                          _buildGeofenceStatusCard(),
+                          const SizedBox(height: 12),
                           OutlinedButton.icon(
                             onPressed: _shareGps,
                             icon: const Icon(Icons.my_location),
@@ -692,13 +967,29 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                                   : 'Chia sẻ GPS khi giao hàng',
                             ),
                           ),
-                          FilledButton(
+                          const SizedBox(height: 8),
+                          FilledButton.icon(
+                            icon: Icon(
+                              _isWithinGeofence ? Icons.check_circle_outline : Icons.lock_outline,
+                              size: 18,
+                            ),
                             onPressed: _order!.status == 'PickingUp'
                                 ? (_confirmingPickup ? null : _confirmPickup)
                                 : (_completing ? null : _complete),
-                            child: Text(_order!.status == 'PickingUp'
-                                ? 'Đã lấy món tại quán'
-                                : 'Đã giao xong'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: _isWithinGeofence ? AppColors.primary : Colors.grey.shade600,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            label: Text(
+                              _order!.status == 'PickingUp'
+                                  ? (_isWithinGeofence
+                                      ? 'Đã lấy món tại quán'
+                                      : 'Lại gần quán để xác nhận')
+                                  : (_isWithinGeofence
+                                      ? 'Đã giao xong'
+                                      : 'Lại gần điểm giao để xác nhận'),
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ],
                         SizedBox(

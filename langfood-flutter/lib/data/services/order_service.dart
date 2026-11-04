@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
@@ -114,11 +114,22 @@ class OrderService {
     ) as Map<String, dynamic>;
   }
 
-  Future<bool> confirmPickup(int orderId, int shipperId) async {
-    final response = await ApiClient.put(
-      'api/Orders/$orderId/pickup?shipperId=$shipperId',
-    );
-    return response.statusCode == 200;
+  Future<bool> confirmPickup(
+    int orderId,
+    int shipperId, {
+    double? lat,
+    double? lng,
+  }) async {
+    String url = 'api/Orders/$orderId/pickup?shipperId=$shipperId';
+    if (lat != null && lng != null) {
+      url += '&lat=$lat&lng=$lng';
+    }
+    final response = await ApiClient.put(url);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return true;
+    }
+    ApiClient.decodeResponse(response);
+    return false;
   }
 
   Future<bool> acceptOrder(int orderId, int shipperId) async {
@@ -144,13 +155,25 @@ class OrderService {
   }
 
   // Shipper hoàn thành đơn hàng (Chuyển sang "Completed")
-  Future<bool> completeOrder(int orderId) async {
+  Future<bool> completeOrder(
+    int orderId, {
+    double? lat,
+    double? lng,
+  }) async {
     try {
-      final response = await ApiClient.put('api/Orders/complete/$orderId');
-      return response.statusCode == 200;
+      String url = 'api/Orders/complete/$orderId';
+      if (lat != null && lng != null) {
+        url += '?lat=$lat&lng=$lng';
+      }
+      final response = await ApiClient.put(url);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return true;
+      }
+      ApiClient.decodeResponse(response);
+      return false;
     } catch (e) {
       debugPrint('OrderService.completeOrder error: $e');
-      return false;
+      rethrow;
     }
   }
 

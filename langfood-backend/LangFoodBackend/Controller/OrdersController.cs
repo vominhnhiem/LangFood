@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -266,21 +266,44 @@ namespace LangFoodBackend.Controllers
         }
 
         [HttpPut("{id}/pickup")]
-        public async Task<IActionResult> ConfirmPickup(int id, [FromQuery] int shipperId)
+        public async Task<IActionResult> ConfirmPickup(int id, [FromQuery] int shipperId, [FromQuery] double? lat = null, [FromQuery] double? lng = null)
         {
-            var assigned = _context.Orders.Where(o => o.Id == id && o.ShipperId == shipperId);
-            var updated = await assigned.Where(o => o.Status == "PickingUp")
-                .ExecuteUpdateAsync(update => update.SetProperty(o => o.Status, "Delivering"));
+            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == id);
+            if (order == null) return NotFound(new { message = "Không tìm thấy đơn hàng." });
 
-            if (updated > 0 || await assigned.AnyAsync(o => o.Status == "Delivering"))
-                return Ok();
+            if (order.ShipperId != shipperId)
+                return BadRequest(new { message = "Đơn hàng này chưa được gán cho bạn." });
 
-            return BadRequest(new { message = "Đơn không còn chờ lấy món hoặc chưa được gán cho shipper này." });
+            if (order.Status == "Delivering") return Ok();
+            if (order.Status != "PickingUp")
+                return BadRequest(new { message = "Đơn không còn ở bước chờ lấy món." });
+
+            // Kiểm tra cự ly geofence shipper phải ở gần quán (dưới 200m)
+            var (sLat, sLng) = GetShipperCoordinates(id, lat, lng);
+            if (sLat.HasValue && sLng.HasValue)
+            {
+                var shop = await _context.Shops.FindAsync(order.ShopId);
+                if (shop != null && shop.PickupLatitude.HasValue && shop.PickupLongitude.HasValue)
+                {
+                    double distance = CalculateDistanceMeters(sLat.Value, sLng.Value, shop.PickupLatitude.Value, shop.PickupLongitude.Value);
+                    const double maxPickupRadius = 200.0;
+                    if (distance > maxPickupRadius)
+                    {
+                        return BadRequest(new { 
+                            message = $"Bạn đang cách quán {Math.Round(distance)}m. Vui lòng di chuyển lại gần quán (dưới {maxPickupRadius}m) để xác nhận lấy món." 
+                        });
+                    }
+                }
+            }
+
+            order.Status = "Delivering";
+            await _context.SaveChangesAsync();
+            return Ok();
         }
 
         // --- 8. HOÀN THÀNH ĐƠN HÀNG (Chia tiền Quán & Shipper) ---
         [HttpPut("complete/{id}")]
-        public async Task<IActionResult> CompleteOrder(int id)
+        public async Task<IActionResult> CompleteOrder(int id, [FromQuery] double? lat = null, [FromQuery] double? lng = null)
         {
             await using var transaction = await _context.Database.BeginTransactionAsync(
                 System.Data.IsolationLevel.Serializable);
@@ -288,6 +311,25 @@ namespace LangFoodBackend.Controllers
             if (order == null || order.Status == "Completed") return Ok();
             if (order.Status != "Delivering")
                 return BadRequest(new { message = "Đơn phải đang giao mới có thể hoàn tất." });
+
+            // Kiểm tra cự ly geofence shipper phải ở gần điểm giao hàng (dưới 200m)
+            var (sLat, sLng) = GetShipperCoordinates(id, lat, lng);
+            if (sLat.HasValue && sLng.HasValue)
+            {
+                double? destLat = order.DeliveryLatitude;
+                double? destLng = order.DeliveryLongitude;
+                if (destLat.HasValue && destLng.HasValue && destLat.Value != 0 && destLng.Value != 0)
+                {
+                    double distance = CalculateDistanceMeters(sLat.Value, sLng.Value, destLat.Value, destLng.Value);
+                    const double maxDeliveryRadius = 200.0;
+                    if (distance > maxDeliveryRadius)
+                    {
+                        return BadRequest(new { 
+                            message = $"Bạn đang cách điểm giao hàng {Math.Round(distance)}m. Vui lòng di chuyển lại gần điểm giao (dưới {maxDeliveryRadius}m) để xác nhận hoàn tất." 
+                        });
+                    }
+                }
+            }
 
             order.Status = "Completed";
             order.DeliveredAt = DateTime.Now;
@@ -454,6 +496,36 @@ namespace LangFoodBackend.Controllers
 
             // Never invent a location before the first GPS update.
             return NotFound(new { message = "No GPS location has been received for this order." });
+        }
+private (double? Latitude, double? Longitude) GetShipperCoordinates(int orderId, double? queryLat, double? queryLng)
+        {
+            if (queryLat.HasValue && queryLng.HasValue &&
+                double.IsFinite(queryLat.Value) && double.IsFinite(queryLng.Value) &&
+                Math.Abs(queryLat.Value) <= 90 && Math.Abs(queryLng.Value) <= 180)
+            {
+                return (queryLat.Value, queryLng.Value);
+            }
+
+            if (_shipperLocations.TryGetValue(orderId, out var loc) &&
+                double.IsFinite(loc.Latitude) && double.IsFinite(loc.Longitude) &&
+                Math.Abs(loc.Latitude) <= 90 && Math.Abs(loc.Longitude) <= 180)
+            {
+                return (loc.Latitude, loc.Longitude);
+            }
+
+            return (null, null);
+        }
+
+        public static double CalculateDistanceMeters(double lat1, double lon1, double lat2, double lon2)
+        {
+            const double R = 6371000; // Bán kính Trái Đất theo mét
+            var dLat = (lat2 - lat1) * Math.PI / 180.0;
+            var dLon = (lon2 - lon1) * Math.PI / 180.0;
+            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                    Math.Cos(lat1 * Math.PI / 180.0) * Math.Cos(lat2 * Math.PI / 180.0) *
+                    Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            return R * c;
         }
     }
 }
