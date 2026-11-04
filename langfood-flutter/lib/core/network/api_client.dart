@@ -59,15 +59,17 @@ class ApiClient {
 
   static Exception _handleException(dynamic error, Uri uri) {
     if (error is TimeoutException) {
+      final portStr = uri.hasPort ? ':${uri.port}' : '';
       return Exception(
-        'Không thể kết nối tới máy chủ (${uri.host}:${uri.port}).\n'
-        'Quá thời gian chờ (15s). Vui lòng kiểm tra Backend đã bật chưa hoặc điện thoại và PC có cùng lớp mạng Wi-Fi không.',
+        'Không thể kết nối tới máy chủ (${uri.host}$portStr).\n'
+        'Quá thời gian chờ (40s). Vui lòng kiểm tra kết nối mạng hoặc thử lại sau giây lát.',
       );
     }
     if (error is SocketException) {
+      final portStr = uri.hasPort ? ':${uri.port}' : '';
       return Exception(
-        'Không thể kết nối tới ${uri.host}:${uri.port}.\n'
-        'Vui lòng kiểm tra địa chỉ IP trong file .env hoặc Wi-Fi.',
+        'Không thể kết nối tới ${uri.host}$portStr.\n'
+        'Vui lòng kiểm tra kết nối mạng hoặc địa chỉ máy chủ.',
       );
     }
     if (error is Exception) {
@@ -114,7 +116,7 @@ class ApiClient {
     try {
       final response = await _client
           .get(uri, headers: _buildHeaders(token))
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 40));
       developer.log(
         'RESPONSE [${response.statusCode}] <- $uri',
         name: 'ApiClient',
@@ -143,7 +145,7 @@ class ApiClient {
                 ? body
                 : (body != null ? jsonEncode(body) : null),
           )
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 40));
       developer.log(
         'RESPONSE [${response.statusCode}] <- $uri',
         name: 'ApiClient',
@@ -172,7 +174,7 @@ class ApiClient {
                 ? body
                 : (body != null ? jsonEncode(body) : null),
           )
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 40));
       developer.log(
         'RESPONSE [${response.statusCode}] <- $uri',
         name: 'ApiClient',
@@ -194,7 +196,7 @@ class ApiClient {
     try {
       final response = await _client
           .delete(uri, headers: _buildHeaders(token))
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 40));
       developer.log(
         'RESPONSE [${response.statusCode}] <- $uri',
         name: 'ApiClient',

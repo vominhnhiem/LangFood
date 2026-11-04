@@ -37,7 +37,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   late CampusDeliveryLocation _location;
   late CheckoutSelection _selection;
   late final OrderService _service = widget.service ?? OrderService();
-  late final String? _buyerId;
+  String? _buyerId;
   late final double _baseFee;
   final Map<int, OrderModel> _created = {};
   bool _submitting = false;
@@ -57,9 +57,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     try {
       _baseFee = ConfigUrl.shippingFee;
     } catch (_) {
-      _baseFee = 0;
-      _configurationError = true;
-      _error = 'Chưa cấu hình phí giao hàng. Vui lòng quay lại giỏ hàng.';
+      _baseFee = 10000.0;
     }
   }
 
@@ -132,18 +130,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
+  void _retrySubmit() {
+    setState(() {
+      _ambiguousFailure = false;
+      _error = null;
+    });
+    _submit();
+  }
+
   Future<void> _submit() async {
     if (_submitting || _finished || _ambiguousFailure || _configurationError) {
       return;
     }
     final auth = context.read<AuthProvider>();
-    if (_buyerId == null || auth.user?.id != _buyerId) {
+    final currentBuyerId = _buyerId ?? auth.user?.id;
+    if (currentBuyerId == null || auth.user?.id != currentBuyerId) {
       setState(
         () =>
             _error = 'Phiên đăng nhập đã thay đổi. Vui lòng quay lại giỏ hàng.',
       );
       return;
     }
+    _buyerId = currentBuyerId;
     if (!_selection.isValid) return;
     final phone = auth.user?.phoneNumber?.trim() ?? '';
     if (phone.isEmpty) {
@@ -172,7 +180,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         );
         final created = await _service.createOrder(
           OrderModel(
-            buyerId: _buyerId,
+            buyerId: currentBuyerId,
             buyerName: auth.user?.fullName ?? auth.user?.username,
             shopId: group.key,
             totalAmount: subtotal,
@@ -213,7 +221,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           );
         }
         _created[group.key] = created;
-        cart.removePurchased(group.value, _buyerId);
+        cart.removePurchased(group.value, currentBuyerId);
       }
       if (!mounted) return;
       setState(() => _finished = true);
@@ -227,6 +235,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             '${error.toString().replaceFirst('Exception: ', '')}'
             '${_ambiguousFailure ? ' Hãy kiểm tra Đơn hàng trước khi đặt lại để tránh trùng đơn.' : ''}';
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_error!),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: 'Kiểm tra',
+            textColor: Colors.white,
+            onPressed: _openOrders,
+          ),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -283,6 +303,34 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       ),
     );
   }
+
+  Widget _errorCard() => _card(
+    title: 'Chưa hoàn tất đặt đơn',
+    icon: Icons.info_outline,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(_error!, style: const TextStyle(color: AppColors.error)),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            TextButton.icon(
+              onPressed: _openOrders,
+              icon: const Icon(Icons.receipt_long),
+              label: const Text('Kiểm tra Đơn hàng'),
+            ),
+            FilledButton.tonalIcon(
+              onPressed: _submitting ? null : _retrySubmit,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Thử lại đặt đơn'),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
 
   Widget _card({
     required String title,
@@ -381,6 +429,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             : ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  if (_error != null) _errorCard(),
                   if (_selection.byShop.length > 1)
                     _card(
                       title:
@@ -530,21 +579,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       ],
                     ),
                   ),
-                  if (_error != null)
-                    _card(
-                      title: 'Chưa hoàn tất đặt đơn',
-                      icon: Icons.info_outline,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(_error!),
-                          TextButton(
-                            onPressed: _openOrders,
-                            child: const Text('Kiểm tra Đơn hàng'),
-                          ),
-                        ],
-                      ),
-                    ),
+                  if (_error != null) _errorCard(),
                   const SizedBox(height: 8),
                 ],
               ),
@@ -595,7 +630,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           onPressed:
                               _submitting ||
                                   _finished ||
-                                  _ambiguousFailure ||
+                                  (_ambiguousFailure && _created.isEmpty) ||
                                   _configurationError
                               ? null
                               : _submit,
