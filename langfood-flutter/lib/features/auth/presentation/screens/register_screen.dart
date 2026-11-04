@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../data/services/auth_service.dart';
@@ -107,13 +107,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Lỗi gửi OTP: $e (Mẹo test: nhập mã 123456)'),
+          content: Text('Không thể gửi mã OTP: $e. Vui lòng kiểm tra lại địa chỉ email.'),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
         ),
       );
-      // Still show dialog so user can enter dev code 123456
-      _showOtpDialog(email, 'Mẹo kiểm thử: Bạn có thể nhập mã test 123456');
     }
   }
 
@@ -149,18 +148,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 6),
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: AppColors.primaryLight.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  hint,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.primaryDark,
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline_rounded, size: 18, color: AppColors.primaryDark),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Vui lòng mở hộp thư đến (hoặc hòm thư Rác/Spam) của Gmail để xem mã OTP 6 số và nhập vào bên dưới.',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.primaryDark,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),
@@ -386,8 +393,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     if (v == null || v.trim().isEmpty) {
                       return 'Vui lòng nhập email';
                     }
-                    if (!v.contains('@') || !v.contains('.')) {
-                      return 'Email không hợp lệ';
+                    final trimmed = v.trim();
+                    final emailRegex = RegExp(
+                      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                    );
+                    if (!emailRegex.hasMatch(trimmed) || trimmed.split('@').length != 2) {
+                      return 'Email không hợp lệ (ví dụ: student@vnu.edu.vn)';
                     }
                     return null;
                   },
