@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../data/services/auth_service.dart';
@@ -243,12 +243,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         }
 
                         scaffold.showSnackBar(
-                          const SnackBar(
+                          SnackBar(
                             content: Text(
-                              'Đăng ký tài khoản thành công! Vui lòng đăng nhập.',
+                              _selectedRoleId == 1
+                                  ? 'Đăng ký tài khoản thành công! Vui lòng đăng nhập.'
+                                  : 'Đăng ký thành công! Hồ sơ của bạn đang chờ Quản trị viên duyệt trước khi có thể hoạt động.',
                             ),
                             backgroundColor: AppColors.success,
                             behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 4),
                           ),
                         );
 
@@ -333,7 +336,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 20),
 
                 // Full Name
-                _buildFieldTitle(_selectedRoleId == 2 ? 'Họ và tên chủ quán *' : (_selectedRoleId == 3 ? 'Họ và tên tài xế *' : 'Họ và tên *')),
+                _buildFieldTitle(
+                  _selectedRoleId == 2
+                      ? 'Họ và tên chủ quán *'
+                      : (_selectedRoleId == 3
+                            ? 'Họ và tên tài xế *'
+                            : 'Họ và tên *'),
+                ),
                 TextFormField(
                   controller: _fullNameController,
                   decoration: _inputDecoration(
@@ -703,14 +712,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(width: 8),
             _buildRoleChip(2, Icons.storefront_outlined, 'Chủ quán', 'Bán món'),
             const SizedBox(width: 8),
-            _buildRoleChip(3, Icons.directions_bike_outlined, 'Shipper', 'Giao hàng'),
+            _buildRoleChip(
+              3,
+              Icons.directions_bike_outlined,
+              'Shipper',
+              'Giao hàng',
+            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildRoleChip(int roleId, IconData icon, String label, String sublabel) {
+  Widget _buildRoleChip(
+    int roleId,
+    IconData icon,
+    String label,
+    String sublabel,
+  ) {
     final isSelected = _selectedRoleId == roleId;
     return Expanded(
       child: InkWell(
@@ -748,7 +767,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 sublabel,
                 style: TextStyle(
                   fontSize: 10,
-                  color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.textSecondary,
                 ),
               ),
             ],
@@ -775,10 +796,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             final name = (b['name'] ?? b['Name'] ?? 'Tòa $id').toString();
             return DropdownMenuItem<int>(
               value: id,
-              child: Text(
-                name,
-                style: const TextStyle(fontSize: 14),
-              ),
+              child: Text(name, style: const TextStyle(fontSize: 14)),
             );
           }).toList(),
           onChanged: (val) {

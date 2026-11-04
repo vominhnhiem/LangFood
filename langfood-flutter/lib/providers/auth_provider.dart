@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -114,6 +114,31 @@ class AuthProvider extends ChangeNotifier {
     _user = profile;
     await _persist(profile);
     _notify();
+  }
+
+  Future<UserModel?> refreshProfile() async {
+    if (_user == null) return null;
+    final epoch = _epoch;
+    _isLoading = true;
+    _notify();
+    try {
+      final fresh = await _authService.getUserById(_user!.id);
+      if (epoch == _epoch && !_disposed) {
+        _user = fresh;
+        await _persist(fresh);
+        _notify();
+        return fresh;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Refresh profile error: $e');
+      return null;
+    } finally {
+      if (epoch == _epoch && !_disposed) {
+        _isLoading = false;
+        _notify();
+      }
+    }
   }
 
   Future<void> logout() async {

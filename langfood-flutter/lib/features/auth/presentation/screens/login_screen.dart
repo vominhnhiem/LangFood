@@ -44,12 +44,22 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (success) {
+      final user = authProvider.user;
+      final isPending =
+          ((user?.isSeller == true || user?.roleId == 2) ||
+              (user?.isShipper == true || user?.roleId == 3)) &&
+          user?.isApproved != true;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Xin chào, ${authProvider.user?.fullName ?? authProvider.user?.username}!',
+            isPending
+                ? 'Xin chào ${user?.fullName ?? user?.username}! Hồ sơ đang chờ Quản trị viên duyệt.'
+                : 'Xin chào, ${user?.fullName ?? user?.username}!',
           ),
-          backgroundColor: AppColors.success,
+          backgroundColor: isPending
+              ? Colors.amber.shade800
+              : AppColors.success,
           behavior: SnackBarBehavior.floating,
         ),
       );

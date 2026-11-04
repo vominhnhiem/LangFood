@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -9,6 +9,7 @@ import 'core/showcase/design_system_showcase.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/home/presentation/screens/home_screen.dart';
+import 'features/auth/presentation/screens/pending_approval_screen.dart';
 import 'features/restaurant/presentation/screens/shop_orders_screen.dart';
 import 'features/shipper/presentation/screens/shipper_orders_screen.dart';
 import 'providers/auth_provider.dart';
@@ -90,6 +91,11 @@ class AuthWrapper extends StatelessWidget {
           user?.shipperId != null ||
           user?.username.toLowerCase() == 'shipper';
       final isShop = user?.isSeller == true || user?.roleId == 2;
+
+      // Đối tác Chủ quán hoặc Shipper phải được Admin duyệt mới vào giao diện quản lý
+      if ((isShipper || isShop) && user?.isApproved != true) {
+        return const PendingApprovalScreen();
+      }
 
       if (isShipper) {
         return const ShipperOrdersScreen();
