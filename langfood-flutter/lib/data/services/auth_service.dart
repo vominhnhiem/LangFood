@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import '../../core/network/api_client.dart';
 import '../models/user_model.dart';
@@ -71,6 +71,10 @@ class AuthService {
     required String phone,
     int? buildingId,
     String? ktxRoom,
+    int roleId = 1,
+    String? shopName,
+    String? shopAddress,
+    String? mssv,
   }) async {
     final response = await ApiClient.post(
       'api/Users/register',
@@ -82,7 +86,11 @@ class AuthService {
         'phoneNumber': phone,
         'buildingId': buildingId,
         'ktxRoom': ktxRoom,
-        'roleId': 1, // Student / Customer
+        'roleId': roleId,
+        if (shopName != null && shopName.isNotEmpty) 'shopName': shopName,
+        if (shopAddress != null && shopAddress.isNotEmpty)
+          'shopAddress': shopAddress,
+        if (mssv != null && mssv.isNotEmpty) 'mssv': mssv,
       },
     );
 

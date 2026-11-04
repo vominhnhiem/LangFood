@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LangFood.Shared.Models;
 using Microsoft.Extensions.Caching.Memory;
@@ -146,18 +146,66 @@ namespace LangFoodBackend.Controllers
 
             var wallet = new Wallet { UserId = user.Id, Balance = 0, UpdatedAt = DateTime.Now };
 
-            if (!string.IsNullOrEmpty(user.ShopName))
+            if (user.RoleId == 2 || !string.IsNullOrEmpty(user.ShopName))
             {
-                user.IsApproved = false;
                 user.RoleId = 2;
+                user.IsApproved = true;
                 _context.Users.Add(user);
                 _context.Wallets.Add(wallet);
-                _context.RoleRequests.Add(new RoleRequest { UserId = user.Id, RequestType = 1, ShopName = user.ShopName, ShopAddress = user.ShopAddress, Status = 0 });
+
+                var shop = new Shop
+                {
+                    UserId = user.Id,
+                    Name = !string.IsNullOrWhiteSpace(user.ShopName) ? user.ShopName : $"{user.FullName}'s Shop",
+                    Address = !string.IsNullOrWhiteSpace(user.ShopAddress) ? user.ShopAddress : (user.Building?.Name ?? "KTX Khu B"),
+                    IsActive = true,
+                    IsOpen = true
+                };
+                user.Shop = shop;
+                _context.Shops.Add(shop);
+                _context.RoleRequests.Add(new RoleRequest
+                {
+                    UserId = user.Id,
+                    RequestType = 1,
+                    ShopName = shop.Name,
+                    ShopAddress = shop.Address,
+                    Status = 1
+                });
+            }
+            else if (user.RoleId == 3)
+            {
+                user.RoleId = 3;
+                user.IsApproved = true;
+                _context.Users.Add(user);
+                _context.Wallets.Add(wallet);
+
+                string mssv = !string.IsNullOrWhiteSpace(user.Mssv) 
+                    ? user.Mssv 
+                    : (!string.IsNullOrWhiteSpace(user.CccdNumber) 
+                        ? user.CccdNumber 
+                        : "SV" + new Random().Next(100000, 999999));
+                var shipper = new Shipper
+                {
+                    UserId = user.Id,
+                    Mssv = mssv,
+                    IsApproved = true,
+                    IsOnline = true,
+                    CreatedAt = DateTime.Now
+                };
+                user.Shipper = shipper;
+                _context.Shippers.Add(shipper);
+                _context.RoleRequests.Add(new RoleRequest
+                {
+                    UserId = user.Id,
+                    RequestType = 2,
+                    ShopName = "MSSV: " + mssv,
+                    Status = 1
+                });
             }
             else
             {
-                user.IsApproved = true;
                 user.RoleId = 1;
+                user.IsApproved = true;
                 _context.Users.Add(user);
                 _context.Wallets.Add(wallet);
             }

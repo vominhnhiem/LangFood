@@ -21,7 +21,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _roomController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _shopNameController = TextEditingController();
+  final _shopAddressController = TextEditingController();
+  final _mssvController = TextEditingController();
 
+  int _selectedRoleId = 1; // 1: Sinh viên, 2: Chủ quán, 3: Shipper
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
@@ -45,6 +49,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _roomController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _shopNameController.dispose();
+    _shopAddressController.dispose();
+    _mssvController.dispose();
     super.dispose();
   }
 
@@ -216,7 +223,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           buildingId: _isBuildingFromApi
                               ? _selectedBuildingId
                               : null,
-                          ktxRoom: _roomController.text.trim(),
+                          ktxRoom: _selectedRoleId == 1
+                              ? _roomController.text.trim()
+                              : null,
+                          roleId: _selectedRoleId,
+                          shopName: _selectedRoleId == 2
+                              ? _shopNameController.text.trim()
+                              : null,
+                          shopAddress: _selectedRoleId == 2
+                              ? _shopAddressController.text.trim()
+                              : null,
+                          mssv: _selectedRoleId == 3
+                              ? _mssvController.text.trim()
+                              : null,
                         );
 
                         if (ctx.mounted) {
@@ -307,10 +326,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     color: AppColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
+
+                // Role Selector
+                _buildRoleSelector(),
+                const SizedBox(height: 20),
 
                 // Full Name
-                _buildFieldTitle('Họ và tên *'),
+                _buildFieldTitle(_selectedRoleId == 2 ? 'Họ và tên chủ quán *' : (_selectedRoleId == 3 ? 'Họ và tên tài xế *' : 'Họ và tên *')),
                 TextFormField(
                   controller: _fullNameController,
                   decoration: _inputDecoration(
@@ -383,73 +406,98 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // KTX Building & Room
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildFieldTitle('Tòa nhà KTX'),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              color: AppColors.background,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: AppColors.border),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<int>(
-                                isExpanded: true,
-                                value: _selectedBuildingId,
-                                items: _buildings.map((b) {
-                                  final id = (b['id'] ?? b['Id']) as int;
-                                  final name =
-                                      (b['name'] ?? b['Name'] ?? 'Tòa $id')
-                                          .toString();
-                                  return DropdownMenuItem<int>(
-                                    value: id,
-                                    child: Text(
-                                      name,
-                                      style: const TextStyle(fontSize: 14),
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: (val) {
-                                  if (val != null) {
-                                    setState(() => _selectedBuildingId = val);
-                                  }
-                                },
+                // Dynamic fields by selected role
+                if (_selectedRoleId == 1) ...[
+                  // KTX Building & Room
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildFieldTitle('Tòa nhà KTX'),
+                            _buildBuildingDropdown(),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildFieldTitle('Phòng'),
+                            TextFormField(
+                              controller: _roomController,
+                              decoration: _inputDecoration(
+                                'P. 402',
+                                Icons.meeting_room_outlined,
                               ),
+                              validator: (v) => (v == null || v.trim().isEmpty)
+                                  ? 'Nhập phòng'
+                                  : null,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ] else if (_selectedRoleId == 2) ...[
+                  // Shop Name
+                  _buildFieldTitle('Tên quán ăn *'),
+                  TextFormField(
+                    controller: _shopNameController,
+                    decoration: _inputDecoration(
+                      'Ví dụ: Cơm Tấm Đêm Tân Lập',
+                      Icons.store_mall_directory_outlined,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildFieldTitle('Phòng'),
-                          TextFormField(
-                            controller: _roomController,
-                            decoration: _inputDecoration(
-                              'P. 402',
-                              Icons.meeting_room_outlined,
-                            ),
-                            validator: (v) => (v == null || v.trim().isEmpty)
-                                ? 'Nhập phòng'
-                                : null,
-                          ),
-                        ],
-                      ),
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Vui lòng nhập tên quán ăn'
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Shop Address
+                  _buildFieldTitle('Địa chỉ / Vị trí quán *'),
+                  TextFormField(
+                    controller: _shopAddressController,
+                    decoration: _inputDecoration(
+                      'Ví dụ: Tầng trệt C1 - KTX Khu B',
+                      Icons.place_outlined,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Vui lòng nhập địa chỉ quán'
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Nearest Building
+                  _buildFieldTitle('Khu vực / Tòa KTX gần nhất'),
+                  _buildBuildingDropdown(),
+                  const SizedBox(height: 16),
+                ] else if (_selectedRoleId == 3) ...[
+                  // MSSV for Shipper
+                  _buildFieldTitle('Mã số sinh viên (MSSV) *'),
+                  TextFormField(
+                    controller: _mssvController,
+                    keyboardType: TextInputType.number,
+                    decoration: _inputDecoration(
+                      'Ví dụ: 21110123',
+                      Icons.badge_outlined,
+                    ),
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Vui lòng nhập MSSV'
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Building where shipper resides
+                  _buildFieldTitle('Tòa nhà KTX đang lưu trú'),
+                  _buildBuildingDropdown(),
+                  const SizedBox(height: 16),
+                ],
 
                 // Password
                 _buildFieldTitle('Mật khẩu *'),
@@ -640,6 +688,105 @@ class _RegisterScreenState extends State<RegisterScreen> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+      ),
+    );
+  }
+
+  Widget _buildRoleSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildFieldTitle('Bạn đăng ký với vai trò *'),
+        Row(
+          children: [
+            _buildRoleChip(1, Icons.school_outlined, 'Sinh viên', 'Đặt món'),
+            const SizedBox(width: 8),
+            _buildRoleChip(2, Icons.storefront_outlined, 'Chủ quán', 'Bán món'),
+            const SizedBox(width: 8),
+            _buildRoleChip(3, Icons.directions_bike_outlined, 'Shipper', 'Giao hàng'),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRoleChip(int roleId, IconData icon, String label, String sublabel) {
+    final isSelected = _selectedRoleId == roleId;
+    return Expanded(
+      child: InkWell(
+        onTap: () => setState(() => _selectedRoleId = roleId),
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.primary.withValues(alpha: 0.1)
+                : AppColors.background,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : AppColors.border,
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                size: 24,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                ),
+              ),
+              Text(
+                sublabel,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBuildingDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          isExpanded: true,
+          value: _selectedBuildingId,
+          items: _buildings.map((b) {
+            final id = (b['id'] ?? b['Id']) as int;
+            final name = (b['name'] ?? b['Name'] ?? 'Tòa $id').toString();
+            return DropdownMenuItem<int>(
+              value: id,
+              child: Text(
+                name,
+                style: const TextStyle(fontSize: 14),
+              ),
+            );
+          }).toList(),
+          onChanged: (val) {
+            if (val != null) {
+              setState(() => _selectedBuildingId = val);
+            }
+          },
+        ),
       ),
     );
   }

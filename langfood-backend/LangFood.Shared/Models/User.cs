@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
@@ -36,6 +36,9 @@ namespace LangFood.Shared.Models
 
         [NotMapped]
         public string? ShopAddress { get; set; }
+
+        [NotMapped]
+        public string? Mssv { get; set; }
 
         [NotMapped]
         public string? Token { get; set; }
