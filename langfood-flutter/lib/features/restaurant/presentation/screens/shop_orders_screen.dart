@@ -1,3 +1,4 @@
+﻿import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/account_menu.dart';
 import 'merchant_products_screen.dart';
 
@@ -107,7 +108,43 @@ class _ShopOrdersScreenState extends State<ShopOrdersScreen> {
     body: _loading
         ? const Center(child: CircularProgressIndicator())
         : _error != null
-        ? Center(child: Text(_error!))
+        ? Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.cloud_off_rounded,
+                    size: 56,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    _error!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  FilledButton.icon(
+                    onPressed: _refresh,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Thử lại'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
         : RefreshIndicator(
             onRefresh: _refresh,
             child: ListView(
