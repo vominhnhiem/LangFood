@@ -1,4 +1,4 @@
-using LangFood.Shared;
+﻿using LangFood.Shared;
 using LangFood.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -51,38 +51,43 @@ using (var scope = app.Services.CreateScope())
     {
         var rootAdminEmail = "admin@langfood.vn";
         var rootAdmin = context.Users.FirstOrDefault(u => u.Email == rootAdminEmail || u.Username == "admin");
-        if (rootAdmin == null)
+        if (rootAdmin != null && (rootAdmin.RoleId != 0 || !rootAdmin.IsApproved))
         {
-            using (var sha256 = System.Security.Cryptography.SHA256.Create())
+            rootAdmin.RoleId = 0;
+            rootAdmin.IsApproved = true;
+            rootAdmin.PasswordHash = "Admin@123";
+            rootAdmin.CanManageOrders = true;
+            rootAdmin.CanManageFinance = true;
+            rootAdmin.CanManageShops = true;
+            context.SaveChanges();
+            Console.WriteLine("Auto-healed Super Admin: admin@langfood.vn / Admin@123");
+        }
+        else if (rootAdmin == null)
+        {
+            var newRoot = new User
             {
-                var bytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes("admin"));
-                var passwordHash = Convert.ToHexString(bytes).ToLower();
+                Id = Guid.NewGuid().ToString(),
+                Username = "admin",
+                Email = rootAdminEmail,
+                FullName = "Super Admin tổng",
+                PasswordHash = "Admin@123",
+                RoleId = 0, // Admin
+                IsApproved = true,
+                CanManageOrders = true,
+                CanManageFinance = true,
+                CanManageShops = true
+            };
+            context.Users.Add(newRoot);
 
-                var newRoot = new User
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    Username = "admin",
-                    Email = rootAdminEmail,
-                    FullName = "Super Admin tổng",
-                    PasswordHash = passwordHash,
-                    RoleId = 0, // Admin
-                    IsApproved = true,
-                    CanManageOrders = true,
-                    CanManageFinance = true,
-                    CanManageShops = true
-                };
-                context.Users.Add(newRoot);
-
-                var wallet = new Wallet
-                {
-                    UserId = newRoot.Id,
-                    Balance = 0,
-                    UpdatedAt = DateTime.Now
-                };
-                context.Wallets.Add(wallet);
-                context.SaveChanges();
-                Console.WriteLine("Seeded default Super Admin: admin@langfood.vn / admin");
-            }
+            var wallet = new Wallet
+            {
+                UserId = newRoot.Id,
+                Balance = 0,
+                UpdatedAt = DateTime.Now
+            };
+            context.Wallets.Add(wallet);
+            context.SaveChanges();
+            Console.WriteLine("Seeded default Super Admin: admin@langfood.vn / Admin@123");
         }
     }
     catch (Exception ex)

@@ -1,4 +1,4 @@
--- ======================================================================================
+﻿-- ======================================================================================
 -- LANGFOOD — SCRIPT KHỞI TẠO DỮ LIỆU THẬT KTX ĐHQG TP.HCM (KTX KHU B & KHU A)
 -- Dự án: LangFood - Ứng dụng đặt món & giao đồ ăn KTX Làng Đại Học TP.HCM
 -- Cơ sở dữ liệu: LangFoodBackendDB (SQL Server)
@@ -294,7 +294,7 @@ INSERT INTO [Users] (
 ('919741A9-FABE-483D-950C-64E260AEE784', 'shipper', '123456', 3, N'Tài Xế Shipper KTX Khu B', 'shipper@langfood.vn', '0908889999', 15, N'P. 201', 1, 1, 0, 0, 0),
 
 -- Admin Quản trị hệ thống
-('c6eba905-994e-4a44-93f9-e37c143644fd', 'admin', 'Admin@123', 1, N'Làng Food Administrator', 'admin@langfood.vn', '0909999999', NULL, NULL, 1, 1, 1, 1, 1);
+('c6eba905-994e-4a44-93f9-e37c143644fd', 'admin', 'Admin@123', 0, N'Làng Food Administrator', 'admin@langfood.vn', '0909999999', NULL, NULL, 1, 1, 1, 1, 1);
 GO
 
 SET IDENTITY_INSERT [Wallets] ON;
