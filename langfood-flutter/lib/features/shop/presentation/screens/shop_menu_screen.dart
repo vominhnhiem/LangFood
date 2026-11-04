@@ -12,6 +12,7 @@ import '../../../../core/widgets/langfood_empty_state.dart';
 import '../../../../core/widgets/langfood_floating_cart_pill.dart';
 import '../../../../core/widgets/langfood_loading_skeleton.dart';
 import '../../../../data/models/product_model.dart';
+import '../../../../data/models/lobby_room.dart';
 import '../../../../data/models/shop_model.dart';
 import '../../../../data/services/product_service.dart';
 import '../../../../providers/auth_provider.dart';
@@ -29,6 +30,7 @@ import '../widgets/shop_product_card.dart';
 /// - Floating Cart Pill nổi ở đáy (Level 3 Elevation)
 /// - Trạng thái Loading Skeleton, Empty State, Error State và Closed State
 class ShopMenuScreen extends StatefulWidget {
+  final LobbyRoom? lobbyRoom;
   final int shopId;
   final String? initialShopName;
   final ShopModel? initialShop;
@@ -39,6 +41,7 @@ class ShopMenuScreen extends StatefulWidget {
     super.key,
     required this.shopId,
     this.initialShopName,
+    this.lobbyRoom,
     this.initialShop,
     this.initialProducts,
     this.productService,
@@ -242,7 +245,12 @@ class _ShopMenuScreenState extends State<ShopMenuScreen> {
     AppHaptics.light();
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => FoodDetailScreen(product: product)),
+      MaterialPageRoute(
+        builder: (_) => FoodDetailScreen(
+          product: product,
+          lobbyRoom: widget.lobbyRoom,
+        ),
+      ),
     );
   }
 
@@ -330,7 +338,7 @@ class _ShopMenuScreenState extends State<ShopMenuScreen> {
     AppHaptics.light();
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const CartScreen()),
+      MaterialPageRoute(builder: (_) => CartScreen(lobbyRoom: widget.lobbyRoom)),
     );
   }
 

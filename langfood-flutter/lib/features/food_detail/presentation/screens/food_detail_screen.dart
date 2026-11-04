@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../data/models/product_model.dart';
+import '../../../../data/models/lobby_room.dart';
 import '../../../../data/models/product_option_model.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../../providers/cart_provider.dart';
@@ -15,7 +16,9 @@ import '../widgets/food_customization_sheet.dart';
 class FoodDetailScreen extends StatefulWidget {
   final ProductModel product;
 
-  const FoodDetailScreen({super.key, required this.product});
+  final LobbyRoom? lobbyRoom;
+
+  const FoodDetailScreen({super.key, required this.product, this.lobbyRoom});
 
   @override
   State<FoodDetailScreen> createState() => _FoodDetailScreenState();
@@ -132,7 +135,9 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const CartScreen()),
+              MaterialPageRoute(
+                builder: (_) => CartScreen(lobbyRoom: widget.lobbyRoom),
+              ),
             );
           },
         ),
@@ -387,6 +392,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
             builder: (_) => ShopMenuScreen(
               shopId: widget.product.shopId,
               initialShopName: widget.product.shopName,
+              lobbyRoom: widget.lobbyRoom,
             ),
           ),
         );

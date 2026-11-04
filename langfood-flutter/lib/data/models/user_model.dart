@@ -34,6 +34,7 @@ class UserModel {
   final int? shopId;
   final String? shopName;
   final int? shipperId;
+  final String? token;
 
   UserModel({
     required this.id,
@@ -49,6 +50,7 @@ class UserModel {
     this.shopId,
     this.shopName,
     this.shipperId,
+    this.token,
   });
 
   bool get isShipper => roleId == 3 || shipperId != null;
@@ -96,6 +98,7 @@ class UserModel {
       shopId: sId,
       shopName: sName ?? json['shopName'] ?? json['ShopName'],
       shipperId: shId,
+      token: json['token'] as String?,
     );
   }
 

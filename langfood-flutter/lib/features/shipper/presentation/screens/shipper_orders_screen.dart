@@ -233,7 +233,7 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
 
     try {
       if (shipperId == null) throw Exception('Tài khoản chưa có mã shipper.');
-      if (order.status != 'Delivering')
+      if (order.status != 'Delivering' && order.status != 'PickingUp')
         await _orderService.acceptOrder(order.id!, shipperId);
       if (mounted) Navigator.pop(context);
 
@@ -256,6 +256,7 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
             builder: (_) => LiveTrackingScreen(
               orderId: order.id ?? 1,
               isShipper: true,
+              autoShareGps: true,
               initialCustomerPos: order.latitude == 0 && order.longitude == 0
                   ? null
                   : LatLng(order.latitude, order.longitude),
@@ -715,7 +716,10 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
                                   size: 18,
                                 ),
                                 label: Text(
-                                  order.status == 'Delivering' ? 'MỞ THEO DÕI' : 'NHẬN ĐƠN NGAY',
+                                  order.status == 'Delivering' ||
+                                          order.status == 'PickingUp'
+                                      ? 'MỞ THEO DÕI'
+                                      : 'NHẬN ĐƠN NGAY',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,

@@ -10,6 +10,7 @@ import '../data/services/auth_service.dart';
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService;
   UserModel? _user;
+  String? _accessToken;
   bool _isLoading = false;
   bool _disposed = false;
   int _epoch = 0;
@@ -19,6 +20,7 @@ class AuthProvider extends ChangeNotifier {
     if (restoreSession) loadUserFromPrefs();
   }
   UserModel? get user => _user;
+  String? get accessToken => _accessToken;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isLoggedIn => _user != null;
@@ -94,6 +96,8 @@ class AuthProvider extends ChangeNotifier {
       final user = await _authService.login(username, password);
       if (epoch != _epoch || _disposed) return false;
       await _persist(user);
+      if (epoch != _epoch || _disposed) return false;
+      _accessToken = user.token;
       _user = user;
       return true;
     } catch (e) {
@@ -115,6 +119,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     _epoch++;
     _user = null;
+    _accessToken = null;
     _notify();
     final prefs = await SharedPreferences.getInstance();
     for (final key in [

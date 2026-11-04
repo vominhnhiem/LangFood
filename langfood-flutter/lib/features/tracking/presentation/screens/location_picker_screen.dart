@@ -67,12 +67,14 @@ class CampusDeliveryLocation {
 /// - Nút CTA cố định chuyển tiếp sang CheckoutScreen (LF-07)
 class LocationPickerScreen extends StatefulWidget {
   final CampusDeliveryLocation? initialLocation;
+  final String? lobbyBuildingName;
   final TileProvider? tileProvider;
   final bool returnResult;
 
   const LocationPickerScreen({
     super.key,
     this.initialLocation,
+    this.lobbyBuildingName,
     this.tileProvider,
     this.returnResult = false,
   });
@@ -95,6 +97,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
   late String _subAddress;
   String _dropOffOption = 'g'; // 'g', 'gate', 'door'
   double _dropOffExtraFee = 0.0;
+  bool _pickedLobbyPosition = false;
   final TextEditingController _roomController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
@@ -167,6 +170,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
     setState(() {
       _selectedPresetIndex = index;
       _selectedPosition = targetPos;
+      _pickedLobbyPosition = true;
       _buildingName = hotspot['building'] as String;
       _subAddress = hotspot['address'] as String;
       _searchController.text = _buildingName;
@@ -179,6 +183,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
     AppHaptics.light();
     setState(() {
       _selectedPosition = point;
+      _pickedLobbyPosition = true;
       _selectedPresetIndex = -1; // Deselect preset
       _buildingName = 'Điểm ghim tùy chọn';
       _subAddress =
@@ -264,6 +269,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
       if (mounted) {
         setState(() {
           _selectedPosition = newLatLng;
+          _pickedLobbyPosition = true;
           _selectedPresetIndex = -1;
           _buildingName = 'Vị trí hiện tại của bạn';
           _subAddress =
@@ -309,6 +315,15 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
 
   void _confirmAndProceedToCheckout() {
     AppHaptics.medium();
+    final lobbyBuilding = widget.lobbyBuildingName;
+    if (lobbyBuilding != null &&
+        ((!_pickedLobbyPosition && widget.initialLocation == null) ||
+            _dropOffOption != 'g')) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Chọn hoặc ghim đúng sảnh $lobbyBuilding, rồi chọn Sảnh tầng G.'),
+      ));
+      return;
+    }
 
     String dropOffLabel = 'Sảnh tầng G (Chân thang máy)';
     if (_dropOffOption == 'gate') {
@@ -327,7 +342,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
 
     final locationData = CampusDeliveryLocation(
       position: _selectedPosition,
-      buildingName: _buildingName,
+      buildingName: lobbyBuilding == null ? _buildingName : 'Sảnh $lobbyBuilding',
       subAddress: _subAddress,
       dropOffOptionKey: _dropOffOption,
       dropOffOptionLabel: dropOffLabel,
@@ -754,7 +769,9 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Khuôn viên Ký túc xá ĐHQG TP.HCM',
+                          widget.lobbyBuildingName == null
+                              ? 'Khuôn viên Ký túc xá ĐHQG TP.HCM'
+                              : 'Ghim điểm nhận tại sảnh ${widget.lobbyBuildingName}',
                           style: AppTypography.bodySm.copyWith(
                             color: theme.textSecondary,
                           ),

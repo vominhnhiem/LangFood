@@ -113,6 +113,8 @@ namespace LangFoodBackend.Controllers
         {
             var order = await _context.Orders.FindAsync(id);
             if (order == null) return NotFound();
+            if (await _context.LobbyRooms.AnyAsync(room => room.OrderId == id))
+                return Conflict(new { message = "Đơn gom đã chốt. Hãy liên hệ quán nếu cần hủy cả chuyến." });
 
             // Chỉ cho phép xóa đơn nếu đang ở trạng thái chờ thanh toán hoặc chưa được xử lý
             if (order.Status == "PendingPayment" || order.Status == "Pending")
@@ -160,9 +162,10 @@ namespace LangFoodBackend.Controllers
             var order = await _context.Orders.FindAsync(id);
             if (order == null) return NotFound();
 
-            // Chỉ quán mới có thể nhận khi đơn đã thanh toán hoặc là tiền mặt (Pending)
-            order.Status = "Preparing";
-            await _context.SaveChangesAsync();
+            if (order.Status == "Preparing") return Ok();
+            var updated = await _context.Orders.Where(o => o.Id == id && o.Status == "Pending")
+                .ExecuteUpdateAsync(update => update.SetProperty(o => o.Status, "Preparing"));
+            if (updated == 0) return BadRequest(new { message = "Đơn không còn chờ quán xác nhận." });
             return Ok();
         }
 
@@ -172,8 +175,10 @@ namespace LangFoodBackend.Controllers
         {
             var order = await _context.Orders.FindAsync(id);
             if (order == null) return NotFound();
-            order.Status = "Ready";
-            await _context.SaveChangesAsync();
+            if (order.Status == "Ready") return Ok();
+            var updated = await _context.Orders.Where(o => o.Id == id && o.Status == "Preparing")
+                .ExecuteUpdateAsync(update => update.SetProperty(o => o.Status, "Ready"));
+            if (updated == 0) return BadRequest(new { message = "Đơn không còn ở bước chuẩn bị món." });
             return Ok();
         }
 
@@ -185,7 +190,7 @@ namespace LangFoodBackend.Controllers
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
                 .Where(o =>
                     ((o.Status == "Ready" || o.Status == "Confirmed" || o.Status == "Accepted") && o.ShipperId == null) ||
-                    (o.Status == "Delivering" && o.ShipperId == shipperId)
+                    ((o.Status == "PickingUp" || o.Status == "Delivering") && o.ShipperId == shipperId)
                 )
                 .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
@@ -193,13 +198,26 @@ namespace LangFoodBackend.Controllers
 
         // --- 7. SHIPPER NHẬN ĐƠN (Có chặn giới hạn & giam tiền ví) ---
         [HttpPut("accept/{id}")]
-        public async Task<IActionResult> AcceptOrder(int id, [FromQuery] int shipperId)
+        public Task<IActionResult> AcceptOrder(int id, [FromQuery] int shipperId) =>
+            AssignOrder(id, shipperId, "Delivering");
+
+        [HttpPut("{id}/claim")]
+        public Task<IActionResult> ClaimOrder(int id, [FromQuery] int shipperId) =>
+            AssignOrder(id, shipperId, "PickingUp");
+
+        private async Task<IActionResult> AssignOrder(int id, int shipperId, string nextStatus)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(
+                System.Data.IsolationLevel.Serializable);
             var order = await _context.Orders.FindAsync(id);
             if (order == null) return NotFound();
 
             if (order.ShipperId != null && order.ShipperId != shipperId)
                 return BadRequest(new { message = "Đơn hàng đã có người khác nhận." });
+
+            if (order.ShipperId == shipperId &&
+                (order.Status == "PickingUp" || order.Status == "Delivering"))
+                return Ok();
 
             if (order.Status != "Ready" && order.Status != "Confirmed" && order.Status != "Accepted")
                 return BadRequest(new { message = "Đơn hàng chưa sẵn sàng để giao." });
@@ -209,7 +227,8 @@ namespace LangFoodBackend.Controllers
             int maxLimit = settings?.MaxOrderPerShipper ?? 3;
 
             var deliveringCount = await _context.Orders
-                .CountAsync(o => o.ShipperId == shipperId && o.Status == "Delivering");
+                .CountAsync(o => o.ShipperId == shipperId &&
+                    (o.Status == "PickingUp" || o.Status == "Delivering"));
 
             if (deliveringCount >= maxLimit)
             {
@@ -217,6 +236,7 @@ namespace LangFoodBackend.Controllers
             }
 
             var shipper = await _context.Shippers.FindAsync(shipperId);
+            if (shipper == null) return NotFound(new { message = "Không tìm thấy shipper." });
             var wallet = await _context.Wallets.FirstOrDefaultAsync(w => w.UserId == shipper.UserId);
 
             // Số tiền giam = Tiền món + phí ship
@@ -239,17 +259,35 @@ namespace LangFoodBackend.Controllers
             });
 
             order.ShipperId = shipperId;
-            order.Status = "Delivering";
+            order.Status = nextStatus;
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
             return Ok();
+        }
+
+        [HttpPut("{id}/pickup")]
+        public async Task<IActionResult> ConfirmPickup(int id, [FromQuery] int shipperId)
+        {
+            var assigned = _context.Orders.Where(o => o.Id == id && o.ShipperId == shipperId);
+            var updated = await assigned.Where(o => o.Status == "PickingUp")
+                .ExecuteUpdateAsync(update => update.SetProperty(o => o.Status, "Delivering"));
+
+            if (updated > 0 || await assigned.AnyAsync(o => o.Status == "Delivering"))
+                return Ok();
+
+            return BadRequest(new { message = "Đơn không còn chờ lấy món hoặc chưa được gán cho shipper này." });
         }
 
         // --- 8. HOÀN THÀNH ĐƠN HÀNG (Chia tiền Quán & Shipper) ---
         [HttpPut("complete/{id}")]
         public async Task<IActionResult> CompleteOrder(int id)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(
+                System.Data.IsolationLevel.Serializable);
             var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == id);
             if (order == null || order.Status == "Completed") return Ok();
+            if (order.Status != "Delivering")
+                return BadRequest(new { message = "Đơn phải đang giao mới có thể hoàn tất." });
 
             order.Status = "Completed";
             order.DeliveredAt = DateTime.Now;
@@ -288,6 +326,7 @@ namespace LangFoodBackend.Controllers
             }
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
             return Ok(new { message = "Giao hàng thành công" });
         }
 
@@ -373,7 +412,8 @@ namespace LangFoodBackend.Controllers
 
             var order = await _context.Orders.FindAsync(id);
             if (order == null) return NotFound(new { message = "Order not found." });
-            if (order.Status != "Delivering" || !dto.ShipperId.HasValue || order.ShipperId != dto.ShipperId)
+            if ((order.Status != "Delivering" && order.Status != "PickingUp") ||
+                !dto.ShipperId.HasValue || order.ShipperId != dto.ShipperId)
                 return BadRequest(new { message = "GPS updates require the assigned shipper and an active delivery." });
 
             var result = new ShipperLocationResultDto

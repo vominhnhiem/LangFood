@@ -147,6 +147,7 @@ class LiveTrackingScreen extends StatefulWidget {
   final OrderService? service;
   final TileProvider? tileProvider;
   final bool enablePeriodicTimer;
+  final bool autoShareGps;
   const LiveTrackingScreen({
     super.key,
     required this.orderId,
@@ -157,6 +158,7 @@ class LiveTrackingScreen extends StatefulWidget {
     this.service,
     this.tileProvider,
     this.enablePeriodicTimer = true,
+    this.autoShareGps = false,
   });
   @override
   State<LiveTrackingScreen> createState() => _LiveTrackingScreenState();
@@ -180,8 +182,17 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
   bool _sendingLocation = false;
   bool _completing = false;
   bool _mapReady = false;
+  LatLng? _pickupPosition;
+  String? _pickupAddress;
+  bool _confirmingPickup = false;
+  bool _autoShareAttempted = false;
+  bool _startingGps = false;
+  String? _gpsError;
 
   LatLng? get _destination {
+    if (_order?.status == 'PickingUp') {
+      return _pickupPosition;
+    }
     final lat = _order?.deliveryLatitude;
     final lng = _order?.deliveryLongitude;
     if (lat != null && lng != null) return LatLng(lat, lng);
@@ -212,7 +223,22 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
       final order = await _service.getOrderById(widget.orderId);
       if (order == null)
         throw Exception('Không tìm thấy đơn hàng #${widget.orderId}.');
-      final location = order.status == 'Delivering'
+      final pickingUp = order.status == 'PickingUp';
+      final tracking = pickingUp || order.status == 'Delivering';
+      if (pickingUp && _pickupAddress == null) {
+        try {
+          final pickup = await _service.getShopPickup(order.shopId);
+          final lat = pickup['latitude'];
+          final lng = pickup['longitude'];
+          if (lat is num && lng is num && lat.abs() <= 90 && lng.abs() <= 180) {
+            _pickupPosition = LatLng(lat.toDouble(), lng.toDouble());
+          }
+          _pickupAddress = pickup['address'] as String?;
+        } catch (_) {
+          // Retry loading the pickup details on the next refresh.
+        }
+      }
+      final location = tracking
           ? await _service.getShipperLocation(widget.orderId)
           : null;
       if (!mounted) return;
@@ -228,6 +254,11 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
         }
       }
       setState(() {
+        if (_order?.status != order.status || position == null) {
+          _route = null;
+          _routeOrigin = null;
+          _routeError = null;
+        }
         _order = order;
         _shipper = position;
         _loading = false;
@@ -235,16 +266,25 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
         _locationTime = DateTime.tryParse(
           location?['updatedAt']?.toString() ?? '',
         );
-        if (position == null || order.status != 'Delivering') _route = null;
       });
       if (order.isFinished) {
         _timer?.cancel();
+      }
+      if (!tracking && _sharing) {
         await _gps?.cancel();
         if (mounted) setState(() => _sharing = false);
       }
+      if (widget.autoShareGps &&
+          widget.isShipper &&
+          tracking &&
+          !_autoShareAttempted &&
+          !_sharing) {
+        _autoShareAttempted = true;
+        unawaited(_shareGps());
+      }
       if (position != null &&
           _destination != null &&
-          order.status == 'Delivering') {
+          tracking) {
         if (_routeOrigin == null ||
             const Distance().as(LengthUnit.Meter, _routeOrigin!, position) >=
                 30) {
@@ -295,6 +335,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
   }
 
   Future<void> _shareGps() async {
+    if (_startingGps) return;
     if (_sharing) {
       await _gps?.cancel();
       if (mounted) setState(() => _sharing = false);
@@ -303,8 +344,10 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
     final shipperId = context.read<AuthProvider>().user?.shipperId;
     if (shipperId == null ||
         _order?.shipperId != shipperId ||
-        _order?.status != 'Delivering')
+        (_order?.status != 'Delivering' && _order?.status != 'PickingUp'))
       return;
+    _startingGps = true;
+    setState(() => _gpsError = null);
     try {
       if (!await Geolocator.isLocationServiceEnabled())
         throw Exception('Vui lòng bật GPS.');
@@ -315,7 +358,11 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
           permission == LocationPermission.deniedForever) {
         throw Exception('Chưa được cấp quyền vị trí.');
       }
-      if (!mounted) return;
+      if (!mounted ||
+          _order?.shipperId != shipperId ||
+          (_order?.status != 'Delivering' && _order?.status != 'PickingUp')) {
+        return;
+      }
       setState(() => _sharing = true);
       _gps =
           Geolocator.getPositionStream(
@@ -349,9 +396,12 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                   return true;
                 }());
                 if (!saved) throw Exception('Không gửi được vị trí.');
+                if (mounted && _gpsError != null) {
+                  setState(() => _gpsError = null);
+                }
                 await _refresh();
               } catch (error) {
-                if (mounted) setState(() => _error = error.toString());
+                if (mounted) setState(() => _gpsError = error.toString());
               } finally {
                 _sendingLocation = false;
               }
@@ -360,16 +410,40 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
               if (mounted)
                 setState(() {
                   _sharing = false;
-                  _error = 'Không đọc được GPS: $error';
+                  _gpsError = 'Không đọc được GPS: $error';
                 });
             },
+            cancelOnError: true,
           );
     } catch (error) {
       if (mounted)
         setState(() {
           _sharing = false;
-          _error = error.toString().replaceFirst('Exception: ', '');
+          _gpsError = error.toString().replaceFirst('Exception: ', '');
         });
+    } finally {
+      _startingGps = false;
+    }
+  }
+
+  Future<void> _confirmPickup() async {
+    final shipperId = context.read<AuthProvider>().user?.shipperId;
+    if (shipperId == null || _confirmingPickup) return;
+
+    setState(() => _confirmingPickup = true);
+    try {
+      if (!await _service.confirmPickup(widget.orderId, shipperId)) {
+        throw Exception('Không thể xác nhận lấy món. Vui lòng thử lại.');
+      }
+      await _refresh();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Chưa xác nhận được. Hãy tải lại đơn.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _confirmingPickup = false);
     }
   }
 
@@ -411,7 +485,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
     final destination = _destination;
     final ownsDelivery =
         widget.isShipper &&
-        _order?.status == 'Delivering' &&
+        (_order?.status == 'Delivering' || _order?.status == 'PickingUp') &&
         _order?.shipperId != null &&
         _order?.shipperId == context.read<AuthProvider>().user?.shipperId;
     return Scaffold(
@@ -563,6 +637,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                             'Lộ trình tham khảo: ${(_route!.distanceMeters / 1000).toStringAsFixed(1)} km • ${(_route!.durationSeconds / 60).ceil()} phút',
                           ),
                         if (_routeError != null) Text(_routeError!),
+                        if (_gpsError != null) Text(_gpsError!),
                         if (_error != null)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -602,6 +677,11 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         if (ownsDelivery) ...[
+                          if (_order!.status == 'PickingUp') ...[
+                            Text('Lấy món tại: ${_pickupAddress ?? 'Chưa tải được địa chỉ quán'}'),
+                            if (_pickupPosition == null)
+                              const Text('Chưa có tọa độ quán để chỉ đường.'),
+                          ],
                           const SizedBox(height: 16),
                           OutlinedButton.icon(
                             onPressed: _shareGps,
@@ -613,8 +693,12 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                             ),
                           ),
                           FilledButton(
-                            onPressed: _completing ? null : _complete,
-                            child: const Text('Đã giao xong'),
+                            onPressed: _order!.status == 'PickingUp'
+                                ? (_confirmingPickup ? null : _confirmPickup)
+                                : (_completing ? null : _complete),
+                            child: Text(_order!.status == 'PickingUp'
+                                ? 'Đã lấy món tại quán'
+                                : 'Đã giao xong'),
                           ),
                         ],
                         SizedBox(

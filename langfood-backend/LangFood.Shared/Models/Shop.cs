@@ -20,6 +20,10 @@ namespace LangFood.Shared.Models
         [StringLength(500)]
         public string Address { get; set; } = string.Empty;
 
+        public double? PickupLatitude { get; set; }
+
+        public double? PickupLongitude { get; set; }
+
         public string? Description { get; set; }
 
         public string? ImageUrl { get; set; }

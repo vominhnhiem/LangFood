@@ -1,5 +1,7 @@
 ﻿using LangFood.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 
@@ -33,6 +35,41 @@ namespace LangFoodBackend.Controllers
         }
 
         // 2. Lấy thông tin Shop theo UserId (Dùng để hiển thị thông tin khi Seller vào trang chỉnh sửa)
+        [HttpGet("{id}/pickup")]
+        public async Task<IActionResult> GetPickup(int id)
+        {
+            var shop = await _context.Shops.FindAsync(id);
+            if (shop == null) return NotFound();
+
+            return Ok(new { shop.Address, latitude = shop.PickupLatitude, longitude = shop.PickupLongitude });
+        }
+
+        public sealed record PickupUpdate(string Address, double? Latitude, double? Longitude);
+
+        [Authorize]
+        [HttpPut("{id}/pickup")]
+        public async Task<IActionResult> UpdatePickup(int id, PickupUpdate update)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+            var address = update.Address?.Trim();
+            if (string.IsNullOrWhiteSpace(address) || address.Length > 500 ||
+                update.Latitude is not double latitude || !double.IsFinite(latitude) || Math.Abs(latitude) > 90 ||
+                update.Longitude is not double longitude || !double.IsFinite(longitude) || Math.Abs(longitude) > 180)
+                return BadRequest(new { message = "Cần địa chỉ và tọa độ điểm lấy món hợp lệ." });
+
+            var shop = await _context.Shops.FirstOrDefaultAsync(s =>
+                s.Id == id && s.UserId == userId && s.IsActive &&
+                _context.Users.Any(u => u.Id == s.UserId && u.RoleId == 2 && u.IsApproved));
+            if (shop == null) return NotFound();
+
+            shop.Address = address;
+            shop.PickupLatitude = latitude;
+            shop.PickupLongitude = longitude;
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetShopByUserId(string userId)
         {

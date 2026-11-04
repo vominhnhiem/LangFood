@@ -74,6 +74,7 @@ class OrderModel {
     'Pending' => 'Chờ quán xác nhận',
     'Preparing' => 'Quán đang chuẩn bị',
     'Ready' => 'Chờ shipper nhận đơn',
+    'PickingUp' => 'Shipper đang đến quán lấy món',
     'Delivering' => 'Đang giao hàng',
     'Completed' => 'Đã giao hàng',
     'Cancelled' || 'Canceled' => 'Đã hủy',

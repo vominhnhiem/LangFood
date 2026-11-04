@@ -6,6 +6,7 @@ import '../../features/account/presentation/screens/profile_screen.dart';
 import '../../features/orders/presentation/screens/my_orders_screen.dart';
 import '../../features/wallet/presentation/screens/wallet_screen.dart';
 import '../../features/restaurant/presentation/screens/merchant_products_screen.dart';
+import '../../features/restaurant/presentation/screens/shop_pickup_screen.dart';
 
 class AccountMenu extends StatelessWidget {
   final Future<void> Function()? beforeLogout;
@@ -30,6 +31,7 @@ class AccountMenu extends StatelessWidget {
           'orders' => const MyOrdersScreen(),
           'wallet' => const WalletScreen(),
           'menu' => const MerchantProductsScreen(),
+          'pickup' => ShopPickupScreen(shopId: user.shopId!),
           _ => const ProfileScreen(),
         };
         if (context.mounted)
@@ -48,6 +50,11 @@ class AccountMenu extends StatelessWidget {
           const PopupMenuItem(value: 'orders', child: Text('Đơn hàng của tôi')),
         if (user.isSeller)
           const PopupMenuItem(value: 'menu', child: Text('Quản lý menu')),
+        if (user.isSeller && user.shopId != null)
+          const PopupMenuItem(
+            value: 'pickup',
+            child: Text('Điểm lấy món của quán'),
+          ),
         if (user.isSeller || user.isShipper)
           const PopupMenuItem(value: 'wallet', child: Text('Ví và giao dịch')),
         const PopupMenuItem(value: 'logout', child: Text('Đăng xuất')),

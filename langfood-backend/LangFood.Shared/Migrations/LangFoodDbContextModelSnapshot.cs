@@ -100,6 +100,49 @@ namespace LangFoodBackend.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("LangFood.Shared.Models.LobbyRoom", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("BuildingId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ClosesAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("HostId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("float");
+
+                    b.Property<int?>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PortionsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ShopId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LobbyRooms");
+                });
+
             modelBuilder.Entity("LangFood.Shared.Models.Order", b =>
                 {
                     b.Property<int>("Id")
@@ -117,6 +160,9 @@ namespace LangFoodBackend.Migrations
 
                     b.Property<string>("BuyerName")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("CommissionFee")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -426,6 +472,12 @@ namespace LangFoodBackend.Migrations
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
+
+                    b.Property<double?>("PickupLatitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("PickupLongitude")
+                        .HasColumnType("float");
 
                     b.Property<string>("UserId")
                         .IsRequired()

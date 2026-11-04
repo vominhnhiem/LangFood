@@ -5,8 +5,10 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../../config/config_url.dart';
 import '../../../../data/models/checkout_selection.dart';
+import '../../../../data/models/lobby_room.dart';
 import '../../../checkout/presentation/screens/checkout_screen.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -28,7 +30,9 @@ import '../../../tracking/presentation/screens/location_picker_screen.dart';
 /// - Thanh thanh toán nổi dính đáy (Sticky Floating Apple-HIG Checkout Bar)
 /// - Trạng thái rỗng (Empty State), tải dữ liệu (Skeleton) và cảnh báo lỗi
 class CartScreen extends StatefulWidget {
-  const CartScreen({super.key});
+  const CartScreen({super.key, this.lobbyRoom});
+
+  final LobbyRoom? lobbyRoom;
 
   @override
   State<CartScreen> createState() => _CartScreenState();
@@ -39,6 +43,7 @@ class _CartScreenState extends State<CartScreen> {
   final Set<CartItemModel> _selectedItems = {};
   final Set<CartItemModel> _knownItems = {};
   bool _hasInitializedSelection = false;
+  bool _confirmingLobby = false;
 
   // Ghi chú riêng cho từng quán ăn theo shopId
   final Map<int, TextEditingController> _shopNoteControllers = {};
@@ -275,8 +280,21 @@ class _CartScreenState extends State<CartScreen> {
     required int count,
     List<CartItemModel>? items,
   }) async {
-    final selected = items ?? _selectedItems.toList();
+    final room = widget.lobbyRoom;
+    if (room != null && !room.isOpen) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Phòng đã đóng. Hãy chọn phòng khác.')),
+      );
+      return;
+    }
+    final selected = (items ?? _selectedItems.toList())
+        .where((item) => room == null || item.product.shopId == room.shopId)
+        .toList();
     if (selected.isEmpty) return;
+    if (room != null) {
+      await _confirmLobbyPortion(room, selected);
+      return;
+    }
     final selection = CheckoutSelection(
       selected,
       shopNotes: {
@@ -287,7 +305,9 @@ class _CartScreenState extends State<CartScreen> {
     final location = await Navigator.push<CampusDeliveryLocation>(
       context,
       MaterialPageRoute(
-        builder: (_) => const LocationPickerScreen(returnResult: true),
+        builder: (_) => LocationPickerScreen(
+          returnResult: true,
+        ),
       ),
     );
     if (location == null || !context.mounted) return;
@@ -295,9 +315,76 @@ class _CartScreenState extends State<CartScreen> {
       context,
       MaterialPageRoute(
         builder: (_) =>
-            CheckoutScreen(deliveryLocation: location, selection: selection),
+            CheckoutScreen(
+              deliveryLocation: location,
+              selection: selection,
+            ),
       ),
     );
+  }
+
+  Future<void> _confirmLobbyPortion(
+    LobbyRoom room,
+    List<CartItemModel> selected,
+  ) async {
+    if (_confirmingLobby) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final token = context.read<AuthProvider>().accessToken;
+    if (token == null) {
+      messenger.showSnackBar(const SnackBar(content: Text('Hãy đăng nhập lại.')));
+      return;
+    }
+    if (selected.any((item) => item.selectedOptionsSummary.isNotEmpty)) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Đặt chung hiện hỗ trợ món giá cơ bản. Hãy bỏ tùy chọn thêm.'),
+      ));
+      return;
+    }
+    _confirmingLobby = true;
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Xác nhận phần gom sảnh'),
+          content: Text(
+            '${room.address}. Phần món sẽ được gửi vào phòng. '
+            'Chủ phòng chốt và thanh toán cả chuyến COD.',
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Quay lại')),
+            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Xác nhận phần')),
+          ],
+        ),
+      );
+      if (!mounted || confirmed != true) return;
+      final response = await ApiClient.put(
+        'api/Lobby/${room.id}/portion',
+        token: token,
+        body: {
+          'items': [
+            for (final item in selected)
+              {
+                'productId': item.product.id,
+                'quantity': item.quantity,
+                'note': item.note,
+              },
+          ],
+        },
+      );
+      if (response.statusCode == 401) throw Exception('Phiên hết hạn. Hãy đăng nhập lại.');
+      ApiClient.decodeResponse(response);
+      if (!mounted) return;
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Đã gửi phần của bạn. Xem trạng thái trong phòng gom đơn.'),
+      ));
+      Navigator.pop(context);
+    } catch (error) {
+      if (mounted) messenger.showSnackBar(
+        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+      );
+    } finally {
+      _confirmingLobby = false;
+    }
   }
 
   @override
@@ -307,10 +394,15 @@ class _CartScreenState extends State<CartScreen> {
     final theme = context.langFoodTheme;
     final isDark = context.isDarkMode;
 
-    final allItems = cartProvider.items;
+    final room = widget.lobbyRoom;
+    final allItems = room == null
+        ? cartProvider.items
+        : cartProvider.itemsByShop[room.shopId] ?? <CartItemModel>[];
     _syncSelectedItems(allItems);
 
-    final shopMap = cartProvider.itemsByShop;
+    final shopMap = room == null
+        ? cartProvider.itemsByShop
+        : {if (allItems.isNotEmpty) room.shopId: allItems};
     final totalSelectedCount = _selectedItems.fold<int>(
       0,
       (sum, item) => sum + item.quantity,
@@ -329,7 +421,7 @@ class _CartScreenState extends State<CartScreen> {
         .length;
     late final double configuredFee;
     try {
-      configuredFee = ConfigUrl.shippingFee;
+      configuredFee = room == null ? ConfigUrl.shippingFee : 0;
     } catch (_) {
       return Scaffold(
         appBar: AppBar(title: const Text('Giỏ hàng của bạn')),
@@ -407,7 +499,7 @@ class _CartScreenState extends State<CartScreen> {
           ),
         ),
         actions: [
-          if (allItems.isNotEmpty)
+          if (room == null && allItems.isNotEmpty)
             TextButton(
               onPressed: () =>
                   _confirmClearCart(context, cartProvider, authProvider),
@@ -1246,8 +1338,8 @@ class _CartScreenState extends State<CartScreen> {
         ),
         _buildSummaryRow(
           textColor: context.langFoodTheme.textPrimary,
-          label: 'Phí giao ($selectedShopsCount đơn)',
-          value: _formatCurrency(deliveryFee),
+          label: widget.lobbyRoom == null ? 'Phí giao ($selectedShopsCount đơn)' : 'Phí ghép sảnh',
+          value: widget.lobbyRoom == null ? _formatCurrency(deliveryFee) : 'Tính khi chốt',
         ),
         if (selectedShopsCount > 1)
           const Padding(
@@ -1518,7 +1610,9 @@ class _CartScreenState extends State<CartScreen> {
                             : MainAxisSize.min,
                         children: [
                           Text(
-                            'Thanh toán ($totalSelectedCount)',
+                            widget.lobbyRoom == null
+                                ? 'Thanh toán ($totalSelectedCount)'
+                                : 'Gửi phần ($totalSelectedCount)',
                             style: AppTypography.titleMd.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,

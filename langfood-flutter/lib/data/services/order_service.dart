@@ -108,11 +108,23 @@ class OrderService {
     }
   }
 
-  // Shipper bấm Nhận đơn hàng (Chuyển sang "Delivering")
+  Future<Map<String, dynamic>> getShopPickup(int shopId) async {
+    return ApiClient.decodeResponse(
+      await ApiClient.get('api/Shops/$shopId/pickup'),
+    ) as Map<String, dynamic>;
+  }
+
+  Future<bool> confirmPickup(int orderId, int shipperId) async {
+    final response = await ApiClient.put(
+      'api/Orders/$orderId/pickup?shipperId=$shipperId',
+    );
+    return response.statusCode == 200;
+  }
+
   Future<bool> acceptOrder(int orderId, int shipperId) async {
     try {
       final response = await ApiClient.put(
-        'api/Orders/accept/$orderId?shipperId=$shipperId',
+        'api/Orders/$orderId/claim?shipperId=$shipperId',
       );
       if (response.statusCode == 200) {
         return true;

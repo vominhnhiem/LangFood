@@ -383,7 +383,7 @@ void main() {
 
     // TC07: Đổi phương thức thanh toán qua Bottom Sheet
     testWidgets(
-      'TC07: Opening payment method bottom sheet allows selecting MoMo / VietQR / COD',
+      'TC07: Payment sheet shows only COD',
       (tester) async {
         final cart = CartProvider();
         cart.addToCart(product: productShop1, quantity: 1);
@@ -413,10 +413,10 @@ void main() {
         await tester.tap(changePaymentBtn);
         await tester.pumpAndSettle();
 
-        // Kiểm tra danh sách 4 phương thức theo Stitch LF-07
-        expect(find.text('Ví MoMo KTX Express'), findsOneWidget);
-        expect(find.text('VietQR Pro / Chuyển khoản'), findsOneWidget);
-        expect(find.text('Ví ZaloPay'), findsOneWidget);
+        expect(find.text('Quét mã QR'), findsNothing);
+        expect(find.text('Ví sinh viên LangFood Pay'), findsNothing);
+        expect(find.text('Ví MoMo KTX Express'), findsNothing);
+        expect(find.text('Ví ZaloPay'), findsNothing);
         expect(find.text('Tiền mặt khi nhận đồ (COD)'), findsWidgets);
 
         // Chọn COD

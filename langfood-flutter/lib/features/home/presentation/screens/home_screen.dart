@@ -28,6 +28,7 @@ import '../../../../providers/theme_provider.dart';
 import '../../../cart/presentation/screens/cart_screen.dart';
 import '../../../food_detail/presentation/screens/food_detail_screen.dart';
 import '../../../shop/presentation/screens/shop_menu_screen.dart';
+import 'lobby_pooling_screen.dart';
 
 /// Màn hình Trang Chủ (HomeScreen) chuẩn thiết kế Stitch LF-01 (Apple HIG & Material 3)
 /// - Collapsing Header với SliverAppBar và tìm kiếm thích ứng
@@ -631,43 +632,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: theme.textSecondary,
                           ),
                         ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // Notification Bell with Red Badge
-              PressScaleWidget(
-                onTap: () {
-                  AppHaptics.light();
-                  _showNotifications();
-                },
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: theme.canvas,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Icon(
-                        Icons.notifications_none_rounded,
-                        color: theme.textPrimary,
-                        size: 20,
-                      ),
-                      Positioned(
-                        top: 7,
-                        right: 8,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
                       ),
                     ],
                   ),
@@ -1837,71 +1801,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showCommunalOrderSheet() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.groups_rounded,
-                    color: AppColors.primary,
-                    size: 30,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Đặt chung',
-                  style: AppTypography.titleMd.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Chưa hỗ trợ giỏ chung giữa nhiều tài khoản. Bạn có thể chọn món từ nhiều quán; mỗi quán tạo một đơn riêng.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: Colors.grey),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _openCart();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Xem giỏ hàng',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+    final shops = <int, String>{
+      for (final product in _allProducts)
+        if (product.shopId > 0 && product.isAvailable && product.isShopOpen)
+          product.shopId: product.shopName,
+    };
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => LobbyPoolingScreen(shops: shops),
+    ));
   }
 
   void _showNotifications() {

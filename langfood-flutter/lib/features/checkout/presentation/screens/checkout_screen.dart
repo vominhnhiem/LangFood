@@ -112,19 +112,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ],
               ),
               const SizedBox(height: 8),
-              ...[
-                'Ví sinh viên LangFood Pay',
-                'Ví MoMo KTX Express',
-                'VietQR Pro / Chuyển khoản',
-                'Ví ZaloPay',
-              ].map(
-                (title) => ListTile(
-                  enabled: false,
-                  leading: const Icon(Icons.lock_outline),
-                  title: Text(title),
-                  subtitle: const Text('Chưa hỗ trợ thanh toán đơn hàng'),
-                ),
-              ),
               const ListTile(
                 leading: Icon(Icons.check_circle, color: AppColors.primary),
                 title: Text('Tiền mặt khi nhận đồ (COD)'),

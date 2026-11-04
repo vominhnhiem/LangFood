@@ -128,9 +128,14 @@ class _ShopOrdersScreenState extends State<ShopOrdersScreen> {
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           Text('Trạng thái: ${order.status}'),
+                          if (order.deliveryRoom?.startsWith('Gom sảnh #') == true)
+                            Text(order.deliveryRoom!),
                           ...order.orderItems.map(
                             (item) => Text(
-                              '${item.quantity}x ${item.productName ?? 'Món #${item.productId}'}',
+                              [
+                                '${item.quantity}x ${item.productName ?? 'Món #${item.productId}'}',
+                                if (item.note?.isNotEmpty == true) item.note!,
+                              ].join(' • '),
                             ),
                           ),
                           if (order.status == 'Pending' ||
