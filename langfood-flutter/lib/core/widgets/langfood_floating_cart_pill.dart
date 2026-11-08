@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -8,11 +6,6 @@ import '../theme/app_tokens.dart';
 import '../theme/app_typography.dart';
 import '../utils/app_motion.dart';
 
-/// Viên thuốc giỏ hàng nổi (Floating Cart Pill) chuẩn thiết kế Stitch LF-01 / Level 3 Elevation
-/// - Nổi cố định phía trên thanh điều hướng hoặc cạnh đáy màn hình
-/// - Tự động tính toán SafeArea
-/// - Hiệu ứng kính mờ (BackdropFilter blur 20px)
-/// - Số lượng và tổng tiền định dạng Tabular Figures chống giật
 class LangFoodFloatingCartPill extends StatelessWidget {
   final int totalItemCount;
   final double totalPrice;
@@ -44,85 +37,93 @@ class LangFoodFloatingCartPill extends StatelessWidget {
         .format(totalPrice)
         .replaceAll(' ', '');
 
+    final textStyle = AppTypography.labelMd.copyWith(
+      color: Colors.white,
+      fontWeight: FontWeight.w700,
+    );
+    final count = _value(context, '$totalItemCount món', textStyle);
+    final price = _value(
+      context,
+      formattedPrice,
+      AppTypography.currencyDisplay.copyWith(color: Colors.white),
+    );
+
     return SafeArea(
       top: false,
       child: Padding(
         padding: margin,
         child: PressScaleWidget(
           onTap: onTap,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppTokens.radiusFull),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-              child: Container(
-                height: 54,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.95),
-                  borderRadius: BorderRadius.circular(AppTokens.radiusFull),
-                  boxShadow: AppTokens.shadowLevel3,
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.25),
-                    width: 1.0,
-                  ),
-                ),
-                child: Row(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            constraints: const BoxConstraints(minHeight: 54),
+            decoration: const ShapeDecoration(
+              color: AppColors.primaryDeep,
+              shape: RoundedSuperellipseBorder(
+                borderRadius: AppTokens.borderRadiusXl,
+              ),
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final stack =
+                    constraints.maxWidth < 250 ||
+                    MediaQuery.textScalerOf(context).scale(14) > 19;
+                final title = Text(
+                  label,
+                  style: textStyle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                );
+                final details = Row(
                   children: [
-                    // Item Count Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
+                    DecoratedBox(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.25),
-                        borderRadius: BorderRadius.circular(
-                          AppTokens.radiusFull,
-                        ),
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: AppTokens.borderRadiusFull,
                       ),
-                      child: Text(
-                        '$totalItemCount món',
-                        style: AppTypography.labelMd.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
                         ),
+                        child: count,
                       ),
                     ),
-                    const SizedBox(width: 12),
-
-                    // Label / Action text
-                    Expanded(
-                      child: Text(
-                        label,
-                        style: AppTypography.titleMd.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-
-                    // Price display (Tabular figures)
-                    Text(
-                      formattedPrice,
-                      style: AppTypography.currencyDisplay.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    const SizedBox(width: 10),
+                    if (!stack) Expanded(child: title) else const Spacer(),
+                    const SizedBox(width: 8),
+                    Flexible(child: price),
                     const SizedBox(width: 6),
                     const Icon(
-                      Icons.arrow_forward_ios_rounded,
+                      Icons.chevron_right_rounded,
                       color: Colors.white,
-                      size: 14,
+                      size: 20,
                     ),
                   ],
-                ),
-              ),
+                );
+                if (!stack) return details;
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [title, const SizedBox(height: 4), details],
+                );
+              },
             ),
           ),
         ),
       ),
     );
   }
+
+  Widget _value(BuildContext context, String value, TextStyle style) =>
+      AnimatedSwitcher(
+        duration: AppMotion.durationOf(context, AppMotion.durationNormal),
+        child: Text(
+          value,
+          key: ValueKey(value),
+          style: style,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      );
 }

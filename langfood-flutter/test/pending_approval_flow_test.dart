@@ -1,5 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:langfood_flutter/core/network/api_client.dart';
 import 'package:langfood_flutter/data/models/user_model.dart';
 import 'package:langfood_flutter/features/auth/presentation/screens/pending_approval_screen.dart';
 import 'package:langfood_flutter/features/home/presentation/screens/home_screen.dart';
@@ -158,9 +163,44 @@ void main() {
       },
     );
 
-    testWidgets('AuthWrapper routes approved Seller to ShopOrdersScreen', (
+    testWidgets('approved seller sees real API orders and can advance them', (
       WidgetTester tester,
     ) async {
+      var status = 'Pending';
+      final actions = <String>[];
+      ApiClient.useClient(
+        MockClient((request) async {
+          if (request.method == 'GET' &&
+              request.url.path.endsWith('/Orders/shop/10')) {
+            return http.Response(
+              jsonEncode([
+                {
+                  'id': 127,
+                  'status': status,
+                  'shopId': 10,
+                  'buyerName': 'Khách KTX',
+                  'deliveryBuilding': 'Tòa BA2',
+                  'deliveryRoom': 'Sảnh tầng G',
+                  'orderItems': [
+                    {'productId': 4, 'productName': 'Cơm gà', 'quantity': 1},
+                  ],
+                },
+              ]),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            );
+          }
+          if (request.method == 'PUT') {
+            actions.add(
+              request.url.pathSegments[request.url.pathSegments.length - 2],
+            );
+            status = actions.length == 1 ? 'Preparing' : 'Ready';
+            return http.Response('', 200);
+          }
+          return http.Response('', 404);
+        }),
+      );
+      addTearDown(() => ApiClient.useClient(http.Client()));
       final mockAuth = MockAuthProvider();
       mockAuth.setMockUser(
         UserModel(
@@ -169,6 +209,7 @@ void main() {
           roleId: 2,
           isApproved: true,
           shopId: 10,
+          shopName: 'Căn tin C1–C2',
         ),
       );
 
@@ -182,8 +223,24 @@ void main() {
         ),
       );
 
+      await tester.pumpAndSettle();
       expect(find.byType(ShopOrdersScreen), findsOneWidget);
       expect(find.byType(PendingApprovalScreen), findsNothing);
+      expect(find.text('Bảng điều hành'), findsOneWidget);
+      expect(find.text('#LF-127'), findsOneWidget);
+      expect(find.text('Cơm gà'), findsOneWidget);
+      expect(find.text('Tạo đơn thử'), findsNothing);
+      final accept = find.text('Nhận đơn');
+      await tester.ensureVisible(accept);
+      await tester.tap(accept);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Mở danh sách'));
+      await tester.pumpAndSettle();
+      final ready = find.text('Báo xong món');
+      await tester.ensureVisible(ready);
+      await tester.tap(ready);
+      await tester.pumpAndSettle();
+      expect(actions, ['shop-accept', 'shop-ready']);
     });
 
     testWidgets(

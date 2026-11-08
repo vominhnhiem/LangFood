@@ -3,10 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:langfood_flutter/core/network/api_client.dart';
 import 'package:langfood_flutter/core/theme/app_theme.dart';
 import 'package:langfood_flutter/data/models/order_model.dart';
+import 'package:langfood_flutter/data/models/order_test_model.dart';
 import 'package:langfood_flutter/data/services/order_service.dart';
 import 'package:langfood_flutter/features/tracking/presentation/screens/live_tracking_screen.dart';
+import 'package:langfood_flutter/features/shipper/presentation/screens/shipper_orders_screen.dart';
 import 'package:langfood_flutter/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -54,11 +59,7 @@ class MockShipperApi extends OrderService {
   }
 
   @override
-  Future<bool> completeOrder(
-    int orderId, {
-    double? lat,
-    double? lng,
-  }) async {
+  Future<bool> completeOrder(int orderId, {double? lat, double? lng}) async {
     completeOrderCalls++;
     lastLat = lat;
     lastLng = lng;
@@ -73,12 +74,64 @@ void main() {
   });
 
   Widget host(AuthProvider auth, Widget page) => ChangeNotifierProvider.value(
-        value: auth,
-        child: MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: page,
+    value: auth,
+    child: MaterialApp(theme: AppTheme.lightTheme, home: page),
+  );
+
+  testWidgets(
+    'rapid taps send one claim and a rejected claim stays on the list',
+    (tester) async {
+      final auth = await session(role: 3);
+      final response = Completer<http.Response>();
+      var claims = 0;
+      ApiClient.useClient(
+        MockClient((request) {
+          expect(request.method, 'PUT');
+          expect(request.url.path, endsWith('/Orders/201/claim'));
+          claims++;
+          return response.future;
+        }),
+      );
+      addTearDown(() => ApiClient.useClient(http.Client()));
+      await tester.pumpWidget(
+        host(
+          auth,
+          ShipperOrdersScreen(
+            enablePeriodicTimer: false,
+            initialOrders: [
+              OrderTestModel(
+                id: 201,
+                customerName: 'Sinh viên kiểm thử',
+                deliveryAddress: 'Tòa BA2 · Sảnh G',
+                phone: '',
+                latitude: 0,
+                longitude: 0,
+                totalAmount: 32000,
+              ),
+            ],
+          ),
         ),
       );
+      final claim = find.text('NHẬN ĐƠN NGAY');
+      await tester.ensureVisible(claim);
+      await tester.tap(claim);
+      await tester.tap(claim);
+      await tester.pump();
+      expect(claims, 1);
+
+      response.complete(
+        http.Response(
+          '{"message":"Đơn đã được nhận"}',
+          409,
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Không thể nhận đơn'), findsOneWidget);
+      expect(find.byType(LiveTrackingScreen), findsNothing);
+      expect(claim.hitTestable(), findsOneWidget);
+    },
+  );
 
   group('Shipper Geofence Confirmation Tests', () {
     testWidgets(
@@ -270,7 +323,10 @@ void main() {
 
         // 1. Kiểm tra Geofence card cảnh báo chưa vào phạm vi
         expect(find.textContaining('Chưa vào phạm vi'), findsOneWidget);
-        expect(find.textContaining('Lại gần điểm giao để xác nhận'), findsOneWidget);
+        expect(
+          find.textContaining('Lại gần điểm giao để xác nhận'),
+          findsOneWidget,
+        );
 
         // 2. Bấm nút khi đang ở xa
         await tester.tap(find.textContaining('Lại gần điểm giao để xác nhận'));

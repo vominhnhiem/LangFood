@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -305,9 +303,7 @@ class _CartScreenState extends State<CartScreen> {
     final location = await Navigator.push<CampusDeliveryLocation>(
       context,
       MaterialPageRoute(
-        builder: (_) => LocationPickerScreen(
-          returnResult: true,
-        ),
+        builder: (_) => LocationPickerScreen(returnResult: true),
       ),
     );
     if (location == null || !context.mounted) return;
@@ -315,10 +311,7 @@ class _CartScreenState extends State<CartScreen> {
       context,
       MaterialPageRoute(
         builder: (_) =>
-            CheckoutScreen(
-              deliveryLocation: location,
-              selection: selection,
-            ),
+            CheckoutScreen(deliveryLocation: location, selection: selection),
       ),
     );
   }
@@ -331,13 +324,19 @@ class _CartScreenState extends State<CartScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final token = context.read<AuthProvider>().accessToken;
     if (token == null) {
-      messenger.showSnackBar(const SnackBar(content: Text('Hãy đăng nhập lại.')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Hãy đăng nhập lại.')),
+      );
       return;
     }
     if (selected.any((item) => item.selectedOptionsSummary.isNotEmpty)) {
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Đặt chung hiện hỗ trợ món giá cơ bản. Hãy bỏ tùy chọn thêm.'),
-      ));
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Đặt chung hiện hỗ trợ món giá cơ bản. Hãy bỏ tùy chọn thêm.',
+          ),
+        ),
+      );
       return;
     }
     _confirmingLobby = true;
@@ -351,8 +350,14 @@ class _CartScreenState extends State<CartScreen> {
             'Chủ phòng chốt và thanh toán cả chuyến COD.',
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Quay lại')),
-            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Xác nhận phần')),
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Quay lại'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Xác nhận phần'),
+            ),
           ],
         ),
       );
@@ -371,17 +376,25 @@ class _CartScreenState extends State<CartScreen> {
           ],
         },
       );
-      if (response.statusCode == 401) throw Exception('Phiên hết hạn. Hãy đăng nhập lại.');
+      if (response.statusCode == 401)
+        throw Exception('Phiên hết hạn. Hãy đăng nhập lại.');
       ApiClient.decodeResponse(response);
       if (!mounted) return;
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Đã gửi phần của bạn. Xem trạng thái trong phòng gom đơn.'),
-      ));
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Đã gửi phần của bạn. Xem trạng thái trong phòng gom đơn.',
+          ),
+        ),
+      );
       Navigator.pop(context);
     } catch (error) {
-      if (mounted) messenger.showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
-      );
+      if (mounted)
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(error.toString().replaceFirst('Exception: ', '')),
+          ),
+        );
     } finally {
       _confirmingLobby = false;
     }
@@ -1338,8 +1351,12 @@ class _CartScreenState extends State<CartScreen> {
         ),
         _buildSummaryRow(
           textColor: context.langFoodTheme.textPrimary,
-          label: widget.lobbyRoom == null ? 'Phí giao ($selectedShopsCount đơn)' : 'Phí ghép sảnh',
-          value: widget.lobbyRoom == null ? _formatCurrency(deliveryFee) : 'Tính khi chốt',
+          label: widget.lobbyRoom == null
+              ? 'Phí giao ($selectedShopsCount đơn)'
+              : 'Phí ghép sảnh',
+          value: widget.lobbyRoom == null
+              ? _formatCurrency(deliveryFee)
+              : 'Tính khi chốt',
         ),
         if (selectedShopsCount > 1)
           const Padding(
@@ -1399,269 +1416,255 @@ class _CartScreenState extends State<CartScreen> {
     required int selectedShopsCount,
   }) {
     final theme = context.langFoodTheme;
-    final isDark = context.isDarkMode;
 
-    return ClipRRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          decoration: BoxDecoration(
-            color: isDark
-                ? theme.surfaceContainerLow.withValues(alpha: 0.92)
-                : Colors.white.withValues(alpha: 0.94),
-            boxShadow: AppTokens.shadowLevel3,
-            border: Border(
-              top: BorderSide(color: theme.borderSubtle, width: 0.5),
-            ),
-          ),
-          padding: EdgeInsets.fromLTRB(
-            AppTokens.marginMobile,
-            10.0,
-            AppTokens.marginMobile,
-            MediaQuery.of(context).padding.bottom + 10.0,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.card,
+        border: Border(top: BorderSide(color: theme.borderSubtle)),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        AppTokens.marginMobile,
+        10.0,
+        AppTokens.marginMobile,
+        MediaQuery.of(context).padding.bottom + 10.0,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Thông báo cam kết giao hàng sinh viên KTX
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Thông báo cam kết giao hàng sinh viên KTX
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 7,
-                          height: 7,
-                          decoration: const BoxDecoration(
-                            color: AppColors.tertiary,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            'Giao hàng tới điểm nhận đã chọn',
-                            style: AppTypography.labelSm.copyWith(
-                              color: theme.textSecondary,
-                              fontSize: 11,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: AppColors.tertiary,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Phí theo quán',
-                    style: AppTypography.labelSm.copyWith(
-                      color: AppColors.secondary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11,
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        'Giao hàng tới điểm nhận đã chọn',
+                        style: AppTypography.labelSm.copyWith(
+                          color: theme.textSecondary,
+                          fontSize: 11,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
-
-              // Dòng điều khiển chính: Chọn tất cả + Giá + Nút CTA
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final textScale = MediaQuery.textScalerOf(context).scale(1.0);
-                  final isCompact =
-                      constraints.maxWidth < (380 * textScale) ||
-                      textScale >= 1.2;
-                  final selectAllWidget = InkWell(
-                    onTap: () => _toggleSelectAll(!isAllSelected, allItems),
-                    borderRadius: BorderRadius.circular(6),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 4,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 22,
-                            height: 22,
-                            decoration: BoxDecoration(
-                              color: isAllSelected
-                                  ? AppColors.primary
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: isAllSelected
-                                    ? AppColors.primary
-                                    : theme.textSecondary.withValues(
-                                        alpha: 0.4,
-                                      ),
-                                width: 1.5,
-                              ),
-                            ),
-                            child: isAllSelected
-                                ? const Icon(
-                                    Icons.done_all_rounded,
-                                    size: 15,
-                                    color: Colors.white,
-                                  )
-                                : null,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Tất cả',
-                            style: AppTypography.labelSm.copyWith(
-                              color: theme.textSecondary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-
-                  final totalWidget = Column(
-                    crossAxisAlignment: isCompact
-                        ? CrossAxisAlignment.end
-                        : CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: isCompact
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              'Tổng: ',
-                              style: AppTypography.labelSm.copyWith(
-                                color: theme.textSecondary,
-                              ),
-                            ),
-                            Text(
-                              _formatCurrency(checkoutTotal),
-                              style: AppTypography.headlineSm.copyWith(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (selectedShopsCount >= 2 && _isVoucherApplied)
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: isCompact
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft,
-                          child: Text(
-                            'Tiết kiệm 35.000₫',
-                            style: AppTypography.labelSm.copyWith(
-                              color: AppColors.tertiary,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ),
-                    ],
-                  );
-
-                  final ctaWidget = ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(0, 48),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      backgroundColor: totalSelectedCount > 0
-                          ? AppColors.primary
-                          : Colors.grey.shade400,
-                      foregroundColor: Colors.white,
-                      elevation: totalSelectedCount > 0 ? 3 : 0,
-                      shadowColor: AppColors.primary.withValues(alpha: 0.4),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                    ),
-                    onPressed: totalSelectedCount > 0
-                        ? () {
-                            final shopLabel = selectedShopsCount > 1
-                                ? 'Đơn ghép $selectedShopsCount quán KTX'
-                                : 'Tất cả các món đã chọn';
-                            _startCheckoutFlow(
-                              context,
-                              shopLabel: shopLabel,
-                              amount: checkoutTotal,
-                              count: totalSelectedCount,
-                            );
-                          }
-                        : null,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: isCompact
-                            ? MainAxisSize.max
-                            : MainAxisSize.min,
-                        children: [
-                          Text(
-                            widget.lobbyRoom == null
-                                ? 'Thanh toán ($totalSelectedCount)'
-                                : 'Gửi phần ($totalSelectedCount)',
-                            style: AppTypography.titleMd.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.arrow_forward_rounded, size: 18),
-                        ],
-                      ),
-                    ),
-                  );
-
-                  if (isCompact) {
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            selectAllWidget,
-                            const SizedBox(width: 8),
-                            Expanded(child: totalWidget),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 46,
-                          child: ctaWidget,
-                        ),
-                      ],
-                    );
-                  }
-
-                  return Row(
-                    children: [
-                      selectAllWidget,
-                      const SizedBox(width: AppTokens.spaceSm),
-                      Expanded(child: totalWidget),
-                      const SizedBox(width: AppTokens.spaceSm),
-                      Flexible(child: SizedBox(height: 48, child: ctaWidget)),
-                    ],
-                  );
-                },
+              const SizedBox(width: 8),
+              Text(
+                'Phí theo quán',
+                style: AppTypography.labelSm.copyWith(
+                  color: AppColors.secondary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 8),
+
+          // Dòng điều khiển chính: Chọn tất cả + Giá + Nút CTA
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+              final isCompact =
+                  constraints.maxWidth < (380 * textScale) || textScale >= 1.2;
+              final selectAllWidget = InkWell(
+                onTap: () => _toggleSelectAll(!isAllSelected, allItems),
+                borderRadius: BorderRadius.circular(6),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: isAllSelected
+                              ? AppColors.primary
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: isAllSelected
+                                ? AppColors.primary
+                                : theme.textSecondary.withValues(alpha: 0.4),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: isAllSelected
+                            ? const Icon(
+                                Icons.done_all_rounded,
+                                size: 15,
+                                color: Colors.white,
+                              )
+                            : null,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Tất cả',
+                        style: AppTypography.labelSm.copyWith(
+                          color: theme.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+
+              final totalWidget = Column(
+                crossAxisAlignment: isCompact
+                    ? CrossAxisAlignment.end
+                    : CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: isCompact
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          'Tổng: ',
+                          style: AppTypography.labelSm.copyWith(
+                            color: theme.textSecondary,
+                          ),
+                        ),
+                        Text(
+                          _formatCurrency(checkoutTotal),
+                          style: AppTypography.headlineSm.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (selectedShopsCount >= 2 && _isVoucherApplied)
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: isCompact
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: Text(
+                        'Tiết kiệm 35.000₫',
+                        style: AppTypography.labelSm.copyWith(
+                          color: AppColors.tertiary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+
+              final ctaWidget = ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(0, 48),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  backgroundColor: totalSelectedCount > 0
+                      ? AppColors.primary
+                      : Colors.grey.shade400,
+                  foregroundColor: Colors.white,
+                  elevation: totalSelectedCount > 0 ? 3 : 0,
+                  shadowColor: AppColors.primary.withValues(alpha: 0.4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                ),
+                onPressed: totalSelectedCount > 0
+                    ? () {
+                        final shopLabel = selectedShopsCount > 1
+                            ? 'Đơn ghép $selectedShopsCount quán KTX'
+                            : 'Tất cả các món đã chọn';
+                        _startCheckoutFlow(
+                          context,
+                          shopLabel: shopLabel,
+                          amount: checkoutTotal,
+                          count: totalSelectedCount,
+                        );
+                      }
+                    : null,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: isCompact
+                        ? MainAxisSize.max
+                        : MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.lobbyRoom == null
+                            ? 'Thanh toán ($totalSelectedCount)'
+                            : 'Gửi phần ($totalSelectedCount)',
+                        style: AppTypography.titleMd.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.arrow_forward_rounded, size: 18),
+                    ],
+                  ),
+                ),
+              );
+
+              if (isCompact) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        selectAllWidget,
+                        const SizedBox(width: 8),
+                        Expanded(child: totalWidget),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 46,
+                      child: ctaWidget,
+                    ),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  selectAllWidget,
+                  const SizedBox(width: AppTokens.spaceSm),
+                  Expanded(child: totalWidget),
+                  const SizedBox(width: AppTokens.spaceSm),
+                  Flexible(child: SizedBox(height: 48, child: ctaWidget)),
+                ],
+              );
+            },
+          ),
+        ],
       ),
     );
   }

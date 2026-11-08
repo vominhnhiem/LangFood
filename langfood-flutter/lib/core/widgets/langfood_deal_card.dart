@@ -199,10 +199,10 @@ class LangFoodDealCard extends StatelessWidget {
                     onAddToCart();
                   },
                   child: Container(
-                    width: 32,
-                    height: 32,
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
-                      color: AppColors.primary,
+                      color: AppColors.campusViolet,
                       borderRadius: BorderRadius.circular(AppTokens.radiusFull),
                       boxShadow: [
                         BoxShadow(
@@ -235,6 +235,7 @@ class LangFoodDealCard extends StatelessWidget {
 
       return Image.network(
         imgUrl,
+        cacheWidth: 432,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
       );

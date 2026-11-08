@@ -2,6 +2,7 @@ class OrderTestModel {
   final int? id;
   final String customerName;
   final String deliveryAddress;
+  final String? pickupAddress;
   final String phone;
   final double latitude;
   final double longitude;
@@ -14,6 +15,7 @@ class OrderTestModel {
     this.id,
     required this.customerName,
     required this.deliveryAddress,
+    this.pickupAddress,
     required this.phone,
     required this.latitude,
     required this.longitude,
@@ -27,7 +29,9 @@ class OrderTestModel {
     return OrderTestModel(
       id: json['id'] as int?,
       customerName: json['customerName'] as String? ?? 'Khách hàng Demo',
-      deliveryAddress: json['deliveryAddress'] as String? ?? 'Sảnh KTX Khu B, Thủ Đức',
+      deliveryAddress:
+          json['deliveryAddress'] as String? ?? 'Sảnh KTX Khu B, Thủ Đức',
+      pickupAddress: json['pickupAddress'] as String?,
       phone: json['phone'] as String? ?? '0987654321',
       latitude: (json['latitude'] as num?)?.toDouble() ?? 10.8800,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 106.8050,
@@ -43,6 +47,7 @@ class OrderTestModel {
       if (id != null) 'id': id,
       'customerName': customerName,
       'deliveryAddress': deliveryAddress,
+      if (pickupAddress != null) 'pickupAddress': pickupAddress,
       'phone': phone,
       'latitude': latitude,
       'longitude': longitude,

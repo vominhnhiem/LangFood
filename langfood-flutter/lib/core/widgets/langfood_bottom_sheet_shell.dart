@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_tokens.dart';
 import '../theme/app_typography.dart';
+import '../utils/app_motion.dart';
 
 /// Khung đáy chuẩn Apple iOS Sheet Presentation (Level 3 Elevation)
 /// - Bo góc trên 24px
@@ -44,6 +45,7 @@ class LangFoodBottomSheetShell extends StatelessWidget {
       enableDrag: enableDrag,
       backgroundColor: Colors.transparent,
       elevation: 0,
+      sheetAnimationStyle: AppMotion.sheetStyle(context),
       builder: (ctx) => LangFoodBottomSheetShell(
         title: title,
         bottomAction: bottomAction,
@@ -109,22 +111,15 @@ class LangFoodBottomSheetShell extends StatelessWidget {
                     else
                       const Spacer(),
                     if (showCloseButton)
-                      GestureDetector(
-                        onTap: onClose ?? () => Navigator.pop(context),
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? Colors.grey.shade800
-                                : Colors.grey.shade100,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.close_rounded,
-                            size: 18,
-                            color: theme.textSecondary,
-                          ),
+                      IconButton(
+                        tooltip: 'Đóng',
+                        onPressed: onClose ?? () => Navigator.pop(context),
+                        style: IconButton.styleFrom(
+                          minimumSize: const Size.square(48),
+                          backgroundColor: theme.surfaceContainerLow,
+                          foregroundColor: theme.textSecondary,
                         ),
+                        icon: const Icon(Icons.close_rounded, size: 20),
                       ),
                   ],
                 ),

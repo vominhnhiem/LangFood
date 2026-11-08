@@ -64,6 +64,7 @@ class OrderModel {
   final double? deliveryLongitude;
   final int paymentMethod;
   final String? createdAt;
+  final String? deliveredAt;
   final List<OrderItemModel> orderItems;
   bool get canCancel => status == 'Pending' || status == 'PendingPayment';
   bool get isFinished =>
@@ -98,6 +99,7 @@ class OrderModel {
     this.deliveryLongitude,
     this.paymentMethod = 0,
     this.createdAt,
+    this.deliveredAt,
     this.orderItems = const [],
   });
 
@@ -127,6 +129,7 @@ class OrderModel {
       deliveryLongitude: (json['deliveryLongitude'] as num?)?.toDouble(),
       paymentMethod: json['paymentMethod'] as int? ?? 0,
       createdAt: json['createdAt'] as String?,
+      deliveredAt: json['deliveredAt'] as String?,
       orderItems: items,
     );
   }

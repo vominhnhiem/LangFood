@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,6 +10,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/app_motion.dart';
+import '../../../../core/widgets/langfood_campus_route.dart';
 import '../../../../core/widgets/langfood_deal_card.dart';
 import '../../../../core/widgets/langfood_empty_state.dart';
 import '../../../../core/widgets/langfood_floating_cart_pill.dart';
@@ -30,15 +29,6 @@ import '../../../food_detail/presentation/screens/food_detail_screen.dart';
 import '../../../shop/presentation/screens/shop_menu_screen.dart';
 import 'lobby_pooling_screen.dart';
 
-/// Màn hình Trang Chủ (HomeScreen) chuẩn thiết kế Stitch LF-01 (Apple HIG & Material 3)
-/// - Collapsing Header với SliverAppBar và tìm kiếm thích ứng
-/// - Lời chào cá nhân hóa cho sinh viên KTX theo thời gian thực
-/// - Bộ lọc phân loại dạng Capsule Pill bo tròn 9999pt
-/// - Banner quảng cáo trượt tự động (Combo thi cử 35k, Freeship KTX)
-/// - Deal chớp nhoáng nghỉ trưa kèm đồng hồ đếm ngược Live Countdown
-/// - Danh sách quán ngon sinh viên chấm cao thẻ ngang kèm điểm đánh giá
-/// - Floating Cart Pill nổi góc đáy khi giỏ hàng có sản phẩm
-/// - Miễn nhiễm với RenderFlex overflow trên mọi kích thước (320px - 430px) và text scale 1.0 - 1.3
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -60,47 +50,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _activeQuickPill; // 'group', 'favorite', 'under30k', 'freeship'
   bool _isLoading = true;
   String? _errorMessage;
-  int _currentNavIndex = 0;
 
-  // Banner carousel state
-  final PageController _bannerController = PageController();
-  int _currentBannerIndex = 0;
-  Timer? _bannerTimer;
-
-  // Live Deal Countdown Timer (Stitch: 00:31:38)
-
-  // Selected delivery location
   String _selectedDorm = 'KTX Khu B • Tòa BA2';
-
-  final List<Map<String, String>> _promoBanners = [
-    {
-      'tag': 'LANGFOOD KTX',
-      'title': 'Khám phá món ngon quanh KTX',
-      'subtitle': 'Chọn món và xem đầy đủ chi phí trước khi đặt',
-      'cta': 'Xem thực đơn',
-      'icon': 'lunch_dining',
-      'gradientStart': '0xFFFF5722',
-      'gradientEnd': '0xFFFF9800',
-    },
-    {
-      'tag': 'THỰC ĐƠN HÔM NAY',
-      'title': 'Đổi bữa với thực đơn hôm nay',
-      'subtitle': 'Giá món được cập nhật từ quán',
-      'cta': 'Đặt món ngay',
-      'icon': 'rice_bowl',
-      'gradientStart': '0xFFE64A19',
-      'gradientEnd': '0xFFFF7043',
-    },
-    {
-      'tag': 'ĐỒ UỐNG & ĂN VẶT',
-      'title': 'Thêm đồ uống cho bữa ăn của bạn',
-      'subtitle': 'Xem tùy chọn và ghi chú trước khi đặt',
-      'cta': 'Thử ngay',
-      'icon': 'local_cafe',
-      'gradientStart': '0xFFB02F00',
-      'gradientEnd': '0xFFFF8A65',
-    },
-  ];
 
   final List<String> _vibeFilters = [
     'Tất cả',
@@ -113,30 +64,13 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadInitialData();
-    _startBannerAutoScroll();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    _bannerController.dispose();
-    _bannerTimer?.cancel();
 
     super.dispose();
-  }
-
-  void _startBannerAutoScroll() {
-    _bannerTimer?.cancel();
-    _bannerTimer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (_bannerController.hasClients) {
-        int nextIndex = (_currentBannerIndex + 1) % _promoBanners.length;
-        _bannerController.animateToPage(
-          nextIndex,
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOut,
-        );
-      }
-    });
   }
 
   Future<void> _loadInitialData() async {
@@ -333,7 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = context.langFoodTheme;
-    final cartProvider = Provider.of<CartProvider>(context);
+    final cartProvider = context.read<CartProvider>();
     final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
@@ -347,28 +281,31 @@ class _HomeScreenState extends State<HomeScreen> {
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                // A. Collapsing SliverAppBar (Brand & Header Top Bar)
-                _buildSliverAppBar(theme, authProvider, cartProvider),
-
-                // B. Delivery Address, Greeting, Search & Quick Pills
-                SliverToBoxAdapter(
-                  child: _buildHeaderSection(theme, authProvider, cartProvider),
-                ),
-
-                // C. Danh mục món ngon (Capsule Category Carousel)
+                _buildSliverAppBar(theme),
+                SliverToBoxAdapter(child: _buildSearch(theme)),
                 SliverToBoxAdapter(child: _buildCategoriesSection(theme)),
-
-                // D. Promotional Banner Carousel (Stitch Parallax Visual)
-                SliverToBoxAdapter(child: _buildPromoBannerSlider()),
-
-                // E. Deal Chớp Nhoáng Nghỉ Trưa ⚡ (Horizontal Flash Deal Cards)
-                SliverToBoxAdapter(
-                  child: _buildFlashDealsSection(
-                    theme,
-                    cartProvider,
-                    authProvider,
+                if (!_hasActiveFilter) ...[
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    sliver: SliverToBoxAdapter(
+                      child: LangFoodCampusBanner(
+                        label: 'LANGFOOD / KTX KHU B',
+                        title: 'Hôm nay ăn gì ở Làng?',
+                        detail: _getGreetingText(
+                          authProvider.user?.fullName ??
+                              authProvider.user?.username,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                  SliverToBoxAdapter(
+                    child: _buildFlashDealsSection(
+                      theme,
+                      cartProvider,
+                      authProvider,
+                    ),
+                  ),
+                ],
 
                 // F. Thực đơn quanh KTX (Section Header & Vibe Filter)
                 SliverToBoxAdapter(child: _buildVibeFilterSection(theme)),
@@ -385,19 +322,22 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // 2. Floating Cart Pill nổi góc đáy (Stitch LF-01 Level 3 Elevation)
-          if (cartProvider.totalItemsCount > 0)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 8, // Nổi thoải mái ngay trên BottomNavigationBar
-              child: LangFoodFloatingCartPill(
-                totalItemCount: cartProvider.totalItemsCount,
-                totalPrice: cartProvider.totalAmount,
-                label: 'Xem giỏ đơn KTX',
-                onTap: _openCart,
-              ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 8,
+            child: Selector<CartProvider, (int, double)>(
+              selector: (_, cart) => (cart.totalItemsCount, cart.totalAmount),
+              builder: (context, totals, _) => totals.$1 == 0
+                  ? const SizedBox.shrink()
+                  : LangFoodFloatingCartPill(
+                      totalItemCount: totals.$1,
+                      totalPrice: totals.$2,
+                      label: 'Xem giỏ đơn KTX',
+                      onTap: _openCart,
+                    ),
             ),
+          ),
         ],
       ),
 
@@ -408,386 +348,110 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // --- WIDGET BUILDERS ---
 
-  Widget _buildSliverAppBar(
-    LangFoodThemeExtension theme,
-    AuthProvider authProvider,
-    CartProvider cartProvider,
-  ) {
+  bool get _hasActiveFilter =>
+      _searchController.text.trim().isNotEmpty ||
+      _selectedCategoryId != -1 ||
+      _activeQuickPill != null ||
+      _selectedVibeIndex != 0;
+
+  Widget _buildSliverAppBar(LangFoodThemeExtension theme) {
+    final scheme = Theme.of(context).colorScheme;
     return SliverAppBar(
       pinned: true,
-      floating: false,
-      elevation: 0,
-      scrolledUnderElevation: 1.0,
-      backgroundColor: theme.card,
-      surfaceTintColor: Colors.transparent,
+      backgroundColor: theme.canvas,
       titleSpacing: AppTokens.marginMobile,
-      title: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.35),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.shopping_bag_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+      toolbarHeight: 76,
+      title: Semantics(
+        button: true,
+        child: InkWell(
+          onTap: _showLocationPickerSheet,
+          borderRadius: AppTokens.borderRadiusLg,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
+            child: Row(
               children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'LANGFOOD',
-                      style: AppTypography.labelSm.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.0,
-                        fontSize: 10,
-                      ),
-                    ),
-                    const SizedBox(width: 3),
-                    const Icon(
-                      Icons.verified_rounded,
-                      size: 13,
-                      color: AppColors.primary,
-                    ),
-                  ],
-                ),
-                Text(
-                  'Khám Phá',
-                  style: AppTypography.titleMd.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.textPrimary,
-                    fontSize: 16,
-                    height: 1.1,
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: scheme.secondaryContainer,
+                    borderRadius: AppTokens.borderRadiusMd,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Icon(
+                      Icons.place_rounded,
+                      color: scheme.onSecondaryContainer,
+                    ),
+                  ),
                 ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'GIAO ĐẾN',
+                        style: AppTypography.labelSm.copyWith(
+                          color: theme.textSecondary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text(
+                        _selectedDorm,
+                        style: AppTypography.titleMd,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.keyboard_arrow_down_rounded),
               ],
             ),
-          ),
-        ],
-      ),
-      actions: [
-        // Action: Cart Shortcut
-        IconButton(
-          tooltip: 'Giỏ hàng KTX',
-          onPressed: _openCart,
-          icon: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Icon(
-                Icons.shopping_bag_outlined,
-                color: theme.textPrimary,
-                size: 24,
-              ),
-              if (cartProvider.totalItemsCount > 0)
-                Positioned(
-                  top: -2,
-                  right: -4,
-                  child: Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
-                    ),
-                    child: Text(
-                      '${cartProvider.totalItemsCount}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
           ),
         ),
-        // Action: User Menu / Avatar
+      ),
+      actions: [
         Padding(
-          padding: const EdgeInsets.only(right: 14, left: 4),
-          child: GestureDetector(
-            onTap: () => _showUserMenu(authProvider),
-            child: Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primaryDeep,
-                border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.3),
-                  width: 1.2,
-                ),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                authProvider.user?.fullName?.isNotEmpty == true
-                    ? authProvider.user!.fullName![0].toUpperCase()
-                    : (authProvider.user?.username.isNotEmpty == true
-                          ? authProvider.user!.username[0].toUpperCase()
-                          : 'U'),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ),
+          padding: const EdgeInsets.only(right: 8),
+          child: IconButton(
+            tooltip: 'Giỏ hàng KTX',
+            onPressed: _openCart,
+            icon: const Icon(Icons.shopping_bag_outlined),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildHeaderSection(
-    LangFoodThemeExtension theme,
-    AuthProvider authProvider,
-    CartProvider cartProvider,
-  ) {
-    return Container(
-      color: theme.card,
-      padding: const EdgeInsets.fromLTRB(
-        AppTokens.marginMobile,
-        6,
-        AppTokens.marginMobile,
-        14,
-      ),
+  Widget _buildSearch(LangFoodThemeExtension theme) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 1. Delivery Location Bar (Stitch: GIAO TẬN PHÒNG THI & KTX)
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.location_on_rounded,
-                  color: AppColors.primary,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: InkWell(
-                  onTap: _showLocationPickerSheet,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'GIAO TẬN PHÒNG THI & KTX',
-                        style: AppTypography.labelSm.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.8,
-                          fontSize: 10,
-                        ),
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              _selectedDorm,
-                              style: AppTypography.titleMd.copyWith(
-                                color: theme.textPrimary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(
-                            Icons.expand_more_rounded,
-                            size: 18,
-                            color: theme.textSecondary,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // 2. Large Title with Dynamic Student Greeting
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.wb_sunny_rounded,
-                color: AppColors.accent,
-                size: 16,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  _getGreetingText(
-                    authProvider.user?.fullName ?? authProvider.user?.username,
-                  ),
-                  style: AppTypography.labelMd.copyWith(
-                    color: theme.textSecondary,
-                    fontSize: 13,
-                  ),
-                  maxLines: 2,
-                  softWrap: true,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Hôm nay ăn gì ở Làng? 🍜',
-            style: AppTypography.headlineLg.copyWith(
-              color: theme.textPrimary,
-              fontWeight: FontWeight.bold,
-              fontSize: 24,
-              letterSpacing: -0.5,
-            ),
-            softWrap: true,
-          ),
-          const SizedBox(height: 12),
-
-          // 3. Search Bar bo góc Squircle với Mic & QR Scanner (Stitch LF-01)
-          Container(
-            height: 46,
-            decoration: BoxDecoration(
-              color: theme.canvas,
-              borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-              border: Border.all(color: theme.borderSubtle, width: 0.8),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.search_rounded,
-                  color: theme.textSecondary,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (_) => _applyFilter(),
-                    style: TextStyle(color: theme.textPrimary, fontSize: 13),
-                    decoration: InputDecoration(
-                      hintText: 'Tìm cơm gà, trà sữa nướng, bún bò...',
-                      hintStyle: TextStyle(
-                        color: theme.textSecondary.withValues(alpha: 0.65),
-                        fontSize: 13,
-                      ),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                ),
-                if (_searchController.text.isNotEmpty)
-                  GestureDetector(
-                    onTap: () {
-                      _searchController.clear();
-                      _applyFilter();
-                    },
-                    child: Icon(
-                      Icons.cancel_rounded,
-                      color: theme.textSecondary,
-                      size: 18,
-                    ),
-                  )
-                else ...[
-                  IconButton(
-                    icon: Icon(
-                      Icons.mic_none_rounded,
-                      color: theme.textSecondary,
-                      size: 19,
-                    ),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 28,
-                      minHeight: 28,
-                    ),
-                    onPressed: () {
-                      AppHaptics.light();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Tính năng tìm kiếm bằng giọng nói đang chuẩn bị ra mắt!',
-                          ),
-                          duration: Duration(seconds: 1),
-                        ),
-                      );
-                    },
-                  ),
-                  if (MediaQuery.sizeOf(context).width >= 350) ...[
-                    Container(
-                      width: 1,
-                      height: 14,
-                      color: theme.borderSubtle,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.qr_code_scanner_rounded,
-                        color: theme.textSecondary,
-                        size: 19,
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 28,
-                        minHeight: 28,
-                      ),
+          TextField(
+            controller: _searchController,
+            onChanged: (_) => _applyFilter(),
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              hintText: 'Tìm món hoặc tên quán',
+              fillColor: theme.card,
+              prefixIcon: Icon(Icons.search_rounded, color: scheme.secondary),
+              suffixIcon: _searchController.text.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'Xóa tìm kiếm',
+                      icon: const Icon(Icons.close_rounded),
                       onPressed: () {
-                        AppHaptics.light();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Tính năng quét mã QR bàn / quán đang chuẩn bị ra mắt!',
-                            ),
-                            duration: Duration(seconds: 1),
-                          ),
-                        );
+                        _searchController.clear();
+                        _applyFilter();
                       },
                     ),
-                  ],
-                ],
-              ],
             ),
           ),
-          const SizedBox(height: 12),
-
-          // 4. Student Quick Action Pills (Đặt nhóm chia ship, Quán quen, Dưới 30k, Freeship)
+          const SizedBox(height: 8),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -865,6 +529,8 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       },
       child: Container(
+        constraints: const BoxConstraints(minHeight: 48),
+        alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
           color: bgColor,
@@ -915,7 +581,7 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
         SizedBox(
-          height: 94,
+          height: 78 + MediaQuery.textScalerOf(context).scale(13) * 2,
           child: _isLoading && _categories.isEmpty
               ? ListView.builder(
                   scrollDirection: Axis.horizontal,
@@ -1033,11 +699,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             const SizedBox(height: 6),
                             SizedBox(
-                              width: 66,
+                              width: 76,
                               child: Text(
                                 cat.name,
                                 textAlign: TextAlign.center,
-                                maxLines: 1,
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontSize: 11,
@@ -1094,215 +760,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return AppColors.primary;
   }
 
-  Widget _buildPromoBannerSlider() {
-    return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: AppTokens.marginMobile,
-        vertical: 8,
-      ),
-      height: 156,
-      child: PageView.builder(
-        controller: _bannerController,
-        onPageChanged: (index) {
-          setState(() {
-            _currentBannerIndex = index;
-          });
-        },
-        itemCount: _promoBanners.length,
-        itemBuilder: (context, index) {
-          final banner = _promoBanners[index];
-          return Container(
-            margin: const EdgeInsets.symmetric(horizontal: 2),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(int.parse(banner['gradientStart']!)),
-                  Color(int.parse(banner['gradientEnd']!)),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-              boxShadow: [
-                BoxShadow(
-                  color: Color(int.parse(banner['gradientStart']!))
-                      .withValues(alpha: 0.3),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Top Row: Tag, Title, Subtitle (Left) + Icon (Right)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.25),
-                              borderRadius: BorderRadius.circular(
-                                AppTokens.radiusFull,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.flash_on_rounded,
-                                  size: 12,
-                                  color: Colors.white,
-                                ),
-                                const SizedBox(width: 3),
-                                Flexible(
-                                  child: Text(
-                                    banner['tag']!,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            banner['title']!,
-                            style: AppTypography.headlineSm.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                              height: 1.2,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            banner['subtitle']!,
-                            style: AppTypography.bodySm.copyWith(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 11,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.lunch_dining_rounded,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Bottom Row: Dots Indicator (Left) + CTA Button (Right) - Stitch LF-01
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Dots Indicator
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: List.generate(_promoBanners.length, (idx) {
-                        final isActive = _currentBannerIndex == idx;
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 250),
-                          width: isActive ? 16 : 6,
-                          height: 5,
-                          margin: const EdgeInsets.only(right: 4),
-                          decoration: BoxDecoration(
-                            color: isActive
-                                ? Colors.white
-                                : Colors.white.withValues(alpha: 0.4),
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                        );
-                      }),
-                    ),
-
-                    // CTA Button
-                    PressScaleWidget(
-                      onTap: () {
-                        AppHaptics.light();
-                        _onVibeFilterSelected(0);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 4,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                banner['cta']!,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppColors.primary,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.arrow_forward_rounded,
-                              size: 13,
-                              color: AppColors.primary,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   Widget _buildFlashDealsSection(
     LangFoodThemeExtension theme,
     CartProvider cartProvider,
@@ -1332,7 +789,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         SizedBox(
-          height: 236,
+          height: 186 + MediaQuery.textScalerOf(context).scale(28) * 2,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1554,23 +1011,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          PressScaleWidget(
-            onTap: _showCommunalOrderSheet,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Text(
-                'Tạo giỏ',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-              ),
-            ),
+          TextButton(
+            onPressed: _showCommunalOrderSheet,
+            child: const Text('Tạo giỏ'),
           ),
         ],
       ),
@@ -1578,39 +1021,35 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBottomNavigationBar(LangFoodThemeExtension theme) {
-    return Container(
-      height: 60,
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: theme.card,
         border: Border(top: BorderSide(color: theme.borderSubtle, width: 0.5)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -3),
-          ),
-        ],
       ),
-      child: Row(
-        children: [
-          _buildNavItem(0, Icons.storefront_rounded, 'Khám phá', theme),
-          _buildNavItem(1, Icons.receipt_long_rounded, 'Đơn hàng', theme),
-          _buildNavItem(
-            2,
-            Icons.group_rounded,
-            'Đặt chung',
-            theme,
-            hasBadge: true,
-            badgeText: 'Nhóm',
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 39 + MediaQuery.textScalerOf(context).scale(13) * 2,
+          child: Row(
+            children: [
+              _buildNavItem(0, Icons.storefront_rounded, 'Khám phá', theme),
+              _buildNavItem(1, Icons.receipt_long_rounded, 'Đơn hàng', theme),
+              _buildNavItem(2, Icons.group_rounded, 'Đặt chung', theme),
+              _buildNavItem(
+                3,
+                Icons.notifications_none_rounded,
+                'Thông báo',
+                theme,
+              ),
+              _buildNavItem(
+                4,
+                Icons.person_outline_rounded,
+                'Tài khoản',
+                theme,
+              ),
+            ],
           ),
-          _buildNavItem(
-            3,
-            Icons.notifications_none_rounded,
-            'Thông báo',
-            theme,
-          ),
-          _buildNavItem(4, Icons.person_outline_rounded, 'Tài khoản', theme),
-        ],
+        ),
       ),
     );
   }
@@ -1619,19 +1058,15 @@ class _HomeScreenState extends State<HomeScreen> {
     int index,
     IconData icon,
     String label,
-    LangFoodThemeExtension theme, {
-    bool hasBadge = false,
-    String? badgeText,
-  }) {
-    final isSelected = _currentNavIndex == index;
+    LangFoodThemeExtension theme,
+  ) {
+    final isSelected = index == 0;
+    final scheme = Theme.of(context).colorScheme;
 
     return Expanded(
       child: InkWell(
         onTap: () {
           AppHaptics.selection();
-          setState(() {
-            _currentNavIndex = 0;
-          });
           if (index == 1) {
             Navigator.push(
               context,
@@ -1648,50 +1083,38 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(
-                  icon,
-                  color: isSelected ? AppColors.primary : theme.textSecondary,
-                  size: 22,
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? scheme.secondaryContainer
+                    : Colors.transparent,
+                borderRadius: AppTokens.borderRadiusFull,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 3,
                 ),
-                if (hasBadge && badgeText != null)
-                  Positioned(
-                    top: -4,
-                    right: -10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.accent,
-                        borderRadius: BorderRadius.circular(
-                          AppTokens.radiusFull,
-                        ),
-                      ),
-                      child: Text(
-                        badgeText,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+                child: Icon(
+                  icon,
+                  color: isSelected
+                      ? scheme.onSecondaryContainer
+                      : theme.textSecondary,
+                  size: 21,
+                ),
+              ),
             ),
             const SizedBox(height: 2),
             Text(
               label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              maxLines: 2,
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? AppColors.primary : theme.textSecondary,
+                color: isSelected
+                    ? scheme.onSecondaryContainer
+                    : theme.textSecondary,
               ),
             ),
           ],
@@ -1714,6 +1137,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     showModalBottomSheet(
       context: context,
+      sheetAnimationStyle: AppMotion.sheetStyle(context),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1806,14 +1230,15 @@ class _HomeScreenState extends State<HomeScreen> {
         if (product.shopId > 0 && product.isAvailable && product.isShopOpen)
           product.shopId: product.shopName,
     };
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => LobbyPoolingScreen(shops: shops),
-    ));
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => LobbyPoolingScreen(shops: shops)),
+    );
   }
 
   void _showNotifications() {
     showModalBottomSheet<void>(
       context: context,
+      sheetAnimationStyle: AppMotion.sheetStyle(context),
       builder: (ctx) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -1853,6 +1278,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showUserMenu(AuthProvider authProvider) {
     showModalBottomSheet<void>(
       context: context,
+      sheetAnimationStyle: AppMotion.sheetStyle(context),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),

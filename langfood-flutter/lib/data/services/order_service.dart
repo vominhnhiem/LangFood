@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
@@ -73,17 +73,10 @@ class OrderService {
 
   // Lấy danh sách đơn hàng của Quán ăn
   Future<List<OrderModel>> getOrdersByShop(int shopId) async {
-    try {
-      final response = await ApiClient.get('api/Orders/shop/$shopId');
-      if (response.statusCode == 200) {
-        final List list = jsonDecode(utf8.decode(response.bodyBytes));
-        return list.map((json) => OrderModel.fromJson(json)).toList();
-      }
-      return [];
-    } catch (e) {
-      debugPrint('OrderService.getOrdersByShop error: $e');
-      rethrow;
-    }
+    final orders = ApiClient.decodeResponse(
+      await ApiClient.get('api/Orders/shop/$shopId'),
+    ) as List;
+    return orders.map((json) => OrderModel.fromJson(json)).toList();
   }
 
   // Quán ăn xác nhận đơn hàng & Bắt đầu nấu (Chuyển sang "Preparing")
@@ -155,11 +148,7 @@ class OrderService {
   }
 
   // Shipper hoàn thành đơn hàng (Chuyển sang "Completed")
-  Future<bool> completeOrder(
-    int orderId, {
-    double? lat,
-    double? lng,
-  }) async {
+  Future<bool> completeOrder(int orderId, {double? lat, double? lng}) async {
     try {
       String url = 'api/Orders/complete/$orderId';
       if (lat != null && lng != null) {

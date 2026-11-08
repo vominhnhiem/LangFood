@@ -12,6 +12,36 @@ class AppMotion {
   static const Curve curveDefault = Curves.easeOutCubic;
   static const Curve curveInOut = Curves.easeInOutCubic;
   static const Curve curveSpring = Curves.easeOutBack;
+
+  static Duration durationOf(BuildContext context, Duration duration) =>
+      MediaQuery.disableAnimationsOf(context) ? Duration.zero : duration;
+
+  static AnimationStyle sheetStyle(BuildContext context) =>
+      MediaQuery.disableAnimationsOf(context)
+      ? AnimationStyle.noAnimation
+      : const AnimationStyle(
+          duration: durationSheet,
+          reverseDuration: durationNormal,
+        );
+}
+
+class LangFoodScrollBehavior extends MaterialScrollBehavior {
+  const LangFoodScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) =>
+      switch (getPlatform(context)) {
+        TargetPlatform.android || TargetPlatform.iOS =>
+          const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+        _ => super.getScrollPhysics(context),
+      };
+
+  @override
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) => child;
 }
 
 /// Tiện ích Haptic Feedback tinh tế (chỉ rung nhẹ cho tương tác có ý nghĩa)
@@ -21,6 +51,7 @@ class AppHaptics {
       HapticFeedback.lightImpact();
     } catch (_) {}
   }
+
   static void lightImpact() => light();
 
   static void medium() {
@@ -28,6 +59,7 @@ class AppHaptics {
       HapticFeedback.mediumImpact();
     } catch (_) {}
   }
+
   static void mediumImpact() => medium();
 
   static void selection() {
@@ -35,6 +67,7 @@ class AppHaptics {
       HapticFeedback.selectionClick();
     } catch (_) {}
   }
+
   static void selectionClick() => selection();
 }
 
@@ -52,7 +85,7 @@ class PressScaleWidget extends StatefulWidget {
     this.onTap,
     this.pressedScale = 0.97,
     this.enableHaptic = true,
-    this.duration = const Duration(milliseconds: 120),
+    this.duration = AppMotion.durationFast,
   });
 
   @override
@@ -89,13 +122,14 @@ class _PressScaleWidgetState extends State<PressScaleWidget>
     if (widget.enableHaptic) {
       AppHaptics.light();
     }
-    _controller.forward();
+    if (!MediaQuery.disableAnimationsOf(context)) {
+      _controller.forward();
+    }
   }
 
   void _onTapUp(TapUpDetails details) {
     if (widget.onTap == null) return;
     _controller.reverse();
-    widget.onTap?.call();
   }
 
   void _onTapCancel() {
@@ -107,13 +141,18 @@ class _PressScaleWidgetState extends State<PressScaleWidget>
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTapDown: _onTapDown,
-      onTapUp: _onTapUp,
-      onTapCancel: _onTapCancel,
+      onTap: widget.onTap,
+      onTapDown: widget.onTap == null ? null : _onTapDown,
+      onTapUp: widget.onTap == null ? null : _onTapUp,
+      onTapCancel: widget.onTap == null ? null : _onTapCancel,
       child: AnimatedBuilder(
         animation: _scaleAnimation,
-        builder: (context, child) =>
-            Transform.scale(scale: _scaleAnimation.value, child: child),
+        builder: (context, child) => Transform.scale(
+          scale: MediaQuery.disableAnimationsOf(context)
+              ? 1
+              : _scaleAnimation.value,
+          child: child,
+        ),
         child: widget.child,
       ),
     );

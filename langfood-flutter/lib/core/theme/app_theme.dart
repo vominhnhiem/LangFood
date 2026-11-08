@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
@@ -100,215 +101,173 @@ class LangFoodThemeExtension extends ThemeExtension<LangFoodThemeExtension> {
 extension LangFoodThemeContext on BuildContext {
   LangFoodThemeExtension get langFoodTheme =>
       Theme.of(this).extension<LangFoodThemeExtension>() ??
-      LangFoodThemeExtension.light;
+      (isDarkMode ? LangFoodThemeExtension.dark : LangFoodThemeExtension.light);
   bool get isDarkMode => Theme.of(this).brightness == Brightness.dark;
 }
 
-/// Hệ thống Theme chính thức của LangFood Campus Express
-class AppTheme {
-  // Light Theme
-  static ThemeData get lightTheme {
-    final textTheme = AppTypography.createTextTheme(AppColors.textPrimaryLight);
+/// Shared appearance for all three roles.
+abstract final class AppTheme {
+  static final lightTheme = _build(
+    LangFoodThemeExtension.light,
+    Brightness.light,
+  );
+  static final darkTheme = _build(LangFoodThemeExtension.dark, Brightness.dark);
 
+  static ThemeData _build(
+    LangFoodThemeExtension colors,
+    Brightness brightness,
+  ) {
+    final dark = brightness == Brightness.dark;
+    final actionInk = dark ? const Color(0xFFFFAA87) : AppColors.primaryDeep;
+    final actionFill = dark ? const Color(0xFFFFAD8A) : AppColors.primaryDeep;
+    final onAction = dark ? const Color(0xFF31140B) : Colors.white;
+    final text = AppTypography.createTextTheme(colors.textPrimary);
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          brightness: brightness,
+        ).copyWith(
+          primary: AppColors.primary,
+          onPrimary: const Color(0xFF241007),
+          primaryContainer: dark
+              ? const Color(0xFF542B1E)
+              : const Color(0xFFFFE5D8),
+          onPrimaryContainer: actionInk,
+          secondary: dark ? const Color(0xFFD1C3FF) : AppColors.campusViolet,
+          onSecondary: dark ? AppColors.campusInk : Colors.white,
+          secondaryContainer: dark
+              ? const Color(0xFF3D2D70)
+              : const Color(0xFFEDE6FF),
+          onSecondaryContainer: dark
+              ? const Color(0xFFE6DBFF)
+              : const Color(0xFF4025AA),
+          surface: colors.card,
+          onSurface: colors.textPrimary,
+          onSurfaceVariant: colors.textSecondary,
+          surfaceContainer: colors.surfaceContainerLow,
+          surfaceContainerHigh: colors.surfaceContainerHigh,
+          outline: colors.borderSubtle,
+          outlineVariant: colors.borderSubtle,
+          surfaceTint: Colors.transparent,
+        );
+    const shape = RoundedSuperellipseBorder(
+      borderRadius: AppTokens.borderRadiusXl,
+    );
+    final border = OutlineInputBorder(
+      borderRadius: AppTokens.borderRadiusLg,
+      borderSide: BorderSide(color: colors.borderSubtle),
+    );
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
+      colorScheme: scheme,
       primaryColor: AppColors.primary,
-      scaffoldBackgroundColor: AppColors.canvasLight,
-      colorScheme: const ColorScheme(
-        brightness: Brightness.light,
-        primary: AppColors.primary,
-        onPrimary: Colors.white,
-        primaryContainer: AppColors.primaryLight,
-        onPrimaryContainer: AppColors.primaryDeep,
-        secondary: AppColors.accent,
-        onSecondary: Colors.white,
-        secondaryContainer: AppColors.surfaceContainerLowLight,
-        onSecondaryContainer: AppColors.textPrimaryLight,
-        surface: AppColors.surfaceLight,
-        onSurface: AppColors.textPrimaryLight,
-        error: AppColors.errorApple,
-        onError: Colors.white,
-        outline: AppColors.borderSubtleLight,
+      scaffoldBackgroundColor: colors.canvas,
+      textTheme: text,
+      extensions: [colors],
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: _LangFoodPageTransitions(),
+          TargetPlatform.iOS: _LangFoodPageTransitions(),
+        },
       ),
-      textTheme: textTheme,
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.surfaceLight,
-        foregroundColor: AppColors.textPrimaryLight,
+        backgroundColor: colors.canvas,
+        foregroundColor: colors.textPrimary,
+        centerTitle: false,
         elevation: 0,
-        scrolledUnderElevation: 1,
-        centerTitle: true,
-        titleTextStyle: AppTypography.titleMd.copyWith(
-          color: AppColors.textPrimaryLight,
-        ),
-        iconTheme: const IconThemeData(color: AppColors.textPrimaryLight),
+        scrolledUnderElevation: 0,
+        titleTextStyle: text.titleLarge,
       ),
-      cardTheme: const CardThemeData(
-        color: AppColors.surfaceLight,
+      cardTheme: CardThemeData(
+        color: colors.card,
         elevation: 0,
         margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: AppTokens.borderRadiusLg,
-          side: BorderSide(color: AppColors.borderSubtleLight, width: 0.5),
-        ),
+        shape: shape.copyWith(side: BorderSide(color: colors.borderSubtle)),
       ),
-      bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: AppColors.surfaceLight,
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: colors.card,
         elevation: 0,
-        shape: RoundedRectangleBorder(
+        shape: const RoundedRectangleBorder(
           borderRadius: AppTokens.borderRadiusSheet,
         ),
       ),
+      dialogTheme: DialogThemeData(backgroundColor: colors.card, shape: shape),
+      dividerTheme: DividerThemeData(color: colors.borderSubtle, thickness: 1),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surfaceLight,
+        fillColor: colors.surfaceContainerLow,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
-          vertical: 14,
+          vertical: 16,
         ),
-        hintStyle: AppTypography.bodyMd.copyWith(
-          color: AppColors.textSecondaryLight,
+        hintStyle: AppTypography.bodyMd.copyWith(color: colors.textSecondary),
+        border: border,
+        enabledBorder: border,
+        focusedBorder: border.copyWith(
+          borderSide: BorderSide(color: actionInk, width: 1.5),
         ),
-        border: OutlineInputBorder(
-          borderRadius: AppTokens.borderRadiusMd,
-          borderSide: const BorderSide(color: AppColors.borderSubtleLight),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: AppTokens.borderRadiusMd,
-          borderSide: const BorderSide(color: AppColors.borderSubtleLight),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: AppTokens.borderRadiusMd,
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: AppTokens.borderRadiusMd,
-          borderSide: const BorderSide(color: AppColors.errorApple),
+        errorBorder: border.copyWith(
+          borderSide: BorderSide(color: scheme.error),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
+          backgroundColor: actionFill,
+          foregroundColor: onAction,
           elevation: 0,
-          minimumSize: const Size.fromHeight(50),
-          shape: RoundedRectangleBorder(borderRadius: AppTokens.borderRadiusLg),
-          textStyle: AppTypography.titleMd.copyWith(color: Colors.white),
+          minimumSize: const Size(48, 50),
+          shape: shape,
+          textStyle: AppTypography.titleMd,
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: actionFill,
+          foregroundColor: onAction,
+          minimumSize: const Size(48, 50),
+          shape: shape,
+          textStyle: AppTypography.titleMd,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.primary, width: 1.5),
-          minimumSize: const Size.fromHeight(50),
-          shape: RoundedRectangleBorder(borderRadius: AppTokens.borderRadiusLg),
-          textStyle: AppTypography.titleMd.copyWith(color: AppColors.primary),
+          foregroundColor: actionInk,
+          side: BorderSide(color: colors.borderSubtle),
+          minimumSize: const Size(48, 50),
+          shape: shape,
         ),
       ),
-      extensions: const [LangFoodThemeExtension.light],
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: actionInk),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.campusInk,
+        contentTextStyle: AppTypography.bodyMd.copyWith(color: Colors.white),
+        actionTextColor: const Color(0xFFFFBAA0),
+        shape: shape,
+      ),
     );
   }
+}
 
-  // Dark Theme
-  static ThemeData get darkTheme {
-    final textTheme = AppTypography.createTextTheme(AppColors.textPrimaryDark);
+class _LangFoodPageTransitions extends CupertinoPageTransitionsBuilder {
+  const _LangFoodPageTransitions();
 
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      primaryColor: AppColors.primary,
-      scaffoldBackgroundColor: AppColors.canvasDark,
-      colorScheme: const ColorScheme(
-        brightness: Brightness.dark,
-        primary: AppColors.primary,
-        onPrimary: Colors.white,
-        primaryContainer: AppColors.surfaceContainerHighDark,
-        onPrimaryContainer: Colors.white,
-        secondary: AppColors.accent,
-        onSecondary: Colors.white,
-        secondaryContainer: AppColors.surfaceContainerLowDark,
-        onSecondaryContainer: Colors.white,
-        surface: AppColors.surfaceDark,
-        onSurface: AppColors.textPrimaryDark,
-        error: AppColors.errorApple,
-        onError: Colors.white,
-        outline: AppColors.borderSubtleDark,
-      ),
-      textTheme: textTheme,
-      appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.surfaceDark,
-        foregroundColor: AppColors.textPrimaryDark,
-        elevation: 0,
-        scrolledUnderElevation: 1,
-        centerTitle: true,
-        titleTextStyle: AppTypography.titleMd.copyWith(
-          color: AppColors.textPrimaryDark,
-        ),
-        iconTheme: const IconThemeData(color: AppColors.textPrimaryDark),
-      ),
-      cardTheme: const CardThemeData(
-        color: AppColors.surfaceDark,
-        elevation: 0,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: AppTokens.borderRadiusLg,
-          side: BorderSide(color: AppColors.borderSubtleDark, width: 0.5),
-        ),
-      ),
-      bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: AppColors.surfaceDark,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: AppTokens.borderRadiusSheet,
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: AppColors.surfaceDark,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-        hintStyle: AppTypography.bodyMd.copyWith(
-          color: AppColors.textSecondaryDark,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: AppTokens.borderRadiusMd,
-          borderSide: const BorderSide(color: AppColors.borderSubtleDark),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: AppTokens.borderRadiusMd,
-          borderSide: const BorderSide(color: AppColors.borderSubtleDark),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: AppTokens.borderRadiusMd,
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: AppTokens.borderRadiusMd,
-          borderSide: const BorderSide(color: AppColors.errorApple),
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          minimumSize: const Size.fromHeight(50),
-          shape: RoundedRectangleBorder(borderRadius: AppTokens.borderRadiusLg),
-          textStyle: AppTypography.titleMd.copyWith(color: Colors.white),
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.primary, width: 1.5),
-          minimumSize: const Size.fromHeight(50),
-          shape: RoundedRectangleBorder(borderRadius: AppTokens.borderRadiusLg),
-          textStyle: AppTypography.titleMd.copyWith(color: AppColors.primary),
-        ),
-      ),
-      extensions: const [LangFoodThemeExtension.dark],
-    );
-  }
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) => MediaQuery.disableAnimationsOf(context)
+      ? child
+      : super.buildTransitions(
+          route,
+          context,
+          animation,
+          secondaryAnimation,
+          child,
+        );
 }

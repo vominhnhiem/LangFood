@@ -327,6 +327,7 @@ class ShopProductCard extends StatelessWidget {
 
       return Image.network(
         imgUrl,
+        cacheWidth: 384,
         fit: BoxFit.cover,
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;

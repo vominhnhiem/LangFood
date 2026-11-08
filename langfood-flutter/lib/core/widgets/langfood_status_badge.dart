@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
+import '../theme/app_theme.dart';
 import '../theme/app_tokens.dart';
 import '../theme/app_typography.dart';
 
@@ -22,40 +23,38 @@ class LangFoodStatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color bg;
-    Color fg;
-
-    switch (variant) {
-      case StatusBadgeVariant.success:
-        bg = AppColors.successApple.withOpacity(0.14);
-        fg = AppColors.successApple;
-        break;
-      case StatusBadgeVariant.warning:
-        bg = AppColors.accent.withOpacity(0.16);
-        fg = const Color(0xFFE65100);
-        break;
-      case StatusBadgeVariant.info:
-        bg = AppColors.info.withOpacity(0.14);
-        fg = AppColors.info;
-        break;
-      case StatusBadgeVariant.error:
-        bg = AppColors.errorApple.withOpacity(0.14);
-        fg = AppColors.errorApple;
-        break;
-      case StatusBadgeVariant.primary:
-        bg = AppColors.primary.withOpacity(0.14);
-        fg = AppColors.primary;
-        break;
-      case StatusBadgeVariant.neutral:
-        bg = Colors.grey.withOpacity(0.14);
-        fg = Colors.grey.shade700;
-        break;
-    }
+    final dark = context.isDarkMode;
+    final (accent, fg) = switch (variant) {
+      StatusBadgeVariant.success => (
+        AppColors.successApple,
+        dark ? const Color(0xFF9BEAB3) : AppColors.tertiary,
+      ),
+      StatusBadgeVariant.warning => (
+        AppColors.accent,
+        dark ? const Color(0xFFFFCF82) : AppColors.secondary,
+      ),
+      StatusBadgeVariant.info => (
+        AppColors.info,
+        dark ? const Color(0xFFB2D8FF) : const Color(0xFF1A4D84),
+      ),
+      StatusBadgeVariant.error => (
+        AppColors.error,
+        dark ? const Color(0xFFFFB0A7) : AppColors.errorApple,
+      ),
+      StatusBadgeVariant.primary => (
+        AppColors.primary,
+        Theme.of(context).colorScheme.onPrimaryContainer,
+      ),
+      StatusBadgeVariant.neutral => (
+        context.langFoodTheme.textSecondary,
+        context.langFoodTheme.textSecondary,
+      ),
+    };
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: bg,
+        color: accent.withValues(alpha: dark ? 0.20 : 0.13),
         borderRadius: BorderRadius.circular(AppTokens.radiusFull),
       ),
       child: Row(
@@ -65,11 +64,13 @@ class LangFoodStatusBadge extends StatelessWidget {
             Icon(icon, size: 13, color: fg),
             const SizedBox(width: 4),
           ],
-          Text(
-            label,
-            style: AppTypography.labelSm.copyWith(
-              color: fg,
-              fontWeight: FontWeight.bold,
+          Flexible(
+            child: Text(
+              label,
+              style: AppTypography.labelSm.copyWith(
+                color: fg,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],

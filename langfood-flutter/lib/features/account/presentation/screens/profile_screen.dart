@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/utils/display_format.dart';
+import '../../../../core/widgets/langfood_card.dart';
 import '../../../../data/models/user_model.dart';
 import '../../../../data/services/account_service.dart';
 import '../../../../data/services/auth_service.dart';
@@ -151,20 +152,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
               icon: const Icon(Icons.photo_library_outlined),
               label: const Text('Đổi ảnh đại diện'),
             ),
-            ListTile(
-              title: Text(_user.username),
-              subtitle: Text(
-                [_user.email, _user.roleName].whereType<String>().join(' • '),
+            LangFoodCard(
+              showShadow: false,
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  _user.username,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                subtitle: Text(
+                  [_user.email, _user.roleName].whereType<String>().join(' • '),
+                ),
               ),
             ),
             const SizedBox(height: 16),
+            Text(
+              'Thông tin cá nhân',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _name,
               enabled: !_saving,
-              decoration: const InputDecoration(
-                labelText: 'Họ tên',
-                border: OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(labelText: 'Họ tên'),
               validator: (s) =>
                   s == null || s.trim().isEmpty ? 'Nhập họ tên' : null,
             ),
@@ -174,10 +184,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               enabled: !_saving,
               keyboardType: TextInputType.phone,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                labelText: 'Số điện thoại',
-                border: OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(labelText: 'Số điện thoại'),
               validator: (s) => RegExp(r'^0[0-9]{9}$').hasMatch(s ?? '')
                   ? null
                   : 'Nhập số điện thoại 10 chữ số, bắt đầu bằng 0',
@@ -188,7 +195,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               initialValue: hasBuilding ? _buildingId : null,
               decoration: const InputDecoration(
                 labelText: 'Tòa nhà (tùy chọn)',
-                border: OutlineInputBorder(),
               ),
               items: _buildings
                   .map(
@@ -216,7 +222,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               enabled: !_saving,
               decoration: const InputDecoration(
                 labelText: 'Phòng / ghi chú nơi ở',
-                border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 24),

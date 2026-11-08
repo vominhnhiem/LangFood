@@ -7,7 +7,6 @@ import '../constants/app_constants.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_tokens.dart';
 import '../theme/app_typography.dart';
-import '../utils/app_motion.dart';
 import 'langfood_card.dart';
 
 /// Thẻ món ăn / quán ăn dạng ngang chuẩn thiết kế Stitch LF-01 (Quán ngon sinh viên chấm cao 🌟)
@@ -259,38 +258,14 @@ class LangFoodHorizontalProductCard extends StatelessWidget {
                       const SizedBox(width: 6),
                       if ((onShopTap != null || onAddToCart != null) &&
                           product.isShopOpen)
-                        PressScaleWidget(
-                          onTap: onShopTap ?? onAddToCart,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(
-                                AppTokens.radiusFull,
-                              ),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Xem quán',
-                                  style: TextStyle(
-                                    color: AppColors.primary,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                SizedBox(width: 2),
-                                Icon(
-                                  Icons.chevron_right_rounded,
-                                  size: 13,
-                                  color: AppColors.primary,
-                                ),
-                              ],
-                            ),
+                        IconButton.filledTonal(
+                          tooltip: onShopTap == null ? 'Thêm món' : 'Xem quán',
+                          onPressed: onShopTap ?? onAddToCart,
+                          icon: Icon(
+                            onShopTap == null
+                                ? Icons.add_rounded
+                                : Icons.storefront_outlined,
+                            size: 20,
                           ),
                         ),
                     ],
@@ -312,6 +287,7 @@ class LangFoodHorizontalProductCard extends StatelessWidget {
 
       return Image.network(
         imgUrl,
+        cacheWidth: 432,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
       );

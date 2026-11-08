@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/utils/display_format.dart';
 import '../../../../core/widgets/action_helpers.dart';
+import '../../../../core/widgets/langfood_card.dart';
 import '../../../../data/models/category_model.dart';
 import '../../../../data/models/product_model.dart';
 import '../../../../data/services/product_service.dart';
@@ -125,6 +126,18 @@ class _MerchantProductsScreenState extends State<MerchantProductsScreen> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
               children: [
+                LangFoodCard(
+                  backgroundColor: Theme.of(context)
+                      .colorScheme
+                      .primaryContainer,
+                  showShadow: false,
+                  showBorder: false,
+                  child: Text(
+                    '${_products.length} món trong thực đơn',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                const SizedBox(height: 12),
                 if (_products.isEmpty)
                   const Padding(
                     padding: EdgeInsets.all(32),
@@ -132,6 +145,7 @@ class _MerchantProductsScreenState extends State<MerchantProductsScreen> {
                   ),
                 ..._products.map(
                   (product) => Card(
+                    margin: const EdgeInsets.only(bottom: 10),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Column(
@@ -145,6 +159,7 @@ class _MerchantProductsScreenState extends State<MerchantProductsScreen> {
                                 ApiClient.resolveImageUrl(product.imageUrl),
                                 width: 56,
                                 height: 56,
+                                cacheWidth: 168,
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => const SizedBox(
                                   width: 56,

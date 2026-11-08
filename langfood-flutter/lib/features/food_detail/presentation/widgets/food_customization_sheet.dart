@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
@@ -53,6 +53,7 @@ class FoodCustomizationSheet extends StatefulWidget {
       barrierColor: Colors.black.withValues(alpha: 0.45),
       enableDrag: true,
       isDismissible: true,
+      sheetAnimationStyle: AppMotion.sheetStyle(context),
       builder: (ctx) => FoodCustomizationSheet(
         product: product,
         initialQuantity: initialQuantity,
@@ -747,7 +748,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
       child: PressScaleWidget(
         onTap: () => _selectSingleOption(group, option),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
+          duration: AppMotion.durationOf(context, AppMotion.durationFast),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: isSelected
@@ -836,7 +837,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
       child: PressScaleWidget(
         onTap: () => _toggleMultipleOption(option),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
+          duration: AppMotion.durationOf(context, AppMotion.durationFast),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: isSelected
@@ -979,7 +980,11 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                   child: TextField(
                     controller: _noteController,
                     cursorColor: AppColors.primary,
-                    style: TextStyle(fontSize: 12.5, color: theme.textPrimary, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: theme.textPrimary,
+                      fontWeight: FontWeight.w500,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Ví dụ: Ít cay, da giòn, dưa leo cắt mỏng...',
                       hintStyle: TextStyle(
@@ -1143,7 +1148,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
             child: PressScaleWidget(
               onTap: _isSubmitting ? null : _handleAddToCart,
               child: AnimatedContainer(
-                duration: AppMotion.durationFast,
+                duration: AppMotion.durationOf(context, AppMotion.durationFast),
                 height: 48,
                 decoration: BoxDecoration(
                   color: AppColors.primary,

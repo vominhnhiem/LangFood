@@ -695,7 +695,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // Kiểm tra AppBar có nhãn LIVE
-        expect(find.text('LIVE'), findsOneWidget);
+        expect(find.text('Trực tuyến'), findsOneWidget);
         expect(find.text('Shipper KTX'), findsOneWidget);
 
         // Khách hàng đặt một đơn mới

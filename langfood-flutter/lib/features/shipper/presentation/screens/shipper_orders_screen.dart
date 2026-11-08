@@ -6,7 +6,11 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/app_motion.dart';
+import '../../../../core/widgets/langfood_card.dart';
+import '../../../../core/widgets/langfood_status_badge.dart';
 import '../../../../data/models/order_test_model.dart';
 import '../../../../data/services/order_service.dart';
 import '../../../../providers/auth_provider.dart';
@@ -31,6 +35,8 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
   final OrderService _orderService = OrderService();
   List<OrderTestModel> _orders = [];
   bool _isLoading = false;
+  bool _openingOrder = false;
+  final _pickupAddresses = <int, String>{};
   String? _error;
   Timer? _liveTimer;
   final Set<int> _notifiedOrderIds = <int>{};
@@ -157,11 +163,32 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
   Future<List<OrderTestModel>> _loadRealOrders(int? shipperId) async {
     if (shipperId == null) throw Exception('Tài khoản chưa có mã shipper.');
     final orders = await _orderService.getOrdersForShipper(shipperId);
+    final pickups = {
+      for (final order in orders)
+        if (order.status == 'PickingUp' &&
+            order.shipperId == shipperId &&
+            !_pickupAddresses.containsKey(order.shopId))
+          order.shopId,
+    };
+    await Future.wait(
+      pickups.map((shopId) async {
+        try {
+          final pickup = await _orderService.getShopPickup(shopId);
+          final address = pickup['address'];
+          if (address is String && address.trim().isNotEmpty) {
+            _pickupAddresses[shopId] = address;
+          }
+        } catch (_) {
+          // The map can retry this lookup without blocking the trip list.
+        }
+      }),
+    );
     return orders
         .map(
           (order) => OrderTestModel(
             id: order.id,
             customerName: order.buyerName ?? 'Khách hàng',
+            pickupAddress: _pickupAddresses[order.shopId],
             phone: order.deliveryPhone ?? '',
             deliveryAddress: [
               order.deliveryBuilding,
@@ -222,54 +249,42 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
   }
 
   Future<void> _acceptOrder(OrderTestModel order) async {
+    final orderId = order.id;
+    if (_openingOrder || orderId == null) return;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final shipperId = authProvider.user?.shipperId;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
+    setState(() => _openingOrder = true);
 
     try {
       if (shipperId == null) throw Exception('Tài khoản chưa có mã shipper.');
-      if (order.status != 'Delivering' && order.status != 'PickingUp')
-        await _orderService.acceptOrder(order.id!, shipperId);
-      if (mounted) Navigator.pop(context);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Đã nhận đơn #${order.id} thành công! Mở bản đồ dẫn đường...',
-            ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => LiveTrackingScreen(
-              orderId: order.id ?? 1,
-              isShipper: true,
-              autoShareGps: true,
-              initialCustomerPos: order.latitude == 0 && order.longitude == 0
-                  ? null
-                  : LatLng(order.latitude, order.longitude),
-              initialAddress: order.deliveryAddress,
-            ),
-          ),
-        );
-        if (mounted) {
-          _fetchOrders();
-        }
+      final claiming = !_inProgress(order);
+      if (claiming) {
+        final claimed = await _orderService.acceptOrder(orderId, shipperId);
+        if (!claimed) throw Exception('Đơn chưa được xác nhận.');
       }
+      if (!mounted) return;
+      if (claiming) {
+        AppHaptics.medium();
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Đã nhận đơn #$orderId.')));
+      }
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => LiveTrackingScreen(
+            orderId: orderId,
+            isShipper: true,
+            autoShareGps: true,
+            initialCustomerPos: order.latitude == 0 && order.longitude == 0
+                ? null
+                : LatLng(order.latitude, order.longitude),
+            initialAddress: order.deliveryAddress,
+          ),
+        ),
+      );
+      if (mounted) await _fetchOrders();
     } catch (e) {
-      if (mounted) Navigator.pop(context);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -281,6 +296,8 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
           ),
         );
       }
+    } finally {
+      if (mounted) setState(() => _openingOrder = false);
     }
   }
 
@@ -288,6 +305,7 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     showModalBottomSheet(
       context: context,
+      sheetAnimationStyle: AppMotion.sheetStyle(context),
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -402,51 +420,22 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
     );
   }
 
+  bool _inProgress(OrderTestModel order) =>
+      order.status == 'PickingUp' || order.status == 'Delivering';
+
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
+    final auth = context.watch<AuthProvider>();
+    final colors = context.langFoodTheme;
+    final text = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+    final active = _orders.where(_inProgress).toList();
+    final ready = _orders.where((order) => !_inProgress(order)).toList();
+    final orders = [...active, ...ready];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Flexible(
-              child: Text(
-                'Shipper KTX',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: const Color(0xFF10B981),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.circle, color: Colors.white, size: 6),
-                  SizedBox(width: 3),
-                  Text(
-                    'LIVE',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.orange,
-        foregroundColor: Colors.white,
-        centerTitle: false,
+        title: const Text('Shipper KTX'),
         actions: [
           IconButton(
             icon: const Icon(Icons.swap_horiz_rounded),
@@ -456,285 +445,254 @@ class _ShipperOrdersScreenState extends State<ShipperOrdersScreen> {
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Tải lại danh sách',
-            onPressed: _fetchOrders,
+            onPressed: _isLoading ? null : _fetchOrders,
           ),
           IconButton(
             icon: const Icon(Icons.logout_rounded),
             tooltip: 'Đăng xuất',
-            onPressed: () {
-              authProvider.logout();
-            },
+            onPressed: auth.logout,
           ),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: _fetchOrders,
-        child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: Colors.orange),
-              )
-            : _error != null
-            ? Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              sliver: SliverToBoxAdapter(
+                child: LangFoodCard(
+                  padding: const EdgeInsets.all(18),
+                  showShadow: false,
+                  backgroundColor: scheme.secondaryContainer,
+                  showBorder: false,
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
-                        Icons.error_outline_rounded,
-                        color: Colors.red,
-                        size: 60,
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            'KTX KHU B / GIAO NHẬN',
+                            style: text.labelMedium?.copyWith(
+                              color: scheme.onSecondaryContainer,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          if (_error == null)
+                            const LangFoodStatusBadge(
+                              label: 'Trực tuyến',
+                              variant: StatusBadgeVariant.success,
+                              icon: Icons.circle,
+                            ),
+                        ],
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        _error!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
+                      const SizedBox(height: 5),
+                      Text('Chuyến giao của bạn', style: text.headlineSmall),
+                      if (!_isLoading && _error == null) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          '${active.length} đang xử lý · ${ready.length} chờ nhận',
+                          style: text.bodyMedium?.copyWith(
+                            color: colors.textSecondary,
+                          ),
                         ),
-                        icon: const Icon(Icons.refresh, color: Colors.white),
-                        label: const Text(
-                          'Thử lại',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        onPressed: _fetchOrders,
-                      ),
+                      ],
                     ],
                   ),
                 ),
-              )
-            : _orders.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.two_wheeler_outlined,
-                      size: 80,
-                      color: Colors.grey,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Chưa có đơn hàng Demo nào đang chờ nhận!',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Màn hình đang ở chế độ LIVE, đơn mới từ khách sẽ tự động nổ.',
-                      style: TextStyle(fontSize: 13, color: Colors.grey),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      icon: const Icon(Icons.refresh, color: Colors.white),
-                      label: const Text(
-                        'Tải lại danh sách đơn',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      onPressed: _fetchOrders,
-                    ),
-                  ],
+              ),
+            ),
+            if (_isLoading || _error != null || orders.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: _isLoading
+                        ? const CircularProgressIndicator()
+                        : Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _error == null
+                                    ? Icons.delivery_dining_outlined
+                                    : Icons.cloud_off_rounded,
+                                size: 42,
+                                color: colors.textSecondary,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                _error ?? 'Chưa có đơn hàng',
+                                style: text.titleMedium,
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 8),
+                              if (_error == null)
+                                Text(
+                                  'Các đơn sẵn sàng lấy món sẽ xuất hiện ở đây.',
+                                  style: text.bodyMedium?.copyWith(
+                                    color: colors.textSecondary,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              const SizedBox(height: 12),
+                              OutlinedButton.icon(
+                                onPressed: _fetchOrders,
+                                icon: const Icon(Icons.refresh_rounded),
+                                label: Text(
+                                  _error == null
+                                      ? 'Tải lại danh sách đơn'
+                                      : 'Thử lại',
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
                 ),
               )
-            : ListView.builder(
-                padding: const EdgeInsets.all(12),
-                itemCount: _orders.length,
-                itemBuilder: (context, index) {
-                  final order = _orders[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    elevation: 3,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                sliver: SliverList.builder(
+                  itemCount: orders.length,
+                  itemBuilder: (context, index) {
+                    final order = orders[index];
+                    final startsSection = index == 0 || index == active.length;
+                    return Padding(
+                      key: ValueKey(order.id ?? index),
+                      padding: const EdgeInsets.only(bottom: 12),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Flexible(
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.receipt_long_rounded,
-                                      color: Colors.orange,
-                                      size: 22,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Flexible(
-                                      child: Text(
-                                        'Đơn #${order.id ?? index + 1}',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 15,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                          if (startsSection)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(2, 8, 2, 8),
+                              child: Text(
+                                _inProgress(order)
+                                    ? 'Đang thực hiện'
+                                    : 'Sẵn sàng nhận',
+                                style: text.titleMedium,
                               ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange.shade50,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.orange.shade200,
-                                  ),
-                                ),
-                                child: Text(
-                                  order.status,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.orange.shade900,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Divider(height: 16),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.person,
-                                size: 18,
-                                color: Colors.grey,
-                              ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  'Khách: ${order.customerName}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.location_on,
-                                size: 18,
-                                color: Colors.red,
-                              ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  'Địa chỉ: ${order.deliveryAddress}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.phone,
-                                size: 18,
-                                color: Colors.green,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'SĐT: ${order.phone}',
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                          const Divider(height: 16),
-                          Wrap(
-                            alignment: WrapAlignment.spaceBetween,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Tổng tiền đơn hàng:',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                  Text(
-                                    _formatCurrency(order.totalAmount),
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.orange,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 8,
-                                  ),
-                                ),
-                                icon: const Icon(
-                                  Icons.directions_bike_rounded,
-                                  size: 18,
-                                ),
-                                label: Text(
-                                  order.status == 'Delivering' ||
-                                          order.status == 'PickingUp'
-                                      ? 'MỞ THEO DÕI'
-                                      : 'NHẬN ĐƠN NGAY',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                                onPressed: () => _acceptOrder(order),
-                              ),
-                            ],
-                          ),
+                            ),
+                          _orderCard(context, order),
                         ],
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _orderCard(BuildContext context, OrderTestModel order) {
+    final colors = context.langFoodTheme;
+    final text = Theme.of(context).textTheme;
+    final inProgress = _inProgress(order);
+    final pickingUp = order.status == 'PickingUp';
+    final destination = pickingUp
+        ? order.pickupAddress ?? 'Xem địa chỉ quán trên bản đồ'
+        : order.deliveryAddress.trim().isEmpty
+        ? 'Chưa có địa chỉ giao'
+        : order.deliveryAddress;
+    final status = switch (order.status) {
+      'PickingUp' => 'Đến lấy món',
+      'Delivering' => 'Đang giao',
+      'Ready' || 'Accepted' || 'Confirmed' => 'Chờ nhận',
+      _ => order.status,
+    };
+
+    return LangFoodCard(
+      showShadow: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              Text(
+                'Đơn #${order.id ?? '—'}',
+                style: AppTypography.currencyDisplay,
+              ),
+              LangFoodStatusBadge(
+                label: status,
+                icon: inProgress ? Icons.route_rounded : Icons.schedule_rounded,
+                variant: inProgress
+                    ? StatusBadgeVariant.info
+                    : StatusBadgeVariant.primary,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            pickingUp ? 'ĐIỂM LẤY MÓN' : 'ĐIỂM GIAO',
+            style: text.labelSmall,
+          ),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.location_on_outlined,
+                size: 21,
+                color: colors.textSecondary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: Text(destination, style: text.titleMedium)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            order.customerName,
+            style: text.bodyMedium?.copyWith(color: colors.textSecondary),
+          ),
+          if (order.phone.trim().isNotEmpty)
+            Text(
+              order.phone,
+              style: text.bodyMedium?.copyWith(color: colors.textSecondary),
+            ),
+          const SizedBox(height: 8),
+          const Divider(),
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: 8,
+            children: [
+              Text(
+                'Tổng tiền đơn hàng',
+                style: text.bodyMedium?.copyWith(color: colors.textSecondary),
+              ),
+              Text(
+                _formatCurrency(order.totalAmount),
+                style: AppTypography.currencyDisplay,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: _openingOrder || order.id == null
+                ? null
+                : () => _acceptOrder(order),
+            icon: Icon(
+              inProgress
+                  ? Icons.navigation_outlined
+                  : Icons.delivery_dining_rounded,
+            ),
+            label: Text(
+              inProgress
+                  ? (pickingUp ? 'Đường đến quán' : 'Đường đến điểm giao')
+                  : 'NHẬN ĐƠN NGAY',
+            ),
+          ),
+        ],
       ),
     );
   }

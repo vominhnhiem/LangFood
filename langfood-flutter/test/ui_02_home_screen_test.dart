@@ -43,6 +43,7 @@ void main() {
       CartProvider? cartProvider,
       AuthProvider? authProvider,
       ThemeProvider? themeProvider,
+      ThemeMode themeMode = ThemeMode.light,
     }) {
       return MultiProvider(
         providers: [
@@ -59,7 +60,7 @@ void main() {
         child: MaterialApp(
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
-          themeMode: ThemeMode.light,
+          themeMode: themeMode,
           home: const HomeScreen(),
         ),
       );
@@ -76,16 +77,12 @@ void main() {
       await tester.pumpWidget(buildTestableHomeScreen());
       await tester.pump(const Duration(milliseconds: 100));
 
-      // 1. Brand Title
-      expect(find.text('LANGFOOD'), findsOneWidget);
-      expect(find.text('Khám Phá'), findsOneWidget);
-
-      // 2. Location Bar & Greeting
-      expect(find.text('GIAO TẬN PHÒNG THI & KTX'), findsOneWidget);
-      expect(find.text('Hôm nay ăn gì ở Làng? 🍜'), findsOneWidget);
+      expect(find.text('GIAO ĐẾN'), findsOneWidget);
+      expect(find.text('LANGFOOD / KTX KHU B'), findsOneWidget);
+      expect(find.text('Hôm nay ăn gì ở Làng?'), findsOneWidget);
 
       // 3. Search Bar
-      expect(find.text('Tìm cơm gà, trà sữa nướng, bún bò...'), findsOneWidget);
+      expect(find.text('Tìm món hoặc tên quán'), findsOneWidget);
 
       // 4. Quick Action Pills
       expect(find.text('Đặt nhóm chia ship'), findsOneWidget);
@@ -177,7 +174,7 @@ void main() {
     final testViewports = [
       {'name': 'Compact (320x640)', 'size': const Size(320, 640)},
       {'name': 'Standard Android (360x800)', 'size': const Size(360, 800)},
-      {'name': 'iPhone Standard (393x852)', 'size': const Size(393, 852)},
+      {'name': 'iPhone Standard (390x852)', 'size': const Size(390, 852)},
       {'name': 'Large Pro Max (430x932)', 'size': const Size(430, 932)},
     ];
 
@@ -186,9 +183,15 @@ void main() {
       final name = vp['name'] as String;
 
       testWidgets(
-        'Responsive & Overflow Test: $name with textScale 1.0 and 1.3 without RenderFlex error',
+        'Responsive layout on $name in light and dark with larger text',
         (WidgetTester tester) async {
-          for (final scale in [1.0, 1.3]) {
+          for (final (mode, scale) in [
+            (ThemeMode.light, 1.0),
+            (ThemeMode.light, 1.65),
+            (ThemeMode.dark, 1.0),
+            (ThemeMode.dark, 1.65),
+          ]) {
+            await tester.pumpWidget(const SizedBox.shrink());
             tester.view.physicalSize = Size(size.width, size.height);
             tester.view.devicePixelRatio = 1.0;
             tester.platformDispatcher.textScaleFactorTestValue = scale;
@@ -198,7 +201,7 @@ void main() {
               tester.platformDispatcher.clearTextScaleFactorTestValue,
             );
 
-            await tester.pumpWidget(buildTestableHomeScreen());
+            await tester.pumpWidget(buildTestableHomeScreen(themeMode: mode));
             await tester.pump(const Duration(milliseconds: 150));
 
             // Verify no rendering or RenderFlex overflow exceptions on initial render
@@ -209,18 +212,21 @@ void main() {
                   'Overflow or error on $name at textScale $scale on initial render',
             );
 
-            // Banner CTA & Content are present
-            expect(find.text('Xem thực đơn'), findsWidgets);
-            expect(find.text('LANGFOOD KTX'), findsWidgets);
+            expect(find.text('GIAO ĐẾN'), findsOneWidget);
 
             // Bottom navigation tabs are visible
             expect(find.text('Khám phá'), findsOneWidget);
             expect(find.text('Đặt chung'), findsOneWidget);
 
             // Scroll down to ensure Flash Deals and product items render without overflow
-            await tester.drag(
-              find.byType(CustomScrollView),
-              const Offset(0, -300),
+            await tester.scrollUntilVisible(
+              find.text('Gợi ý hôm nay'),
+              200,
+              scrollable: find.byWidgetPredicate(
+                (widget) =>
+                    widget is Scrollable &&
+                    widget.axisDirection == AxisDirection.down,
+              ),
             );
             await tester.pump(const Duration(milliseconds: 100));
 

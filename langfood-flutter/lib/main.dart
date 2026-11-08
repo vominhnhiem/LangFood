@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -7,9 +7,11 @@ import 'package:provider/provider.dart';
 import 'core/constants/app_constants.dart';
 import 'core/showcase/design_system_showcase.dart';
 import 'core/theme/app_theme.dart';
+import 'core/utils/app_motion.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/home/presentation/screens/home_screen.dart';
 import 'features/auth/presentation/screens/pending_approval_screen.dart';
+import 'features/restaurant/presentation/screens/seller_dashboard_screen.dart';
 import 'features/restaurant/presentation/screens/shop_orders_screen.dart';
 import 'features/shipper/presentation/screens/shipper_orders_screen.dart';
 import 'providers/auth_provider.dart';
@@ -20,6 +22,19 @@ void main() {
   runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+      if (const bool.fromEnvironment('SELLER_DASHBOARD_PREVIEW')) {
+        runApp(
+          MaterialApp(
+            title: 'Làng Food · Chủ quán',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            scrollBehavior: const LangFoodScrollBehavior(),
+            home: const SellerDashboardScreen(),
+          ),
+        );
+        return;
+      }
       try {
         await dotenv.load(fileName: '.env');
       } catch (_) {}
@@ -66,6 +81,8 @@ class LangFoodApp extends StatelessWidget {
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
+            scrollBehavior: const LangFoodScrollBehavior(),
+            themeAnimationDuration: AppMotion.durationNormal,
             routes: {'/showcase': (_) => const DesignSystemShowcase()},
             home: const AuthWrapper(),
           );

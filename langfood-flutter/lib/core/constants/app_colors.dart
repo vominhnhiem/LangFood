@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 class AppColors {
   // Brand Colors (Màu nhận diện thương hiệu)
   static const Color primary = Color(0xFFFF5722); // Deep Orange (#FF5722)
+  static const Color campusViolet = Color(0xFF5738D1);
+  static const Color campusLime = Color(0xFFD8F45B);
+  static const Color campusInk = Color(0xFF241B3B);
   static const Color primaryDark = Color(0xFFE64A19);
   static const Color primaryDeep = Color(
     0xFFB02F00,
@@ -18,31 +21,29 @@ class AppColors {
 
   // Background & Surface - Light Mode
   static const Color background = Color(0xFFF8F9FA); // Legacy background
-  static const Color canvasLight = Color(
-    0xFFF2F2F7,
-  ); // Apple HIG Grouped Canvas (#F2F2F7)
+  static const Color canvasLight = Color(0xFFFFF8EF);
   static const Color surface = Colors.white;
   static const Color cardBg = Colors.white;
   static const Color surfaceLight = Colors.white;
-  static const Color surfaceContainerLowLight = Color(0xFFF4F3F8);
-  static const Color surfaceContainerHighLight = Color(0xFFE9E7ED);
+  static const Color surfaceContainerLowLight = Color(0xFFF6EFE7);
+  static const Color surfaceContainerHighLight = Color(0xFFECE5F4);
 
   // Background & Surface - Dark Mode
-  static const Color canvasDark = Color(0xFF1C1C1E); // Apple HIG Dark Canvas
-  static const Color surfaceDark = Color(0xFF2C2C2E); // Elevated Dark Card
-  static const Color surfaceContainerLowDark = Color(0xFF242426);
-  static const Color surfaceContainerHighDark = Color(0xFF3A3A3C);
+  static const Color canvasDark = Color(0xFF191526);
+  static const Color surfaceDark = Color(0xFF241E35);
+  static const Color surfaceContainerLowDark = Color(0xFF2C2541);
+  static const Color surfaceContainerHighDark = Color(0xFF382F51);
 
   // Text Colors - Light Mode
   static const Color textPrimary = Color(0xFF212121);
-  static const Color textPrimaryLight = Color(0xFF1C1C1E);
+  static const Color textPrimaryLight = campusInk;
   static const Color textSecondary = Color(0xFF757575);
-  static const Color textSecondaryLight = Color(0xFF8E8E93);
+  static const Color textSecondaryLight = Color(0xFF625771);
   static const Color textHint = Color(0xFF9E9E9E);
 
   // Text Colors - Dark Mode
   static const Color textPrimaryDark = Color(0xFFFFFFFF);
-  static const Color textSecondaryDark = Color(0xFF8E8E93);
+  static const Color textSecondaryDark = Color(0xFFCCC0DE);
   static const Color textHintDark = Color(0xFF636366);
 
   // Status & Semantic Colors
@@ -60,8 +61,8 @@ class AppColors {
   static const Color borderLight = Color(0xFFE5E5EA);
   static const Color borderDark = Color(0xFF38383A);
   static const Color divider = Color(0xFFE0E0E0);
-  static const Color borderSubtleLight = Color(0xFFE5E5EA);
-  static const Color borderSubtleDark = Color(0xFF38383A);
+  static const Color borderSubtleLight = Color(0xFFE5DCE9);
+  static const Color borderSubtleDark = Color(0xFF493D62);
 
   // Shimmer
   static const Color shimmerBase = Color(0xFFE0E0E0);
@@ -74,6 +75,6 @@ class AppColors {
   static const Color glassLight = Color(
     0xD9FFFFFF,
   ); // rgba(255, 255, 255, 0.85)
-  static const Color glassDark = Color(0xD12C2C2E); // rgba(44, 44, 46, 0.82)
+  static const Color glassDark = Color(0xE6241E35);
   static const Color scrim = Color(0x73000000); // 45% black overlay
 }

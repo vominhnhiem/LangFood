@@ -246,10 +246,8 @@ class _ShopMenuScreenState extends State<ShopMenuScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => FoodDetailScreen(
-          product: product,
-          lobbyRoom: widget.lobbyRoom,
-        ),
+        builder: (_) =>
+            FoodDetailScreen(product: product, lobbyRoom: widget.lobbyRoom),
       ),
     );
   }
@@ -338,7 +336,9 @@ class _ShopMenuScreenState extends State<ShopMenuScreen> {
     AppHaptics.light();
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => CartScreen(lobbyRoom: widget.lobbyRoom)),
+      MaterialPageRoute(
+        builder: (_) => CartScreen(lobbyRoom: widget.lobbyRoom),
+      ),
     );
   }
 
@@ -599,6 +599,11 @@ class _ShopMenuScreenState extends State<ShopMenuScreen> {
                 coverUrl.startsWith('http')
                     ? coverUrl
                     : '${AppConstants.baseUrl.replaceAll(RegExp(r'/$'), '')}/${coverUrl.replaceAll(RegExp(r'^/'), '')}',
+                cacheWidth:
+                    (MediaQuery.sizeOf(context).width *
+                            MediaQuery.devicePixelRatioOf(context))
+                        .clamp(320, 1440)
+                        .round(),
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) =>
                     _buildCoverPlaceholder(),
@@ -638,7 +643,7 @@ class _ShopMenuScreenState extends State<ShopMenuScreen> {
                         vertical: 4.5,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.tertiary.withValues(alpha: 0.92),
+                        color: AppColors.campusViolet,
                         borderRadius: BorderRadius.circular(
                           AppTokens.radiusFull,
                         ),

@@ -5,7 +5,11 @@ import 'package:provider/provider.dart';
 import '../../../../config/config_url.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../core/utils/app_motion.dart';
 import '../../../../core/utils/display_format.dart';
+import '../../../../core/widgets/langfood_card.dart';
+import '../../../../core/widgets/langfood_campus_route.dart';
 import '../../../../data/models/checkout_selection.dart';
 import '../../../../data/models/order_model.dart';
 import '../../../../data/services/order_service.dart';
@@ -82,6 +86,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   void _paymentSheet() {
     showModalBottomSheet<void>(
       context: context,
+      sheetAnimationStyle: AppMotion.sheetStyle(context),
       isScrollControlled: true,
       backgroundColor: context.langFoodTheme.card,
       shape: const RoundedRectangleBorder(
@@ -263,10 +268,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        icon: const Icon(
-          Icons.check_circle,
-          size: 48,
-          color: AppColors.tertiary,
+        icon: LangFoodCampusRoute(
+          color: Theme.of(dialogContext).colorScheme.secondary,
         ),
         title: const Text('Đặt đơn thành công!'),
         content: Text(
@@ -337,35 +340,35 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     required IconData icon,
     required Widget child,
     Widget? action,
+    bool highlight = false,
   }) {
-    final theme = context.langFoodTheme;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.card,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.borderSubtle, width: 0.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: AppColors.primary, size: 21),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium,
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: LangFoodCard(
+        showShadow: false,
+        backgroundColor: highlight ? scheme.secondaryContainer : null,
+        borderRadius: 20,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: scheme.onSecondaryContainer, size: 21),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                 ),
-              ),
-              if (action != null) action,
-            ],
-          ),
-          const SizedBox(height: 12),
-          child,
-        ],
+                if (action != null) action,
+              ],
+            ),
+            const SizedBox(height: 12),
+            child,
+          ],
+        ),
       ),
     );
   }
@@ -442,6 +445,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   _card(
                     title: 'Điểm nhận hàng KTX',
                     icon: Icons.location_on,
+                    highlight: true,
                     action: TextButton(
                       onPressed: _submitting || _created.isNotEmpty
                           ? null
@@ -525,7 +529,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(money(item.totalPrice)),
+                                  Text(
+                                    money(item.totalPrice),
+                                    style: AppTypography.currencyDisplay,
+                                  ),
                                 ],
                               ),
                             ),
@@ -614,11 +621,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               fit: BoxFit.scaleDown,
                               child: Text(
                                 money(_total),
-                                style: const TextStyle(
-                                  color: AppColors.primary,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: AppTypography.currencyDisplay,
                               ),
                             ),
                           ],
@@ -636,9 +639,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               : _submit,
                           style: FilledButton.styleFrom(
                             minimumSize: const Size(0, 48),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
                           ),
                           child: _submitting
                               ? const SizedBox(

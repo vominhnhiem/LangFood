@@ -36,8 +36,8 @@ class LangFoodCard extends StatelessWidget {
 
     final bg = backgroundColor ?? theme.card;
     final border = showBorder
-        ? Border.all(color: theme.borderSubtle, width: 0.5)
-        : null;
+        ? BorderSide(color: theme.borderSubtle)
+        : BorderSide.none;
 
     final shadows = showShadow
         ? (isDark ? AppTokens.shadowLevel1Dark : AppTokens.shadowLevel1)
@@ -45,11 +45,13 @@ class LangFoodCard extends StatelessWidget {
 
     final cardContent = Container(
       padding: padding,
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(borderRadius),
-        border: border,
-        boxShadow: shadows,
+        shape: RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(borderRadius),
+          side: border,
+        ),
+        shadows: shadows,
       ),
       child: child,
     );

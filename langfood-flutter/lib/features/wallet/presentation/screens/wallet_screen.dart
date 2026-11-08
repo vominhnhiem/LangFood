@@ -131,17 +131,23 @@ class _WalletScreenState extends State<WalletScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 Card(
+                  color: Theme.of(context).colorScheme.secondaryContainer,
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       children: [
-                        const Text('Số dư hiện tại'),
+                        Text(
+                          'Số dư hiện tại',
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
                         Text(
                           money(_data!.balance),
                           style: Theme.of(context).textTheme.headlineMedium,
                         ),
+                        const SizedBox(height: 12),
                         Wrap(
                           spacing: 12,
+                          runSpacing: 8,
                           children: [
                             FilledButton.icon(
                               onPressed: _busy ? null : () => _request(false),
@@ -167,6 +173,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   const ListTile(title: Text('Chưa có giao dịch.')),
                 ..._data!.transactions.map(
                   (row) => Card(
+                    margin: const EdgeInsets.only(top: 8),
                     child: ListTile(
                       title: Text(
                         row['description']?.toString() ??
@@ -196,6 +203,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   const ListTile(title: Text('Chưa có yêu cầu rút.')),
                 ..._data!.withdrawals.map(
                   (row) => Card(
+                    margin: const EdgeInsets.only(top: 8),
                     child: ListTile(
                       title: Text(
                         '${money(row['amount'] as num?)} • ${_status(row['status'])}',

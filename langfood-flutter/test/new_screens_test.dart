@@ -124,16 +124,23 @@ void main() {
   testWidgets(
     'history cancels only waiting orders after confirmation and removes them',
     (tester) async {
-      tester.view.physicalSize = const Size(390, 844);
+      tester.view.physicalSize = const Size(320, 640);
       tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = 1.65;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       final auth = await session();
       addTearDown(auth.dispose);
       final api = OrdersApi();
       await tester.pumpWidget(host(auth, MyOrdersScreen(service: api)));
       await tester.pumpAndSettle();
-      expect(find.text('Hủy đơn'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Hủy đơn'),
+        180,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Hủy đơn'));
       await tester.pumpAndSettle();
       expect(api.cancellations, 0);
@@ -145,6 +152,7 @@ void main() {
       await tester.tap(find.text('Đã kết thúc'));
       await tester.pumpAndSettle();
       expect(find.text('Đơn #3'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     },
   );
   testWidgets('deposit request never optimistically increases wallet balance', (

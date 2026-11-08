@@ -37,22 +37,29 @@ class LangFoodPrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isEnabled = onPressed != null && !isLoading;
     final bg = isEnabled
-        ? (backgroundColor ?? AppColors.primary)
+        ? (backgroundColor ??
+              (context.isDarkMode
+                  ? const Color(0xFFFFAD8A)
+                  : AppColors.primaryDeep))
         : (context.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300);
     final fg = isEnabled
-        ? (textColor ?? Colors.white)
+        ? (textColor ??
+              (backgroundColor == null && context.isDarkMode
+                  ? const Color(0xFF31140B)
+                  : Colors.white))
         : (context.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade500);
 
     return PressScaleWidget(
       onTap: isEnabled ? onPressed : null,
       child: AnimatedContainer(
-        duration: AppMotion.durationFast,
+        duration: AppMotion.durationOf(context, AppMotion.durationFast),
         width: double.infinity,
         height: height,
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(borderRadius),
-          boxShadow: isEnabled ? AppTokens.shadowPrimaryButton : null,
+          shape: RoundedSuperellipseBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+          ),
         ),
         alignment: Alignment.center,
         child: isLoading
